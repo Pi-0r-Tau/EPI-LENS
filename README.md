@@ -15,7 +15,7 @@ graph TB
         PP[Popup Interface]
         BG[Background Script]
         CS[Content Script]
-        AN[Analyzer]
+        AN[Analyser]
     end
 
     subgraph Frame Analysis
