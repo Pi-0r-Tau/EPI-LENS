@@ -1,7 +1,11 @@
 # EPI-LENS
 **E**pilepsy **P**hotic **I**ntensity **L**evel **E**valuator for **N**euro Visual **S**timuli
 
-EPI-LENS is a browser extension designed to analyse video content for potentially harmful photosensitive triggers in real-time. It provides detailed metrics and analytics for researchers and accessibility specialists and exports as CSV and JSON.
+EPI-LENS is a browser extension designed to analyse video content for potentially harmful photosensitive triggers in real-time. Designed for use in empirical research, accessibility auditing and machine learning dataset generation. 
+
+Extracts temporal, spatial and spectral metrics from video content and exports data as CSV and JSON. 
+
+
 
 ## Use Cases
 
