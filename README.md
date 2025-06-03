@@ -74,83 +74,72 @@ graph TB
 ```
 ```mermaid
 graph TB
-    subgraph Input
-        VID[Video Frame Input]
-        FC[Frame Capture]
-        VID --> FC
+    subgraph Video_Processing [Video Processing]
+        VID[Video Frame Input] --> CAP[Frame Capture]
+        CAP --> |ImageData| ANA[Analysis Engine]
     end
 
-    subgraph Core_Analysis [Core Analysis Pipeline]
-        subgraph Brightness [Brightness Analysis]
-            BR["Luminance Calculation
-            Y = 0.2126R + 0.7152G + 0.0722B"]
-            FD["Flash Detection
-            ΔB = |Bt - Bt-1| > threshold"]
-            FR["Flash Rate
-            FR = flashCount/frameTime"]
-            BR --> FD --> FR
-        end
-
-        subgraph Spectral [Spectral Analysis]
-            FFT["FFT Processing
-            X(k) = Σx(n)e^(-j2πkn/N)"]
-            FREQ["Frequency Analysis
-            f = sampleRate * k/N"]
-            DOM["Dominant Frequency
-            max(|X(k)|), k>0"]
-            FFT --> FREQ --> DOM
-        end
-
-        subgraph Spatial [Spatial Analysis]
-            EDG["Edge Detection
-            |∇f| = √(Gx² + Gy²)"]
-            MOT["Motion Detection
-            M = motionPixels/totalPixels"]
-            DIST["Spatial Distribution
-            Center vs Periphery"]
-            EDG --> MOT --> DIST
-        end
-    end
-
-    subgraph Risk [Risk Assessment]
-        PSI["PSI Calculation
-        0.3F + 0.25I + 0.2C + 0.15D + 0.1B"]
-        COH["Temporal Coherence
-        R(τ) = E[(Xt-μ)(Xt+τ-μ)]/σ²"]
-        VAR["Color Variance
-        σ² = Σ(x-μ)²/N"]
-    end
-
-    subgraph Memory [Memory Management]
+    subgraph Memory_System [Memory System]
         BUF["Temporal Buffer
         CircularBuffer(128)"]
         CHK["Data Chunks
         1000 frames/chunk"]
-        CLEAN["Garbage Collection"]
+        TST["Timestamp Manager"]
     end
 
-    subgraph Export [Data Export]
-        DATA[Analysis Data]
-        OUT["Output Formats
-        CSV | JSON | Metadata"]
-        DATA --> OUT
+    subgraph Analysis_Pipeline [Analysis Pipeline]
+        ANA --> |Brightness| BRI["Luminance Analysis
+        Y = 0.2126R + 0.7152G + 0.0722B"]
+        ANA --> |Color| COL["Color Processing
+        RG = |R-G|/√2, BY = |2B-R-G|/√6"]
+        ANA --> |Motion| MOT["Motion Detection
+        M = motionPixels/totalPixels"]
+        ANA --> |Edges| EDG["Edge Detection
+        |∇f| = √(Gx² + Gy²)"]
+
+        subgraph Real_Time_Metrics [Real-time Metrics]
+            BRI --> FLA["Flash Detection
+            ΔB = |Bt - Bt-1| > threshold"]
+            COL --> VAR["Color Variance
+            σ² = Σ(x-μ)²/N"]
+            MOT --> DIF["Frame Difference
+            D = Σ|It(x,y) - It-1(x,y)|/N"]
+            EDG --> CHG["Edge Change Rate
+            ECR = |Et - Et-1|/max(Et,Et-1)"]
+        end
+
+        subgraph Signal_Processing [Signal Processing]
+            FLA --> FFT["FFT Analysis
+            X(k) = Σx(n)e^(-j2πkn/N)"]
+            VAR --> COH["Temporal Coherence
+            R(τ) = E[(Xt-μ)(Xt+τ-μ)]/σ²"]
+            DIF --> PER["Periodicity Detection
+            P(f) = |F{ACF(t)}|"]
+            CHG --> TMP["Temporal Analysis
+            T = Σwi*Mi where Mi={ECR,D,ΔB}"]
+        end
     end
 
-    FC --> BR
-    FC --> FFT
-    FC --> EDG
+    subgraph Risk_Assessment [Risk Assessment]
+        AGG["PSI Risk Aggregation"]
+        PSI["PSI Calculation
+        0.3F + 0.25I + 0.2C + 0.15D + 0.1B"]
+        AGG --> PSI
+    end
 
-    FR --> PSI
-    DOM --> PSI
-    DIST --> PSI
+    subgraph Data_Management [Data Management]
+        FFT & COH & PER & TMP --> AGG
+        AGG --> BUF
+        BUF --> CHK
+        CHK --> EXP[Export System]
+    end
 
-    BUF --> FFT
-    BUF --> COH
+    subgraph Export_Formats [Export Formats]
+        EXP --> CSV[CSV Export]
+        EXP --> JSN[JSON Export]
+        EXP --> META[Metadata Export]
+    end
 
-    PSI --> DATA
-    VAR --> DATA
-
-    Memory --> Export
 ```
 
 ### Graphs from test run on music performance video 
