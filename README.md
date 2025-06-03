@@ -24,6 +24,8 @@ EPI-LENS is a browser extension designed to analyse video content for potentiall
 - Guidance for content modifications
 - Quality assurance for accessibility compliance
 
+# Compatibility
+- Youtube (currently a working prototype, will be expanded to other domains)
 
 ## Core Metrics Overview
 
