@@ -28,88 +28,81 @@ EPI-LENS is a browser extension designed to analyse video content for potentiall
 ```mermaid
 graph TB
     subgraph Browser
-        YT[YouTube Video Player]
+        YT[YouTube Video]
         CE[Chrome Extension]
     end
 
-    subgraph Extension Components
-        PP[Popup Interface]
-        BG[Background Script]
-        CS[Content Script]
-        AN[Analyser]
-    end
-
-    subgraph Frame Analysis
+    subgraph Analysis Engine
         FC[Frame Capture]
-        subgraph Luminance["Luminance Analysis"]
-            LUM["Relative Luminance (Y)<br/>Y = 0.2126R + 0.7152G + 0.0722B"]
-            BR["Brightness Calculation<br/>Normalized [0,1]"]
+        subgraph Core Metrics
+            BR[Brightness Analysis]
+            FD[Flash Detection]
+            FR[Flash Rate]
         end
 
-        subgraph Color["Color Analysis"]
-            CV["RGB Variance Analysis"]
-            CHS["Color History (30 frames)"]
-            CSD["Spike Detection (μ ± 2σ)"]
-            TC["Temporal Color Changes"]
+        subgraph Detailed Metrics
+            PSI[PSI Calculation]
+            SPA[Spatial Analysis]
+            CHR[Chromatic Analysis]
+            TMP[Temporal Analysis]
+            FFT[FFT Analysis]
+            EDG[Edge Detection]
+            COH[Temporal Coherence]
         end
 
-        subgraph Flash["Flash Detection"]
-            FI["Flash Intensity<br/>Frame-to-frame difference"]
-            FR["Flash Rate<br/>Flashes per second"]
-            FD["Flash Duration<br/>Timestamp-based"]
+        subgraph Data Processing
+            VAR[Color Variance]
+            ENT[Frame Entropy]
+            TCP[Temporal Changes]
+            DIF[Frame Difference]
+            MOT[Motion Detection]
         end
 
-        subgraph Temporal["Temporal Analysis"]
-            FF["Flicker Frequency (Hz)"]
-            TM["Temporal Changes"]
-            EN["Frame Entropy"]
+        subgraph Memory Management
+            BUF[Temporal Buffer]
+            CHK[Data Chunking]
+            TST[Timestamp Tracking]
         end
     end
 
-    subgraph Risk["Risk Assessment"]
-        RA["Risk Level Classification"]
-        RH["High: >3 fps or >0.8 intensity"]
-        RM["Medium: >2 fps or >0.5 intensity"]
-        RL["Low: Default state"]
+    subgraph Risk Assessment
+        PSC[PSI Score]
+        FRQ[Flash Frequency]
+        INT[Flash Intensity]
+        COV[Spatial Coverage]
+        DUR[Flash Duration]
+        SPE[Spectral Analysis]
+        EDR[Edge Rate]
     end
 
-    subgraph Export["Data Export"]
-        CSV["CSV Export"]
-        JSON["JSON Export"]
-        REP["Analysis Report"]
+    subgraph Exports
+        CSV[CSV Export]
+        JSON[JSON Export]
+        
     end
 
-    YT -->|Video Frames| CS
-    CS -->|Frame Data| AN
-    AN -->|Process Frame| FC
+    YT --> FC
+    FC --> BR
+    FC --> PSI
+    FC --> SPA
+    FC --> CHR
+    FC --> FFT
+    FC --> EDG
 
-    FC --> LUM
-    LUM --> BR
-    BR --> FI
+    BR --> FD
+    FD --> FR
 
-    FC --> CV
-    CV --> CHS
-    CHS --> CSD
-    CHS --> TC
+    PSI --> PSC
+    FR --> FRQ
+    BR --> INT
+    SPA --> COV
+    FD --> DUR
+    FFT --> SPE
+    EDG --> EDR
 
-    FI --> FR
-    FI --> FD
-
-    BR --> FF
-    BR --> TM
-    FC --> EN
-
-    FR --> RA
-    FI --> RA
-    RA --> RH
-    RA --> RM
-    RA --> RL
-
-    CS -->|Metrics| PP
-    PP -->|Export Request| CS
-    CS --> CSV
-    CS --> JSON
-    CS --> REP
+    PSC --> CSV
+    PSC --> JSON
+    
 ```
 
 ### Graphs from test run on music performance video 
