@@ -28,7 +28,6 @@ EPI-LENS is a browser extension designed to analyse video content for potentiall
 ## Core Metrics Overview
 
 
-
 | Metric | Formula/Method | Purpose | Output Range | Use Case |
 |--------|---------------|---------|--------------|-----------|
 | Relative Luminance | Y = 0.2126R + 0.7152G + 0.0722B | Base brightness calculation | 0.0 - 1.0 | Flash detection baseline |
@@ -57,56 +56,87 @@ EPI-LENS is a browser extension designed to analyse video content for potentiall
 
 ## Core Metrics Implementation
 
-### 1. Brightness Analysis
-- **Method**: Relative luminance calculation
-- **Formula**: `Y = 0.2126R + 0.7152G + 0.0722B`
-- **Sampling**: Reduced resolution (1/4) for performance
-- **Frame Buffer**: 128-frame circular buffer
+## Core Metrics Implementation
+
+### 1. Luminance Analysis
+- Uses HTML5 Canvas API to capture frames directly from YouTube video player
+- Downsamples video to 1/4 resolution for real-time performance
+- Processes frames through circular buffer for comparison
+- Applies ITU-R BT.709 coefficients directly to RGB channels
+- Updates at 60fps with frame skipping when necessary
 
 ### 2. Flash Detection
-- **Primary Method**: Frame-to-frame brightness difference
-- **Threshold**: Configurable, default 0.1
-- **Validation**: Temporal coherence check
-- **Memory**: Maintains last 30 frames
+- Compares consecutive frames in circular buffer
+- Maintains 30-frame history for pattern detection
+- Uses dual-threshold system:
+  - Primary threshold for immediate changes
+  - Secondary threshold for pattern validation
+- Updates risk assessment based on flash frequency
 
-### 3. Spectral Analysis
-- **Method**: Fast Fourier Transform (FFT)
-- **Window Size**: 64 samples
-- **Frequency Range**: 0-30Hz
-- **DC Component**: Filtered out
-- **Resolution**: ~0.94Hz (60fps/64)
+### 3. Colour Analysis
+- Processes RGB channels independently
+- Maintains separate buffers for each colour channel
+- Calculates opponent colour values in real-time
+- Tracks chromatic changes through 30-frame history
+- Applies statistical variance calculations per channel
 
-### 4. Edge Detection
-- **Algorithm**: Sobel operator
-- **Magnitude**: `|∇f| = √(Gx² + Gy²)`
-- **Thresholding**: Dynamic based on frame statistics
-- **Temporal**: Edge change rate tracking
+### 4. Motion Analysis
+- Performs pixel-by-pixel comparison between frames
+- Uses reduced resolution grid for performance
+- Calculates motion vectors in 8x8 pixel blocks
+- Tracks motion density through 10-frame window
+- Updates motion metrics every frame
 
-### 5. Motion Analysis
-- **Method**: Frame difference
-- **Metric**: `motionRatio = motionPixels/totalPixels`
-- **Threshold**: 0.1 * 765 (RGB max)
-- **History**: Rolling average of 10 frames
+### 5. Edge Detection
+- Implements Sobel operator for real-time edge detection
+- Processes horizontal and vertical gradients separately
+- Uses dynamic thresholding based on frame content
+- Maintains edge history for pattern detection
+- Updates edge metrics every frame
 
-### 6. Colour Processing
-- **Variance**: Per-channel statistical analysis
-- **Chromatic Flash**: Red-Green and Blue-Yellow contrast
-- **History**: 30-frame colour buffer
-- **Spike Detection**: 2σ threshold
+### 6. Temporal Analysis
+- Maintains rolling buffer of 128 frames
+- Processes frame sequences for pattern detection
+- Calculates coherence scores in real-time
+- Updates temporal metrics every frame
+- Uses sparse storage for efficiency
 
-### 7. Temporal Coherence
-- **Method**: Autocorrelation analysis
-- **Window**: 30 frames
-- **Formula**: `R(τ) = E[(Xt - μ)(Xt+τ - μ)]/σ²`
-- **Periodicity**: Peak detection in ACF
+### 7. Spectral Processing
+- Implements custom FFT for real-time analysis
+- Uses 64-sample windows with overlap
+- Processes frequency components up to 30Hz
+- Filters DC component automatically
+- Updates spectral data every 64 frames
 
-### 8. PSI Calculation
-Components and weights:
-- Frequency (F): 30% - Flash rate normalized to 3Hz
-- Intensity (I): 25% - Brightness difference
-- Coverage (C): 20% - Spatial distribution
-- Duration (D): 15% - Temporal persistence
-- Brightness (B): 10% - Absolute luminance
+### 8. PSI Score Calculation
+- Combines multiple metrics in real-time:
+  - Flash frequency from temporal analysis
+  - Intensity from luminance analysis
+  - Coverage from spatial analysis
+  - Duration from pattern detection
+- Updates score continuously with new data
+- Adjusts weights dynamically based on content
+
+### 9. Data Management
+- Uses circular buffers for all metrics
+- Implements chunked storage for long videos
+- Manages memory through automatic cleanup
+- Maintains separate buffers for different metrics
+- Synchronizes all metric updates
+
+### 10. Export System
+- Processes metrics into CSV/JSON formats
+- Includes timestamps for all measurements
+- Maintains data integrity across chunks
+- Provides complete metric history
+- Handles large datasets efficiently
+
+### 11. Performance Optimization
+- Implements frame skipping when necessary
+- Uses reduced resolution processing
+- Maintains separate update rates per metric
+- Optimizes memory usage through sparse storage
+- Balances accuracy with performance
 
 ## Memory Management
 
