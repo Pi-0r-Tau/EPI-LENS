@@ -24,7 +24,7 @@ EPI-LENS is a browser extension designed to analyse video content for potentiall
 - Guidance for content modifications
 - Quality assurance for accessibility compliance
 
-## Architecture 
+## Architecture Overview
 ```mermaid
 graph TB
     subgraph Video Processing
@@ -71,6 +71,86 @@ graph TB
         EXP --> JSN[JSON Export]
     end
     
+```
+```mermaid
+graph TB
+    subgraph Input
+        VID[Video Frame Input]
+        FC[Frame Capture]
+        VID --> FC
+    end
+
+    subgraph Core_Analysis [Core Analysis Pipeline]
+        subgraph Brightness [Brightness Analysis]
+            BR["Luminance Calculation
+            Y = 0.2126R + 0.7152G + 0.0722B"]
+            FD["Flash Detection
+            ΔB = |Bt - Bt-1| > threshold"]
+            FR["Flash Rate
+            FR = flashCount/frameTime"]
+            BR --> FD --> FR
+        end
+
+        subgraph Spectral [Spectral Analysis]
+            FFT["FFT Processing
+            X(k) = Σx(n)e^(-j2πkn/N)"]
+            FREQ["Frequency Analysis
+            f = sampleRate * k/N"]
+            DOM["Dominant Frequency
+            max(|X(k)|), k>0"]
+            FFT --> FREQ --> DOM
+        end
+
+        subgraph Spatial [Spatial Analysis]
+            EDG["Edge Detection
+            |∇f| = √(Gx² + Gy²)"]
+            MOT["Motion Detection
+            M = motionPixels/totalPixels"]
+            DIST["Spatial Distribution
+            Center vs Periphery"]
+            EDG --> MOT --> DIST
+        end
+    end
+
+    subgraph Risk [Risk Assessment]
+        PSI["PSI Calculation
+        0.3F + 0.25I + 0.2C + 0.15D + 0.1B"]
+        COH["Temporal Coherence
+        R(τ) = E[(Xt-μ)(Xt+τ-μ)]/σ²"]
+        VAR["Color Variance
+        σ² = Σ(x-μ)²/N"]
+    end
+
+    subgraph Memory [Memory Management]
+        BUF["Temporal Buffer
+        CircularBuffer(128)"]
+        CHK["Data Chunks
+        1000 frames/chunk"]
+        CLEAN["Garbage Collection"]
+    end
+
+    subgraph Export [Data Export]
+        DATA[Analysis Data]
+        OUT["Output Formats
+        CSV | JSON | Metadata"]
+        DATA --> OUT
+    end
+
+    FC --> BR
+    FC --> FFT
+    FC --> EDG
+
+    FR --> PSI
+    DOM --> PSI
+    DIST --> PSI
+
+    BUF --> FFT
+    BUF --> COH
+
+    PSI --> DATA
+    VAR --> DATA
+
+    Memory --> Export
 ```
 
 ### Graphs from test run on music performance video 
