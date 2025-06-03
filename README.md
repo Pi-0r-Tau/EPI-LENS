@@ -56,87 +56,140 @@ EPI-LENS is a browser extension designed to analyse video content for potentiall
 
 ## Core Metrics Implementation
 
-## Core Metrics Implementation
+### Brightness and Flash Detection
+- **Relative Luminance (Y)**
+  - Implemented using HTML5 Canvas getImageData
+  - Applies ITU-R BT.709 coefficients (0.2126R + 0.7152G + 0.0722B) per pixel
+  - Processes at 1/4 resolution for performance
+  - Maintains 128-frame circular buffer
+  - Updates every frame at 60fps
 
-### 1. Luminance Analysis
-- Uses HTML5 Canvas API to capture frames directly from YouTube video player
-- Downsamples video to 1/4 resolution for real-time performance
-- Processes frames through circular buffer for comparison
-- Applies ITU-R BT.709 coefficients directly to RGB channels
-- Updates at 60fps with frame skipping when necessary
+- **Flash Detection (ΔB)**
+  - Compares consecutive frames using circular buffer
+  - Primary threshold set at 0.1 for brightness difference
+  - Secondary validation using 3-frame window
+  - Pattern recognition using 30-frame history
+  - Real-time threshold adjustment based on content
 
-### 2. Flash Detection
-- Compares consecutive frames in circular buffer
-- Maintains 30-frame history for pattern detection
-- Uses dual-threshold system:
-  - Primary threshold for immediate changes
-  - Secondary threshold for pattern validation
-- Updates risk assessment based on flash frequency
+### Colour Analysis
+- **Colour Contrast (RG, BY)**
+  - Separates RGB channels from Canvas ImageData
+  - Calculates Red-Green opposition using |R-G|/√2
+  - Processes Blue-Yellow using |2B-R-G|/√6
+  - Updates at full frame rate
+  - Uses 30-frame history for pattern detection
 
-### 3. Colour Analysis
-- Processes RGB channels independently
-- Maintains separate buffers for each colour channel
-- Calculates opponent colour values in real-time
-- Tracks chromatic changes through 30-frame history
-- Applies statistical variance calculations per channel
+- **Colour Variance (σ²)**
+  - Independent tracking of RGB channels
+  - Calculates per-channel means and variances
+  - Running statistics over 30-frame window
+  - Dynamic baseline adjustment
+  - Spike detection using 2σ threshold
 
-### 4. Motion Analysis
-- Performs pixel-by-pixel comparison between frames
-- Uses reduced resolution grid for performance
-- Calculates motion vectors in 8x8 pixel blocks
-- Tracks motion density through 10-frame window
-- Updates motion metrics every frame
+### Motion Analysis
+- **Motion Ratio (M)**
+  - Pixel-by-pixel frame comparison
+  - Reduced resolution sampling (1/4)
+  - 8x8 pixel block processing
+  - Motion threshold at 0.1 * RGB_MAX
+  - 10-frame rolling average
 
-### 5. Edge Detection
-- Implements Sobel operator for real-time edge detection
-- Processes horizontal and vertical gradients separately
-- Uses dynamic thresholding based on frame content
-- Maintains edge history for pattern detection
-- Updates edge metrics every frame
+- **Motion Density (MD)**
+  - Area-based motion calculation
+  - Spatial distribution mapping
+  - Weighted regional analysis
+  - Updates every frame
+  - Dynamic threshold adjustment
 
-### 6. Temporal Analysis
-- Maintains rolling buffer of 128 frames
-- Processes frame sequences for pattern detection
-- Calculates coherence scores in real-time
-- Updates temporal metrics every frame
-- Uses sparse storage for efficiency
+### Edge Analysis
+- **Edge Change Rate (ECR)**
+  - Two-pass Sobel operator implementation
+  - Horizontal and vertical gradient calculation
+  - Frame-to-frame edge comparison
+  - Dynamic thresholding
+  - Temporal stability tracking
 
-### 7. Spectral Processing
-- Implements custom FFT for real-time analysis
-- Uses 64-sample windows with overlap
-- Processes frequency components up to 30Hz
-- Filters DC component automatically
-- Updates spectral data every 64 frames
+- **Edge Density (ED)**
+  - Counts edge pixels above threshold
+  - Normalizes by total frame area
+  - Updates per frame
+  - Regional density mapping
+  - Pattern boundary detection
 
-### 8. PSI Score Calculation
-- Combines multiple metrics in real-time:
-  - Flash frequency from temporal analysis
-  - Intensity from luminance analysis
-  - Coverage from spatial analysis
-  - Duration from pattern detection
-- Updates score continuously with new data
-- Adjusts weights dynamically based on content
+### Temporal Analysis
+- **Temporal Coherence (R(τ))**
+  - 30-frame sliding window
+  - Autocorrelation calculation
+  - Mean and variance normalization
+  - Real-time coefficient updates
+  - Pattern periodicity detection
 
-### 9. Data Management
-- Uses circular buffers for all metrics
-- Implements chunked storage for long videos
-- Manages memory through automatic cleanup
-- Maintains separate buffers for different metrics
-- Synchronizes all metric updates
+- **Temporal Change Rate (TCR)**
+  - Frame-to-frame change tracking
+  - Running average over 10 frames
+  - Dynamic threshold adjustment
+  - Change acceleration tracking
+  - Pattern sequence detection
 
-### 10. Export System
-- Processes metrics into CSV/JSON formats
-- Includes timestamps for all measurements
-- Maintains data integrity across chunks
-- Provides complete metric history
-- Handles large datasets efficiently
+### Frequency Analysis
+- **Spectral Analysis (X(k))**
+  - Custom FFT implementation
+  - 64-sample window with overlap
+  - Hanning window application
+  - DC component filtering
+  - 30Hz analysis band
 
-### 11. Performance Optimization
-- Implements frame skipping when necessary
-- Uses reduced resolution processing
-- Maintains separate update rates per metric
-- Optimizes memory usage through sparse storage
-- Balances accuracy with performance
+- **Flicker Frequency (f)**
+  - Real-time frequency calculation
+  - Sample rate normalization
+  - Peak frequency detection
+  - Harmonic analysis
+  - Updates every 64 samples
+
+### Pattern Analysis
+- **Frame Entropy**
+  - 256-bin brightness histogram
+  - Information theory calculation
+  - Running entropy tracking
+  - Complexity change detection
+  - Pattern identification
+
+- **Periodicity Detection (P(f))**
+  - FFT of autocorrelation function
+  - Pattern frequency analysis
+  - Sequence matching
+  - Confidence scoring
+  - Real-time updates
+
+### Impact Assessment
+- **Coverage (C)**
+  - Bright pixel counting
+  - Area normalization
+  - Regional distribution
+  - Center-weighted analysis
+  - Impact area calculation
+
+- **Duration (D)**
+  - Flash sequence tracking
+  - Frame count normalization
+  - Pattern persistence measurement
+  - Temporal impact assessment
+  - Running duration calculation
+
+### Risk Evaluation
+- **PSI Score**
+  - Five-component weighted calculation
+  - Real-time component updates
+  - Dynamic weight adjustment
+  - Risk level categorization
+  - Trend analysis and prediction
+
+### Memory Management
+- All metrics use circular buffers
+- Efficient data structures for real-time processing
+- Automatic garbage collection
+- Sparse storage optimization
+- Memory footprint optimization
 
 ## Memory Management
 
@@ -157,7 +210,6 @@ EPI-LENS is a browser extension designed to analyse video content for potentiall
 - Resolution reduction: 1/4
 - Data compression: JSON/CSV optimization
 - Memory footprint: ~10MB per 1000 frames
-
 ## Architecture Overview
 ```mermaid
 graph TB
