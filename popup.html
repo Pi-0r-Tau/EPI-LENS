@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Research Mode</h2>
+
+        <div class="threshold-controls">
+            <div class="threshold-group">
+                <label for="flashThreshold">Flashes Per Second Threshold</label>
+                <input type="range" id="flashThreshold" min="1" max="10" step="0.5" value="3">
+                <span class="threshold-value" id="flashThresholdValue">3.0</span>
+            </div>
+
+            <div class="threshold-group">
+                <label for="intensityThreshold">Flash Intensity Threshold</label>
+                <input type="range" id="intensityThreshold" min="0.1" max="1" step="0.05" value="0.2">
+                <span class="threshold-value" id="intensityThresholdValue">0.20</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="startAnalysis">Start Analysis</button>
+            <button id="stopAnalysis">Stop Analysis</button>
+        </div>
+
+        <div class="key-metrics">
+            <div class="stat-card flash-count">
+                <h3>Detected Flashes</h3>
+                <div class="value" id="flashCount" data-metric="flashCount">0</div>
+            </div>
+            <div class="stat-card risk-indicator">
+                <h3>Risk Level</h3>
+                <div class="value" id="riskLevel" data-metric="riskLevel">Low</div>
+                <div class="risk-indicator-bar" id="riskIndicatorBar"></div>
+            </div>
+        </div>
+
+        <div class="analytics-panel">
+            <h3>Advanced Analytics</h3>
+            <div id="advancedMetrics" class="metrics-panel">
+            </div>
+            <div class="metrics-section">
+                <h4>Photic Stimulus Index (PSI)</h4>
+                <div id="psiMetrics" class="metrics-panel">
+                </div>
+            </div>
+
+            <div class="metrics-section">
+                <h4>Spatial Analysis</h4>
+                <div id="spatialMetrics" class="metrics-panel">
+                </div>
+            </div>
+
+            <div class="metrics-section">
+                <h4>Chromatic Analysis</h4>
+                <div id="chromaticMetrics" class="metrics-panel">
+                </div>
+            </div>
+
+            <div class="metrics-section">
+                <h4>Frame Analysis</h4>
+                <div id="frameMetrics" class="metrics-panel">
+                </div>
+            </div>
+
+            <div class="metrics-section">
+                <h4>Spectral Analysis</h4>
+                <div id="spectralMetrics" class="metrics-panel">
+                </div>
+            </div>
+
+            <div class="metrics-section">
+                <h4>Edge Detection</h4>
+                <div id="edgeMetrics" class="metrics-panel">
+                </div>
+            </div>
+        </div>
+
+        <div class="export-controls">
+            <button id="exportCSV">Export CSV</button>
+            <button id="exportJSON">Export JSON</button>
+        </div>
+    </div>
+    <script src="analyzer.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>

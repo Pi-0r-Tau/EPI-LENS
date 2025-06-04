@@ -1,0 +1,275 @@
+:root {
+    --bg-dark: #1a1a1a;
+    --text-dark: #ffffff;
+    --accent-dark: #2196f3;
+    --border-dark: #333333;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.container {
+    width: 400px;
+    padding: 15px;
+    background-color: var(--bg-dark);
+}
+
+.mode-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.controls, .export-controls {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.analysis-options {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 15px 0;
+}
+
+.results {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 15px 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+button {
+    padding: 8px 16px;
+    cursor: pointer;
+    background-color: var(--accent-dark);
+    color: var(--text-dark);
+    border: none;
+    border-radius: 4px;
+    transition: opacity 0.2s;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+.video-status {
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+}
+
+.video-status.detected {
+    background-color: #e8f5e9;
+    border-left: 4px solid #4caf50;
+}
+
+.video-status.analyzing {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.risk-level {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.risk-level.high {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.risk-level.medium {
+    background-color: #fff3e0;
+    color: #ef6c00;
+}
+
+.risk-level.low {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.analysis-progress {
+    height: 4px;
+    background: #333;
+    margin: 10px 0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--accent-dark);
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.stat-card {
+    background: #252525;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-dark);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card .value {
+    font-size: 24px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.change-indicator {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.change-indicator.increase {
+    color: #4caf50;
+    opacity: 1;
+}
+
+.change-indicator.decrease {
+    color: #f44336;
+    opacity: 1;
+}
+
+.risk-indicator-bar {
+    height: 4px;
+    margin-top: 5px;
+    background: #333;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.risk-indicator-bar::after {
+    content: '';
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--accent-dark);
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.risk-indicator-bar.high::after {
+    background: #f44336;
+    width: 100%;
+}
+
+.risk-indicator-bar.medium::after {
+    background: #ff9800;
+    width: 66%;
+}
+
+.risk-indicator-bar.low::after {
+    background: #4caf50;
+    width: 33%;
+}
+
+.fps-indicator {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.metrics-panel, .timeline-panel {
+    margin-top: 15px;
+    padding: 10px;
+    background: #252525;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.analyzing-badge {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: var(--accent-dark);
+    color: var(--text-dark);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+}
+
+.pulse {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+}
+
+.highlight {
+    animation: highlight 0.3s ease-out;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-dark);
+}
+
+.value.high {
+    color: #f44336;
+}
+
+.value.medium {
+    color: #ff9800;
+}
+
+.value.low {
+    color: #4caf50;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes highlight {
+    0% { background: var(--accent-dark); color: white; }
+    100% { background: transparent; }
+}
+
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.value.updated {
+    animation: flash 0.3s ease;
+}
+
+@keyframes flash {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); color: var(--accent-dark); }
+    100% { transform: scale(1); }
+}
