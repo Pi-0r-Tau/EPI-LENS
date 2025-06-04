@@ -35,7 +35,6 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 - Duty cycle and Flash Envelope analysis
 - Chromatic Flicker Fusion Rate (CFFR)
 - Spatiotemporal Contrast Sensitivity Metric (STCSM)
-- ColoUr Opponency Flicker Detection
 - Temporal Clustering of Flashes
 
 ## Core Metrics Overview
@@ -346,5 +345,7 @@ graph TB
 ### Graphs from test run on music performance video, using only a select number of metrics
 
 ![image](https://github.com/user-attachments/assets/d28a2e03-6688-4b6c-90e9-3cf494bdebc1)
+
+
 
 
