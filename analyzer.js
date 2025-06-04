@@ -194,10 +194,10 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Analyses a video frame at a given timestamp
-         * @param {*} video 
-         * @param {*} timestamp 
-         * @returns 
+         * Analyses a video frame at a given timestamp, handles frame rate limiting, resets metrics and processes the frame.
+         * @param {HTMLVideoElement} video - The video element to analyse.
+         * @param {number} timestamp - The current timestamp of the video in miliseconds.
+         * @returns {Object|null} - Returns analysis results or null if frame rate limit is exceeded.
          */
         analyzeFrame(video, timestamp) {
             try {
@@ -241,7 +241,13 @@ if (!window.VideoAnalyzer) {
             }
         }
 
-        // Consolidate frame processing
+        /**
+         * Process the captured frame image data and computes all relevant metrics. Updates flash metrics, risk level and storage.
+         * @param {ImageData} imageData - The image data of the current frame.
+         * @param {number} timestamp - The current timestamp of the video in milliseconds.
+         * @param {number} relativeTime - Time since analysis started in seconds
+         * @returns {Object} - Returns results object containing all computed metrics.
+         */
         processFrame(imageData, timestamp, relativeTime) {
             const brightness = this.calculateAverageBrightness(imageData.data);
             const brightnessDiff = Math.abs(brightness - this.metrics.lastFrameBrightness);
