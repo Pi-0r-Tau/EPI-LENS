@@ -835,6 +835,11 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Calculates the difference and motion ratio between the current and previous frame.
+         * @param {ImageData} currentFrame - The current frame's ImageData. 
+         * @returns {Object} Frame difference and motion metrics. 
+         */
         calculateFrameDifference(currentFrame) {
             if (!this.lastFrame) {
                 this.lastFrame = currentFrame;
