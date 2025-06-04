@@ -963,6 +963,11 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Calculates temporal coherence of brightness over a window of frames.
+         * @param {number} brightness - Current frame brightness. 
+         * @returns {Object} Temporal coherence metrics. 
+         */
         calculateTemporalCoherence(brightness) {
             const history = this.advancedMetrics.temporalCoherence.history;
             history.push(brightness);
@@ -992,6 +997,11 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Detects edges in the frame using Sobel operator
+         * @param {ImageData} imageData - The frame's ImageData.
+         * @returns {Object} Edge detection metrics.
+         */
         detectEdges(imageData) {
             const width = imageData.width;
             const height = imageData.height;
