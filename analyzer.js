@@ -537,6 +537,10 @@ if (!window.VideoAnalyzer) {
             }
         }
 
+        /**
+         * Analyzes the temporal color history for variance, spikes, and average change.
+         * @returns {Object} Temporal variance, spikes, and average change.
+         */
         analyzeColorHistory() {
             const history = this.advancedMetrics.colorHistory;
             if (history.r.length < 2) {
