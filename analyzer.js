@@ -626,6 +626,12 @@ if (!window.VideoAnalyzer) {
             return spikes;
         }
 
+        
+        /**
+         * Calculates the temporal change in brightness between frames.
+         * @param {number} currentBrightness - The brightness value of the current frame
+         * @returns {number} The absolute change in brightness.
+         */
         calculateTemporalChange(currentBrightness) {
             const changes = this.advancedMetrics.temporalChanges;
             const change = changes.length > 0 ?
@@ -635,6 +641,10 @@ if (!window.VideoAnalyzer) {
             return change;
         }
 
+        /**
+         * Estimates the flicker frequency (Hz) based on brightness changes.
+         * * @returns {number} Estimated flicker frequency in Hz.
+         */
         estimateFlickerFrequency() {
             const changes = this.advancedMetrics.temporalChanges;
             if (changes.length < 2) return 0;
@@ -648,9 +658,14 @@ if (!window.VideoAnalyzer) {
 
             if (timeDiffs.length === 0) return 0;
             const avgTimeDiff = timeDiffs.reduce((a, b) => a + b) / timeDiffs.length;
-            return 1000 / avgTimeDiff; // Convert to Hz
+            return 1000 / avgTimeDiff;
         }
 
+        /**
+         * Calculates the entropy of the frame based on brightness histogram.
+         * @param {ImageData} imageData - The frame's ImageData.
+         * @returns {number} Frame entropy value.
+         */
         calculateFrameEntropy(imageData) {
             const histogram = new Array(256).fill(0);
             for (let i = 0; i < imageData.data.length; i += 4) {
@@ -675,6 +690,12 @@ if (!window.VideoAnalyzer) {
             return entropy;
         }
 
+        /**
+         * Calculates the Photosensitive Seizure Index (PSI) score and its components.
+         * @param {number} brightness - Current frame brightness.
+         * @param {number} brightnessDiff - Difference in brightness from previous frame.
+         * @returns {Object} PSI score and component breakdown.
+         */
         calculatePSI(brightness, brightnessDiff) {
             const frequency = this.metrics.flashCount / (this.metrics.frameCount / 60);
             const coverage = this.calculateCoverage(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height));
@@ -701,6 +722,11 @@ if (!window.VideoAnalyzer) {
             return { score, components: psi };
         }
 
+        /**
+         * Analyses spatial distribution of brightness in the frame (center, periphery, quadrants).
+         * @param {ImageData} imageData - The frame's ImageData.
+         * @returns {Object} Spatial brightness metrics.
+         */
         analyzeSpatialDistribution(imageData) {
             const width = this.canvas.width;
             const height = this.canvas.height;
@@ -729,8 +755,7 @@ if (!window.VideoAnalyzer) {
                         peripherySum += brightness;
                         peripheryPixels++;
                     }
-
-                    // Quadrant analysis
+                    // Determine quadrant
                     const quadrantIndex = (x < width/2 ? 0 : 1) + (y < height/2 ? 0 : 2);
                     quadrants[quadrantIndex] += brightness;
                 }
@@ -743,6 +768,11 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Analyses chromatic flashes (red-green and blue-yellow contrast) in the frame.
+         * @param {ImageData} imageData - The frame's ImageData.
+         * @returns {Object} Chromatic flash metrics.
+         */
         analyzeChromaticFlashes(imageData) {
             const data = imageData.data;
             const pixels = data.length / 4;
