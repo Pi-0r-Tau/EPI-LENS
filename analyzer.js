@@ -468,9 +468,9 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Calculates color variance for the current frame and updates history.
+         * Calculates colour variance for the current frame and updates history.
          * @param {ImageData} imageData - The frame's ImageData.
-         * @returns {Object} Color variance metrics.
+         * @returns {Object} Colour variance metrics.
          */
         calculateColorVariance(imageData) {
             if (!imageData || !imageData.data) return { r: 0, g: 0, b: 0 };
@@ -538,7 +538,7 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Analyzes the temporal color history for variance, spikes, and average change.
+         * Analyzes the temporal colour history for variance, spikes, and average change.
          * @returns {Object} Temporal variance, spikes, and average change.
          */
         analyzeColorHistory() {
@@ -596,7 +596,7 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Detects significant color spikes in the frame-to-frame changes.
+         * Detects significant colour spikes in the frame-to-frame changes.
          * @param {Object} changes - Object with r, g, b arrays of changes.
          * @returns {Array} List of detected spikes.
          */
