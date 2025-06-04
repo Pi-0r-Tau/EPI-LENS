@@ -584,6 +584,11 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+         /**
+         * Calculates the temporal variance of an array of values.
+         * @param {Array<number>} values - Array of numeric values.
+         * @returns {number} Temporal variance.
+         */
         calculateTemporalVariance(values) {
             const mean = values.reduce((a, b) => a + b, 0) / values.length;
             const squaredDiffs = values.map(v => Math.pow(v - mean, 2));
