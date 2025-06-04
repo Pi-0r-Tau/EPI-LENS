@@ -872,6 +872,11 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Performs spectral analysis (FFT) on the brightness signal to find dominant frequency.
+         * @param {number} brightness - Current frame brightness.
+         * @returns {Object} Spectral analysis results
+         */
         performSpectralAnalysis(brightness) {
             try {
                 // Update temporal buffer
