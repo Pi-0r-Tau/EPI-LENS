@@ -1037,6 +1037,13 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Computes the Sobel X gradient at a given pixel index.
+         * @param {Uint8ClampedArray} data - RGBA pixel data array. 
+         * @param {number} idx - Index in the data array. 
+         * @param {number} width - Width of the image.
+         * @returns {number} Sobel X gradient value. 
+         */
         sobelGradientX(data, idx, width) {
             const topLeft = this.getLuminance(data, idx - width * 4 - 4);
             const topRight = this.getLuminance(data, idx - width * 4 + 4);
@@ -1049,6 +1056,13 @@ if (!window.VideoAnalyzer) {
                    (topLeft + 2 * middleLeft + bottomLeft);
         }
 
+        /**
+         * Computes the Sobel Y gradient at a given pixel index
+         * @param {Uint8ClampedArray} data - RGBA pixel data array. 
+         * @param {number} idx - Index in the data array. 
+         * @param {number} width - Width of the image. 
+         * @returns {number} Sobel Y gradient value. 
+         */
         sobelGradientY(data, idx, width) {
             const topLeft = this.getLuminance(data, idx - width * 4 - 4);
             const topMiddle = this.getLuminance(data, idx - width * 4);
