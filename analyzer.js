@@ -1,3 +1,5 @@
+"use strict";
+
 if (!window.VideoAnalyzer) {
     class VideoAnalyzer {
         constructor() {
