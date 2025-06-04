@@ -387,6 +387,11 @@ if (!window.VideoAnalyzer) {
             return this.timelineData;
         }
 
+         /**
+         * Detects and records a flash sequence based on brightness change.
+         * @param {number} brightness - Current frame brightness.
+         * @param {number} timestamp - Current timestamp.
+         */
         detectFlashSequence(brightness, timestamp) {
             const brightnessDiff = Math.abs(brightness - this.metrics.lastFrameBrightness);
 
@@ -408,6 +413,10 @@ if (!window.VideoAnalyzer) {
             });
         }
 
+         /**
+         * Updates the risk level based on flash rate and intensity.
+         * @returns {Object} Risk assessment summary.
+         */
         updateRiskLevel() {
             const flashRate = this.metrics.flashCount / (this.metrics.frameCount / 60);
             const intensity = this.calculateAverageIntensity();
@@ -429,6 +438,10 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Calculates the average intensity of detected flash sequences.
+         * @returns {number} Average flash intensity.
+         */
         calculateAverageIntensity() {
             if (!this.metrics.flashSequences.length) return 0;
 
@@ -439,6 +452,10 @@ if (!window.VideoAnalyzer) {
             return totalIntensity / this.metrics.flashSequences.length;
         }
 
+         /**
+         * Analyzes risk factors based on flash rate, intensity, and sequence count.
+         * @returns {Array} List of detected risk factors.
+         */
         analyzeRiskFactors() {
             const factors = [];
             const flashRate = this.metrics.flashCount / (this.metrics.frameCount / 60);
@@ -450,6 +467,11 @@ if (!window.VideoAnalyzer) {
             return factors.length ? factors : ['No significant risk factors'];
         }
 
+        /**
+         * Calculates color variance for the current frame and updates history.
+         * @param {ImageData} imageData - The frame's ImageData.
+         * @returns {Object} Color variance metrics.
+         */
         calculateColorVariance(imageData) {
             if (!imageData || !imageData.data) return { r: 0, g: 0, b: 0 };
 
