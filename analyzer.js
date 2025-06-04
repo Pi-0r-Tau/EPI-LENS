@@ -595,6 +595,11 @@ if (!window.VideoAnalyzer) {
             return Math.sqrt(squaredDiffs.reduce((a, b) => a + b, 0) / values.length) / 255;
         }
 
+        /**
+         * Detects significant color spikes in the frame-to-frame changes.
+         * @param {Object} changes - Object with r, g, b arrays of changes.
+         * @returns {Array} List of detected spikes.
+         */
         detectColorSpikes(changes) {
             const threshold = 0.2; 
             const spikes = [];
