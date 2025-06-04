@@ -1,8 +1,38 @@
 "use strict";
 
 if (!window.VideoAnalyzer) {
+    /**
+     * @class VideoAnalyzer
+     * @classdesc Video analysis utility for detecting visual risks such as flash, flickering and chromatic anomalies. It computes metrics including brightness, colour variance, entropy and temporal coherence to assess visual risk levels.
+     */
     class VideoAnalyzer {
+    /**
+     * Constructs a new VideoAnalyzer instance.
+     * Initializes metrics, thresholds, analysis buffers, and metrics for video frame analysis.
+     *
+     * @constructor
+     * @property {Object} metrics - Stores flash count, risk level, timeline, and frame statistics.
+     * @property {Object} thresholds - Thresholds for brightness change, flash detection, and sequence length.
+     * @property {HTMLCanvasElement} canvas - Offscreen canvas for frame processing.
+     * @property {CanvasRenderingContext2D} context - 2D context for the canvas.
+     * @property {number} sampleSize - Downsampling factor for performance.
+     * @property {Array} timelineData - Stores timeline entries for analyzed frames.
+     * @property {Array} detailedData - Stores detailed analysis per frame.
+     * @property {number} lastAnalysisTime - Timestamp of the last frame analysis.
+     * @property {number} minAnalysisInterval - Minimum interval between analyses (ms).
+     * @property {Object} advancedMetrics - Stores analysis data (color variance, entropy, etc).
+     * @property {Object} fft - Fast Fourier Transform implementation for spectral analysis.
+     * @property {Object} temporalBuffer - Circular buffer for temporal data (brightness history).
+     * @property {number|null} startTime - Start time of the analysis session.
+     * @property {Array} dataChunks - Stores chunks of analyzed frame data.
+     * @property {Array} currentChunk - Current chunk of frame data.
+     * @property {number} chunkSize - Number of frames per chunk.
+     * @property {number} totalFrames - Total frames analyzed.
+     * @property {number|null} analysisStartTime - Timestamp when analysis started.
+     * @property {number} lastExportTime - Timestamp of last data export.
+     */
         constructor() {
+           
             this.metrics = {
                 flashCount: 0,
                 riskLevel: 'low',
@@ -134,6 +164,13 @@ if (!window.VideoAnalyzer) {
             this.lastExportTime = 0;
         }
 
+
+        /**
+         * Updates the analysis thresholds based on brightness change, flash detection, and sequence length.
+         * @param {Object} thresholds - Threshold values to update.
+         * @param {number} thresholds.intensity - Brightness change threshold for flash detection.
+         * @param {number} thresholds.flashesPerSecond - Maximum allowed flashes per second.
+         */
         updateThresholds(thresholds) {
             this.thresholds = {
                 brightnessChange: thresholds.intensity,
@@ -148,10 +185,20 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Sets or updates analysis options for the analyzer.
+         * @param {object} options - Analysis  options to set.
+         */
         setAnalysisOptions(options) {
             this.analysisOptions = { ...this.analysisOptions, ...options };
         }
 
+        /**
+         * Analyses a video frame at a given timestamp
+         * @param {*} video 
+         * @param {*} timestamp 
+         * @returns 
+         */
         analyzeFrame(video, timestamp) {
             try {
                 // Initialize start time if not set
@@ -194,7 +241,7 @@ if (!window.VideoAnalyzer) {
             }
         }
 
-        // New method to consolidate frame processing
+        // Consolidate frame processing
         processFrame(imageData, timestamp, relativeTime) {
             const brightness = this.calculateAverageBrightness(imageData.data);
             const brightnessDiff = Math.abs(brightness - this.metrics.lastFrameBrightness);
