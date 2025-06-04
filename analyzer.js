@@ -803,6 +803,13 @@ if (!window.VideoAnalyzer) {
             return result;
         }
 
+       
+        /**
+         * Analyses temporal contrast in brightness over recent frames.
+         * @param {number} brightness - Current frame brightness. 
+         * @param {number} timestamp - Current timestamp. 
+         * @returns {Object} Temporal contrast metrics. 
+         */
         analyzeTemporalContrast(brightness, timestamp) {
             const history = this.advancedMetrics.temporalContrast.history;
             history.push({ brightness, timestamp });
