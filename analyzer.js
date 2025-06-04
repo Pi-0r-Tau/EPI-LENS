@@ -1075,17 +1075,31 @@ if (!window.VideoAnalyzer) {
                    (topLeft + 2 * topMiddle + topRight);
         }
 
+        /**
+         * Gets the luminance value at a given pixel index.
+         * @param {Uint8ClampedArray} data - RGBA pixel data array. 
+         * @param {number} idx - Index in the data array. 
+         * @returns {number} Luminance value. 
+         */
         getLuminance(data, idx) {
             if (idx < 0 || idx >= data.length) return 0;
             return data[idx] * 0.2126 + data[idx + 1] * 0.7152 + data[idx + 2] * 0.0722;
         }
 
+        /**
+         * Calculates the change in edge density between the last two frames.
+         * @returns {number} Change in edge density.
+         */
         calculateEdgeChange() {
             const history = this.advancedMetrics.edgeDetection.history;
             if (history.length < 2) return 0;
             return Math.abs(history[history.length - 1] - history[history.length - 2]);
         }
 
+        /**
+         * Generates a CSV string of the analyzed timeline data.
+         * @returns {string} CSV formatted string of the analysis data.
+         */
         generateCSV() {
             try {
                 const headers = [
@@ -1183,6 +1197,10 @@ if (!window.VideoAnalyzer) {
             }
         }
 
+        /**
+         * Generates a summary report of the analysis session.
+         * @returns {Object} Report object containing video title, duration, metrics, recommendations, and timeline data.
+         */
         generateReport() {
             return {
                 videoTitle: document.title,
@@ -1198,6 +1216,10 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Generates recommendations based on detected risks.
+         * @returns {Array<string>} List of recommendations or warnings. 
+         */
         generateRecommendations() {
             const recommendations = [];
             const flashRate = this.metrics.flashCount / (this.metrics.frameCount / 60);
@@ -1215,6 +1237,10 @@ if (!window.VideoAnalyzer) {
             return recommendations.length ? recommendations : ['No significant issues detected'];
         }
 
+        /**
+         * Generates a JSON string of the analyzed timeline data and metadata, from the generateReport method.
+         * @returns {string} JSON-formatted string of analysis results. 
+         */
         generateJSON() {
             try {
                 const data = {
@@ -1292,8 +1318,11 @@ if (!window.VideoAnalyzer) {
             }
         }
 
+        /**
+         * Resets the analyzer state, clearing all metrics and buffers.
+         */
         reset() {
-            this.startTime = null;  // Add this line
+            this.startTime = null;  
             this.metrics = {
                 flashCount: 0,
                 riskLevel: 'low',
@@ -1372,6 +1401,16 @@ if (!window.VideoAnalyzer) {
             this.lastExportTime = 0;
         }
 
+        /**
+         * Creates a timeline entry object for the current frame.
+         * @param {number} relativeTime - Time since analysis started.
+         * @param {number} timestamp - Current timestamp. 
+         * @param {number} brightness - Current frame brightness. 
+         * @param {boolean} isFlash - Whether a flash was detected. 
+         * @param {number} brightnessDiff - Brightness difference from previous frame. 
+         * @param {Object} metrics - Computed metrics for the frame. 
+         * @returns {Object} Timeline entry object 
+         */
         createTimelineEntry(relativeTime, timestamp, brightness, isFlash, brightnessDiff, metrics) {
             const entry = {
                 timestamp: timestamp,
@@ -1406,6 +1445,11 @@ if (!window.VideoAnalyzer) {
             return entry;
         }
 
+        /**
+         * Creates a results object for the current frame.
+         * @param {Object} timelineEntry - Timeline entry for the frame. 
+         * @returns {Object} Results object with summary metrics. 
+         */
         createResults(timelineEntry) {
             return {
                 ...timelineEntry,
@@ -1417,6 +1461,10 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Updates the timeline data storage with a new entry.
+         * @param {Object} timelineEntry - Timeline entry to store.
+         */
         updateStorage(timelineEntry) {
             this.timelineData.push(timelineEntry);
 
