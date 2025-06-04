@@ -293,6 +293,11 @@ if (!window.VideoAnalyzer) {
             return this.createResults(timelineEntry);
         }
 
+        /**
+         * Captures the current video frame and returns its ImageData.
+         * @param {HTMLVideoElement} video - The video element to capture from
+         * @returns {ImageData|null} The captured frame's ImageData, or null on error.
+         */
         captureFrame(video) {
            
             if (!video.videoWidth || !video.videoHeight) {
@@ -313,6 +318,11 @@ if (!window.VideoAnalyzer) {
         }
 
 
+        /**
+         * Calculates the average brightness of the given pixel data.
+         * @param {Uint8ClampedArray} data - RGBA pixel data array.
+         * @returns {number} Average brightness value [0,1].
+         */
         calculateAverageBrightness(data) {
             let totalBrightness = 0;
             for (let i = 0; i < data.length; i += 4) {
@@ -325,6 +335,11 @@ if (!window.VideoAnalyzer) {
             return totalBrightness / (data.length / 4);
         }
 
+        /**
+         * Calculates the proportion of bright pixels in the frame.
+         * @param {ImageData} imageData - The frame ImageData.
+         * @returns {number} Ratio of bright pixels [0,1].
+         */
         calculateCoverage(imageData) {
             if (!imageData || !imageData.data) return 0;
 
@@ -345,13 +360,16 @@ if (!window.VideoAnalyzer) {
                 }
             }
 
-            return brightPixels / pixels; // Return coverage as ratio [0,1]
+            return brightPixels / pixels; 
         }
 
-        analyzeColors(imageData) {
-            // Color analysis logic TODO: Errrr oops
-        }
+        // TASK-7672
+        // Colour analysis logic see notes TASK-7672
 
+        /**
+         * Returns a detailed analysis summary of the current session.
+         * @returns {Object} Detailed analysis including frame rate, flash sequences, average intensity, and risk factors.
+         */
         getDetailedAnalysis() {
             return {
                 frameRate: this.metrics.frameCount / (this.metrics.lastTimestamp || 1),
@@ -361,6 +379,10 @@ if (!window.VideoAnalyzer) {
             };
         }
 
+        /**
+         * Returns the timeline data of analyzed frames.
+         * @returns {Array} Timeline data array.
+         */
         getTimelineData() {
             return this.timelineData;
         }
