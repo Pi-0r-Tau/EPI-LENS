@@ -911,6 +911,11 @@ if (!window.VideoAnalyzer) {
             }
         }
 
+        /**
+         * Detects periodicity in a signal using autocorrelation.
+         * @param {Array<number>} signal - Array of numeric values.
+         * @returns {Object} Periodicity detection result.
+         */
         detectPeriodicity(signal) {
             if (signal.length < 4) return { isPeriodic: false, period: 0 };
 
