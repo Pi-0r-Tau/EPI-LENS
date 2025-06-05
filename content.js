@@ -3,7 +3,7 @@
  * @description
  * Content script for EPI-LENS browser extension. Handles initialisation, video detection, communication with background, popup scripts
  * and real-time video analysis overlay for Youtube.
- * Integrates with VideoAnalyzer to process video frames and send analysis results
+ * Integrates with VideoAnalyzer to process video frames and send analysis results.
  */
 "use strict";
 
