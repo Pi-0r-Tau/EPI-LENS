@@ -143,11 +143,34 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeControls();
 });
 
+
 /**
  * Holds references to UI controls.
  * @type {Object}
  */
 let controls = {};
+
+function formatTime(seconds) {
+    if (isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function updateProgress(data) {
+    if (!data || !data.currentTime || !data.duration) return;
+
+    const progressBar = document.getElementById('videoProgress');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationEl = document.getElementById('duration');
+
+    if (progressBar && currentTimeEl && durationEl) {
+        const progress = (data.currentTime / data.duration) * 100;
+        progressBar.style.width = `${progress}%`;
+        currentTimeEl.textContent = formatTime(data.currentTime);
+        durationEl.textContent = formatTime(data.duration);
+    }
+}
 /**
  * Updates the entire popup UI with new analysis data.
  * @param {Object} data - The analysis data 
@@ -155,6 +178,7 @@ let controls = {};
 function updateUI(data) {
     if (!data) return;
     updateBadge();
+    updateProgress(data);
     updateFlashCount(data);
     updateRiskLevel(data);
     updateAnalyticsPanel(data);

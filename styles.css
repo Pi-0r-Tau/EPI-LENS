@@ -108,8 +108,23 @@ button:hover {
 .progress-bar {
     height: 100%;
     background: var(--accent-dark);
-    width: 0%;
-    transition: width 0.3s;
+    width: 0;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    animation: pulse-soft 2s infinite;
+}
+
+.video-progress {
+    margin: 15px 0;
+    padding: 5px;
+}
+
+.progress-container {
+    height: 6px;
+    background: var(--border-dark);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
 }
 
 .stats-grid {
@@ -272,4 +287,16 @@ button:hover {
     0% { transform: scale(1); }
     50% { transform: scale(1.2); color: var(--accent-dark); }
     100% { transform: scale(1); }
+}
+
+@keyframes pulse-soft {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
 }
