@@ -192,47 +192,70 @@
 
     /**
      * Starts the video analysis process with the given options
+     * TASK 836: Start and stop video via UI buttons
      * @param {Object} options - Analysis options and thresholds. 
      * @returns {void}
      */
     function startAnalysis(options) {
-        reconnectAttempts = 0;
-        videoElement = document.querySelector('video');
-        if (!videoElement) return;
+    reconnectAttempts = 0;
+    videoElement = document.querySelector('video');
+    if (!videoElement) return;
 
-        if (options.thresholds && analyzer) {
-            analyzer.updateThresholds(options.thresholds);
-        }
-
-        isAnalyzing = true;
-        analysisOptions = options;
-
-        const overlay = createOverlay();
-        videoElement.parentElement.appendChild(overlay);
-
-        if (analyzer) {
-            analyzer.reset(); // Reset metrics and startTime before starting new analysis
-        }
-
-        // Store initial video time
-        const initialTime = videoElement.currentTime;
-        console.log('Starting analysis at video time:', initialTime);
-
-        // Debug logging
-        setInterval(() => {
-            if (analyzer && analyzer.totalFrames > 0) {
-                console.log('Analysis stats:', {
-                    totalFrames: analyzer.totalFrames,
-                    chunks: analyzer.dataChunks.length,
-                    currentChunkSize: analyzer.currentChunk.length,
-                    startTime: analyzer.analysisStartTime,
-                    lastTime: analyzer.lastExportTime
-                });
-            }
-        }, 5000);
-
-        analyzeVideo(options);
+    if (options.thresholds && analyzer) {
+        analyzer.updateThresholds(options.thresholds);
     }
+
+    isAnalyzing = true;
+    analysisOptions = options;
+
+    const overlay = createOverlay();
+    videoElement.parentElement.appendChild(overlay);
+
+    if (analyzer) {
+        analyzer.reset(); // Reset metrics and startTime before starting new analysis
+    }
+
+    // Store initial video time
+    const initialTime = videoElement.currentTime;
+    console.log('Starting analysis at video time:', initialTime);
+
+    // Automatically play the video when analysis starts
+    if (videoElement.paused) {
+        videoElement.play()
+            .then(() => {
+                console.log('Video playback started successfully');
+            })
+            .catch(error => {
+                console.error('Error starting video playback:', error);
+            });
+    }
+
+    // Debug logging
+    setInterval(() => {
+        if (analyzer && analyzer.totalFrames > 0) {
+            console.log('Analysis stats:', {
+                totalFrames: analyzer.totalFrames,
+                chunks: analyzer.dataChunks.length,
+                currentChunkSize: analyzer.currentChunk.length,
+                startTime: analyzer.analysisStartTime,
+                lastTime: analyzer.lastExportTime,
+                isPlaying: !videoElement.paused,
+                currentTime: videoElement.currentTime
+            });
+        }
+    }, 5000);
+
+    // Add event listener to handle any interruptions in playback
+    videoElement.addEventListener('pause', () => {
+        if (isAnalyzing) {
+            videoElement.play().catch(error => {
+                console.warn('Could not resume playback:', error);
+            });
+        }
+    });
+
+    analyzeVideo(options);
+}
 
    
 
@@ -412,6 +435,21 @@
             analyzer.metrics.lastFrameBrightness = 0;
         }
     }
+
+    function stopAnalysis() {
+    isAnalyzing = false;
+    removeOverlay();
+    
+    // Pause video when analysis is stopped
+    if (videoElement && !videoElement.paused) {
+        videoElement.pause();
+    }
+    
+    // Hide analyzing badge in popup
+    chrome.runtime.sendMessage({
+        type: 'HIDE_BADGE'
+    });
+}
 
     // Initialize only if on YouTube
     if (window.location.hostname.includes('youtube.com')) {

@@ -117,27 +117,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Starts the analysis by sending a message to the content script with current threshold options
+     * TASK 836: Start and stop video via UI buttons
      */
     function startAnalysis() {
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            // Add analyzing badge immediately
-            const badge = document.createElement('div');
-            badge.className = 'analyzing-badge';
-            badge.id = 'analyzingBadge';
-            badge.innerHTML = '<span class="pulse"></span> Analyzing...';
-            document.body.appendChild(badge);
+        // Show analyzing badge
+        const badge = document.createElement('div');
+        badge.className = 'analyzing-badge';
+        badge.id = 'analyzingBadge';
+        badge.innerHTML = '<span class="pulse"></span> Analyzing...';
+        document.body.appendChild(badge);
 
-            chrome.tabs.sendMessage(tabs[0].id, {
-                action: 'START_ANALYSIS',
-                options: {
-                    thresholds: {
-                        flashesPerSecond: parseFloat(controls.flashThreshold.value),
-                        intensity: parseFloat(controls.intensityThreshold.value)
-                    }
+        // Send message to content script
+        chrome.tabs.sendMessage(tabs[0].id, {
+            action: 'START_ANALYSIS',
+            options: {
+                thresholds: {
+                    flashesPerSecond: parseFloat(controls.flashThreshold.value),
+                    intensity: parseFloat(controls.intensityThreshold.value)
                 }
-            });
+            }
         });
-    }
+    });
+}
+
+function stopAnalysis() {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+            action: 'STOP_ANALYSIS'
+        });
+
+        // Remove the analyzing badge
+        const badge = document.getElementById('analyzingBadge');
+        if (badge) {
+            badge.remove();
+        }
+    });
+}
 
     // Initialize controls after DOM is loaded
     initializeControls();
