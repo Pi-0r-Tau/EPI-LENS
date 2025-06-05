@@ -1,3 +1,9 @@
+/**
+ * @file popup.js
+ * @descripton Handles the popup UI logic for the EPI-LENS browser extension, including control initialisation,
+ * threshold updates, analysis start/stop, exporting results, and updating UI panels with analysis data.
+ * @module popup
+ */
 "use strict";
 
 document.addEventListener('DOMContentLoaded', () => {
