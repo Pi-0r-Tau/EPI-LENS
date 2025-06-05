@@ -6,9 +6,16 @@
  */
 "use strict";
 
+/**
+ * Initialises the popup UI once the DOM is loaded
+ * Sets up control references and event listeners for user interactions.
+ */
 document.addEventListener('DOMContentLoaded', () => {
     let controls = {};
 
+    /**
+     * Initialises control elements and attaches event listeners.
+     */
     function initializeControls() {
         controls = {
             startBtn: document.getElementById('startAnalysis'),
@@ -37,6 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (controls.exportJsonBtn) controls.exportJsonBtn.addEventListener('click', exportJSON);
     }
 
+    /**
+     * Updates the display value for threshold sliders.
+     * @param {Event} event - The input event from the threshold slider. 
+     */
     function updateThresholdDisplay(event) {
         const valueElement = document.getElementById(`${event.target.id}Value`);
         if (valueElement) {
@@ -46,6 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * Returns the correct click handler for a given control key.
+     * @param {string} key - The control key. 
+     * @returns {Function|undefined} The handler function or undefined. 
+     */
     function getClickHandler(key) {
         const handlers = {
             startBtn: startAnalysis,
@@ -55,6 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return handlers[key];
     }
 
+    /**
+     * Sends a message to the content script to export analysis results as CSV.
+     */
     function exportResults() {
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             chrome.tabs.sendMessage(tabs[0].id, {action: 'EXPORT_DATA'}, function(response) {
@@ -74,6 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /**
+     * Sends a message to the content script to export analysis results as JSON.
+     */
     function exportJSON() {
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             chrome.tabs.sendMessage(tabs[0].id, {action: 'EXPORT_DATA', format: 'json'}, function(response) {
@@ -93,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /**
+     * Starts the analysis by sending a message to the content script with current threshold options
+     */
     function startAnalysis() {
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             // Add analyzing badge immediately
@@ -118,7 +143,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeControls();
 });
 
+/**
+ * Holds references to UI controls.
+ * @type {Object}
+ */
 let controls = {};
+/**
+ * Updates the entire popup UI with new analysis data.
+ * @param {Object} data - The analysis data 
+ */
 function updateUI(data) {
     if (!data) return;
     updateBadge();
@@ -133,6 +166,9 @@ function updateUI(data) {
     updateEdgeMetrics(data);
 }
 
+/**
+ * Ensures the analysing badge is visible in the popup
+ */
 function updateBadge() {
     let badge = document.getElementById('analyzingBadge');
     if (!badge) {
@@ -144,6 +180,10 @@ function updateBadge() {
     }
 }
 
+/**
+ * Updates the flash count display.
+ * @param {Object} data - The analysis data
+ */
 function updateFlashCount(data) {
     const flashCountElement = document.getElementById('flashCount');
     if (flashCountElement) {
@@ -156,6 +196,10 @@ function updateFlashCount(data) {
     }
 }
 
+/**
+ * Updates the risk level display and indicator bar.
+ * @param {Object} data - The analysis data. 
+ */
 function updateRiskLevel(data) {
     const riskElement = document.getElementById('riskLevel');
     const riskBar = document.getElementById('riskIndicatorBar');
@@ -167,6 +211,10 @@ function updateRiskLevel(data) {
     }
 }
 
+/**
+ * Updates the advanced analytics panel with metrics.
+ * @param {Object} data - The analysis data  
+ */
 function updateAnalyticsPanel(data) {
     const analyticsPanel = document.getElementById('advancedMetrics');
     if (!analyticsPanel) return;
@@ -201,6 +249,10 @@ function updateAnalyticsPanel(data) {
     `;
 }
 
+/**
+ * Updates the PSI (Photosensitive Seizure Index) metrics panel
+ * @param {Object} data - The analysis data.  
+ */
 function updatePSIPanel(data) {
     const psiPanel = document.getElementById('psiMetrics');
     if (!psiPanel || !data.psi) return;
@@ -231,6 +283,10 @@ function updatePSIPanel(data) {
     `;
 }
 
+/**
+ * Updates the spatial metrics panel.
+ * @param {Object} data - The analysis data  
+ */
 function updateSpatialPanel(data) {
     const spatialPanel = document.getElementById('spatialMetrics');
     if (!spatialPanel || !data.spatialMap) return;
@@ -251,6 +307,10 @@ function updateSpatialPanel(data) {
     `;
 }
 
+/**
+ * Updates the chromatic metrics panel
+ * @param {Object} data - The analysis data.  
+ */
 function updateChromaticPanel(data) {
     const chromaticPanel = document.getElementById('chromaticMetrics');
     if (!chromaticPanel || !data.chromaticFlashes) return;
@@ -271,6 +331,10 @@ function updateChromaticPanel(data) {
     `;
 }
 
+/**
+ * Updates the frame metrics panel.
+ * @param {Object} data - The analysis data.  
+ */
 function updateFrameMetrics(data) {
     const panel = document.getElementById('frameMetrics');
     if (!panel || !data.frameDifference) return;
@@ -291,6 +355,10 @@ function updateFrameMetrics(data) {
     `;
 }
 
+/**
+ * Updates the spectral metrics panel
+ * @param {Object} data - The analysis data  
+ */
 function updateSpectralMetrics(data) {
     const panel = document.getElementById('spectralMetrics');
     if (!panel || !data.spectralAnalysis) return;
@@ -303,6 +371,10 @@ function updateSpectralMetrics(data) {
     `;
 }
 
+/**
+ * Updates the edge metrics panel.
+ * @param {Object} data - The analysis data.  
+ */
 function updateEdgeMetrics(data) {
     const panel = document.getElementById('edgeMetrics');
     if (!panel || !data.edgeDetection) return;
@@ -323,6 +395,12 @@ function updateEdgeMetrics(data) {
     `;
 }
 
+/**
+ * Listens for messages from the background/content script and updates the UI.
+ * @param {Object} message - The message object
+ * @param {Object} _sender - The sender of the message. (Not used: TASK-6872)
+ * @param {Function} _sendResponse - The callback to send a response. (Not used: TASK-6872)
+ */
 chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
     if (message.type === 'UPDATE_UI' || message.type === 'ANALYSIS_UPDATE') {
         updateUI(message.data);
