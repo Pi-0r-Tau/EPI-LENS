@@ -121,26 +121,12 @@ if (!window.VideoAnalyzer) {
             };
 
             // FFT implementation
+            // TASK 2786: O(N log N) Cooley-Turkey FTT Improvements
             this.fft = {
-                forward: (signal) => {
-                    const n = signal.length;
-                    if (n <= 1) return signal;
-
-                    const spectrum = Array(n).fill().map(() => ({ re: 0, im: 0 }));
-
-                    for (let k = 0; k < n; k++) {
-                        for (let t = 0; t < n; t++) {
-                            const angle = -2 * Math.PI * k * t / n;
-                            spectrum[k].re += signal[t] * Math.cos(angle);
-                            spectrum[k].im += signal[t] * Math.sin(angle);
-                        }
-                    }
-
-                    return spectrum;
-                }
+                forward: (signal) => this.performFFT(signal)
             };
 
-            // Add circular buffer for temporal data
+            // Circular buffer for temporal data
             this.temporalBuffer = {
                 maxSize: 128,
                 data: [],
@@ -643,7 +629,7 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Estimates the flicker frequency (Hz) based on brightness changes.
-         * * @returns {number} Estimated flicker frequency in Hz.
+         * @returns {number} Estimated flicker frequency in Hz.
          */
         estimateFlickerFrequency() {
             const changes = this.advancedMetrics.temporalChanges;
@@ -874,40 +860,51 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Performs spectral analysis (FFT) on the brightness signal to find dominant frequency.
-         * @param {number} brightness - Current frame brightness.
-         * @returns {Object} Spectral analysis results
+         * TASK 2786: O(N log N) Cooley-Turkey FTT Improvements
+         * @param {number} brightness - The frames current brightness level to be added to the temporal buffer
+         * @returns {Object} Spectral analysis results:
+         *  @property {number} dominantFrequency - The most dominant frequency in Hz, excluding DC and Nyquist
+         *  @property {Array<{frequency: number, amplitude: number}>} spectrum - The normalised magnitude spectrum.
+         *  @property {number} windowSize - The size of the FTT window used.
+         * @throws Logs an error and returns default values if an exception occurs during processing, default values are 0.00.
          */
-        performSpectralAnalysis(brightness) {
-            try {
-                // Update temporal buffer
-                this.temporalBuffer.add(brightness);
+            performSpectralAnalysis(brightness) {
 
-                if (this.temporalBuffer.data.length < 32) {
+                try {
+
+                    this.temporalBuffer.add(brightness);
+                    
+                    if (this.temporalBuffer.data.length < 32) {
                     return { dominantFrequency: 0, spectrum: [] };
-                }
+                    }
 
-                // Use last 64 samples for FFT
+                // Power of 2 length
                 const signal = [...this.temporalBuffer.data.slice(-64)];
-                const spectrum = this.fft.forward(signal);
 
-                // Calculate magnitude spectrum
+                // Hanning window to reduce leakage
+                const windowed = signal.map((x, i) =>
+                    x * (0.5 * (1 - Math.cos((2 * Math.PI * i) / (signal.length - 1)))));
+
+                const spectrum = this.fft.forward(windowed);
+
+                // Calculate magnitude spectrum with normalization
                 const magnitudes = spectrum.map((bin, i) => ({
-                    frequency: (i * 60) / 64, // Bin index to Hz
-                    amplitude: Math.sqrt(bin.re * bin.re + bin.im * bin.im)
+                    frequency: (i * 60) / signal.length, 
+                    amplitude: 2 * Math.sqrt(bin.re * bin.re + bin.im * bin.im) / signal.length
                 }));
 
-                // Find dominant frequency (exclude DC component)
                 const dominantBin = magnitudes
                     .slice(1, Math.floor(magnitudes.length / 2))
                     .reduce((max, curr) => curr.amplitude > max.amplitude ? curr : max, { amplitude: 0 });
 
                 return {
                     dominantFrequency: dominantBin.frequency,
-                    spectrum: magnitudes.slice(0, 32)
+                    spectrum: magnitudes.slice(0, Math.floor(magnitudes.length / 2)), // Only return positive frequencies
+                    windowSize: signal.length
                 };
             } catch (error) {
                 console.error('Spectral analysis error:', error);
-                return { dominantFrequency: 0, spectrum: [] };
+                return { dominantFrequency: 0, spectrum: [], windowSize: 0 };
             }
         }
 
@@ -1473,8 +1470,118 @@ if (!window.VideoAnalyzer) {
                 this.timelineData.shift();
             }
         }
+    
+
+    // FTT Methods
+    // TASK 2786: O(N log N) Cooley-Tukey FTT Improvements
+    // Performs spectral analysis on a stream of real valued brightness data using the Cooley-Tukey FTT.
+    // Replaces the previous O(N²) DFT approach with a O(N Log N) solution
+
+    /**
+     * Multiplies two complex numbers.
+     * @param {{re: number, im: number}} a - First complex number. 
+     * @param {{re: number, im: number}} b - Second complex number. 
+     * @returns {{re: number, im: number}} The product of the two complex numbers. 
+     */
+    complexMultiply(a, b) {
+        return {
+            re: a.re * b.re - a.im * b.im,
+            im: a.re * b.im + a.im * b.im
+        };
     }
 
-    // Make VideoAnalyzer globally available only if it doesn't exist
+    /**
+     * Pads a signal array to the next power of two in length and performs FFT. 
+     * Cooley-Tukey requires input lenghts that are powers of two for OP.
+     * @param {Array<number>} signal - The input signal array. 
+     * @returns {Array<{re: number, im: number}>} The FFT result as an array of complex numbers. 
+     */
+    padToPowerOfTwo(signal) {
+            const n = signal.length;
+            const nextPow2 = Math.pow(2, Math.ceil(Math.log2(n)));
+            const paddedSignal = new Array(nextPow2).fill(0);
+            paddedSignal.splice(0, n, ...signal);
+            return this.performFFT(paddedSignal);
+        }
+
+    /**
+     * Performs bit-reversal permutation on an array of complex numbers.
+     * Required for reordering of input data for in-place computation
+     * @param {Array<{re: number, im: number}>} x - The array to shuffle. 
+     * @returns {Array<{re: number, im: number}>} The shuffled array. 
+     */
+    bitReverseShuffle(x) {
+            const n = x.length;
+            let j = 0;
+
+            for (let i = 0; i < n - 1; i++) {
+                if (i < j) {
+                    [x[i], x[j]] = [x[j], x[i]];
+                }
+
+                let k = n >> 1;
+                while (k <= j) {
+                    j -= k;
+                    k >>= 1;
+                }
+                j += k;
+            }
+            return x;
+        }
+
+     /**
+      * Performs the Cooley-Tukey FFT algorithm on a real-valued signal to compute its frequency domain representation.
+      * If the input length is not a power of two, it is zero-padded to the next power of 2.
+      * @param {Array<number>} signal - The input signal array. 
+      * @returns {Array<{re: number, im: number}>} The FFT result as an array of complex numbers 
+      */
+    performFFT(signal) {
+            const n = signal.length;
+
+            // Ensure input length is power of 2
+            if (n <= 1 || (n & (n - 1)) !== 0) {
+                return this.padToPowerOfTwo(signal);
+            }
+
+            // Create complex number array
+            const x = signal.map(val => ({ re: val, im: 0 }));
+
+            // Bit-reverse permutation
+            this.bitReverseShuffle(x);
+
+            // Cooley-Tukey FFT
+            for (let len = 2; len <= n; len *= 2) {
+                const halfLen = len / 2;
+                const angle = -2 * Math.PI / len;
+                const wLen = { re: Math.cos(angle), im: Math.sin(angle) };
+
+                for (let i = 0; i < n; i += len) {
+                    let w = { re: 1, im: 0 };
+
+                    for (let j = 0; j < halfLen; j++) {
+                        const idx1 = i + j;
+                        const idx2 = idx1 + halfLen;
+                        const temp = this.complexMultiply(w, x[idx2]);
+
+                        x[idx2] = {
+                            re: x[idx1].re - temp.re,
+                            im: x[idx1].im - temp.im
+                        };
+
+                        x[idx1] = {
+                            re: x[idx1].re + temp.re,
+                            im: x[idx1].im + temp.im
+                        };
+
+                        w = this.complexMultiply(w, wLen);
+                    }
+                }
+            }
+
+            return x;
+        }
+
+    }
+
     window.VideoAnalyzer = VideoAnalyzer;
 }
