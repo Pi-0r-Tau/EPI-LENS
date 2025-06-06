@@ -34,9 +34,10 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 ## Recent updates
 - Progress bar for video being analysed in UI
 - UI buttons for start analysis and stop analysis, play and pause the video respectively.
+- Improve current O(N²) FTT by using Cooley-Turkey reducing time complexity to O(m log m)
 
 ## Updates in progress
-- Improve current O(N²) FTT by using Cooley-Turkey reducing time complexity to O(m log m)
+-  
 
 ## Future metrics
 - Duty cycle and Flash Envelope analysis
