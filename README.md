@@ -37,7 +37,8 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 - Improve current O(N²) FTT by using Cooley-Turkey reducing time complexity to O(m log m)
 
 ## Updates in progress
--  
+-  Typed array buffering
+-  Multi-scale center-weighted spatial pooling for flash detection
 
 ## Future metrics
 - Duty cycle and Flash Envelope analysis
