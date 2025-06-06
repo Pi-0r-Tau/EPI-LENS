@@ -121,7 +121,7 @@ if (!window.VideoAnalyzer) {
             };
 
             // FFT implementation
-            // TASK 2786: O(N log N) Cooley-Turkey FTT Improvements
+            // TASK 2786: O(m log m) Cooley-Turkey FTT Improvements
             this.fft = {
                 forward: (signal) => this.performFFT(signal)
             };
@@ -860,7 +860,7 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Performs spectral analysis (FFT) on the brightness signal to find dominant frequency.
-         * TASK 2786: O(N log N) Cooley-Turkey FTT Improvements
+         * TASK 2786: O(m log m) Cooley-Turkey FTT Improvements
          * @param {number} brightness - The frames current brightness level to be added to the temporal buffer
          * @returns {Object} Spectral analysis results:
          *  @property {number} dominantFrequency - The most dominant frequency in Hz, excluding DC and Nyquist
@@ -1473,9 +1473,9 @@ if (!window.VideoAnalyzer) {
     
 
     // FTT Methods
-    // TASK 2786: O(N log N) Cooley-Tukey FTT Improvements
+    // TASK 2786: O(m log m) Cooley-Tukey FTT Improvements
     // Performs spectral analysis on a stream of real valued brightness data using the Cooley-Tukey FTT.
-    // Replaces the previous O(N²) DFT approach with a O(N Log N) solution
+    // Replaces the previous O(N²) DFT approach with a O(m Log m) solution
 
     /**
      * Multiplies two complex numbers.
