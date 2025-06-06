@@ -791,11 +791,15 @@ if (!window.VideoAnalyzer) {
 
        
         /**
-         * Analyses temporal contrast in brightness over recent frames. 
+         * Analyses temporal contrast in brightness over recent frames.
+         * Maintains a history of the last 10 frame and calculates the max rate of brightness change per
+         * unit of time.
+         * Capped at a reasonable limit to avoid extreme spikes.
+         * 
          * TASK 2380: Adjust maxRate to reasonable max.
          * @param {number} brightness - Current frame brightness. 
          * @param {number} timestamp - Current timestamp. 
-         * @returns {Object} Temporal contrast metrics. 
+         * @returns {{currentRate: number, maxRate: number}} - Object containg the current rate of brightness change and historical max rate capped at 1000. 
          */
         analyzeTemporalContrast(brightness, timestamp) {
             const history = this.advancedMetrics.temporalContrast.history;
@@ -828,8 +832,9 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Calculates the difference and motion ratio between the current and previous frame.
-         * @param {ImageData} currentFrame - The current frame's ImageData. 
-         * @returns {Object} Frame difference and motion metrics. 
+         * Stores the current frame for comparison with the next frame
+         * @param {ImageData} currentFrame - The RGBA pixel data of the current video frame 
+         * @returns {{difference: number, motion: number}} Frame difference and motion metrics. 
          */
         calculateFrameDifference(currentFrame) {
             if (!this.lastFrame) {
@@ -914,9 +919,10 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Detects periodicity in a signal using autocorrelation.
-         * @param {Array<number>} signal - Array of numeric values.
-         * @returns {Object} Periodicity detection result.
+         * Detects periodicity in a numeric signal using autocorrelation analysis.
+         * Identifies peaks in the autocorrelation function to estimate the dominant period.
+         * @param {number[]} signal - Array of numeric values representing a time-series signal
+         * @returns {{isPeriodic: boolean, period: number, confidence: number}} Periodicity detection result
          */
         detectPeriodicity(signal) {
             if (signal.length < 4) return { isPeriodic: false, period: 0 };
@@ -966,9 +972,9 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Calculates temporal coherence of brightness over a window of frames.
-         * @param {number} brightness - Current frame brightness. 
-         * @returns {Object} Temporal coherence metrics. 
+         * Calculates temporal coherence of brightness over a sliding window of recent frames.
+         * @param {number} brightness - Brightness value of current frame
+         * @returns {{coherenceScore: number, periodicity: number|null}} Temporal coherence metrics 
          */
         calculateTemporalCoherence(brightness) {
             const history = this.advancedMetrics.temporalCoherence.history;
@@ -1000,9 +1006,10 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Detects edges in the frame using Sobel operator
-         * @param {ImageData} imageData - The frame's ImageData.
-         * @returns {Object} Edge detection metrics.
+         * Detects edges in the frame using Sobel operator.
+         * Calculates the gradient magnitude at each pixel and counts edges based on threshold.
+         * @param {ImageData} imageData - The RGBA pixel data of the current video frame.
+         * @returns {{edgeDensity: number, edgeCount: number, temporalEdgeChange: number}}
          */
         detectEdges(imageData) {
             const width = imageData.width;
@@ -1241,7 +1248,7 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Generates a JSON string of the analyzed timeline data and metadata, from the generateReport method.
-         * @returns {string} JSON-formatted string of analysis results. 
+         * @returns {string} JSON-formatted string of analysis results. Pretty-printed.
          */
         generateJSON() {
             try {
