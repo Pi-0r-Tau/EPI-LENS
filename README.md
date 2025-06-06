@@ -303,6 +303,23 @@ graph TB
         ANA --> |Edges| EDG["Edge Detection
         |∇f| = √(Gx² + Gy²)"]
 
+        subgraph FFT_Implementation [FFT Processing]
+            WIN["Window Function
+            w(n) = 0.5(1 - cos(2πn/(N-1)))"]
+            PTW["Power of 2 Padding
+            N = 2^⌈log₂(n)⌉"]
+            BRS["Bit Reverse Shuffle
+            j = ∑(b_i·2^(r-1-i)) for i=0 to r-1
+            where r=log₂(N)"]
+            CTF["Cooley-Tukey FFT
+            X(k) = ∑[x(n)·W_N^(nk)]
+            W_N = e^(-j2π/N)"]
+            WIN --> PTW
+            PTW --> BRS
+            BRS --> CTF
+            
+        end
+
         subgraph Real_Time_Metrics [Real-time Metrics]
             BRI --> FLA["Flash Detection
             ΔB = |Bt - Bt-1| > threshold"]
@@ -315,14 +332,14 @@ graph TB
         end
 
         subgraph Signal_Processing [Signal Processing]
-            FLA --> FFT["FFT Analysis
-            X(k) = Σx(n)e^(-j2πkn/N)"]
+            FLA --> FFT_Implementation
             VAR --> COH["Temporal Coherence
             R(τ) = E[(Xt-μ)(Xt+τ-μ)]/σ²"]
             DIF --> PER["Periodicity Detection
             P(f) = |F{ACF(t)}|"]
             CHG --> TMP["Temporal Analysis
             T = Σwi*Mi where Mi={ECR,D,ΔB}"]
+            CTF --> AGG
         end
     end
 
@@ -334,7 +351,7 @@ graph TB
     end
 
     subgraph Data_Management [Data Management]
-        FFT & COH & PER & TMP --> AGG
+         COH & PER & TMP --> AGG
         AGG --> BUF
         BUF --> CHK
         CHK --> EXP[Export System]
@@ -343,7 +360,6 @@ graph TB
     subgraph Export_Formats [Export Formats]
         EXP --> CSV[CSV Export]
         EXP --> JSN[JSON Export]
-        EXP --> META[Metadata Export]
     end
 
 ```
