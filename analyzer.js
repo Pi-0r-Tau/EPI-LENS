@@ -755,9 +755,10 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Analyses chromatic flashes (red-green and blue-yellow contrast) in the frame.
-         * @param {ImageData} imageData - The frame's ImageData.
-         * @returns {Object} Chromatic flash metrics.
+         * Analyses chromatic flashes in video frame by measuring red-green and blue-yellow color contrasts.
+         * Computes average contrast values across all pixels and updates internal color history for temporal analysis.
+         * @param {ImageData} imageData - The RGBA pixel data of the current video frame
+         * @returns {{redGreen: number, blueYellow: number}} Chromatic flash metrics.
          */
         analyzeChromaticFlashes(imageData) {
             const data = imageData.data;
