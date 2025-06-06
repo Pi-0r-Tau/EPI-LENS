@@ -614,9 +614,10 @@ if (!window.VideoAnalyzer) {
 
         
         /**
-         * Calculates the temporal change in brightness between frames.
-         * @param {number} currentBrightness - The brightness value of the current frame
-         * @returns {number} The absolute change in brightness.
+         * Calculates the absolute change in brightness between the current and previous frame.
+         * Stores the result along with a timestamp in the internal temporal change history.
+         * @param {number} currentBrightness - Normalized brightness value of the current frame (range: 0–1).
+         * @returns {number} Absolute brightness change compared to the previous frame (range: 0–1).
          */
         calculateTemporalChange(currentBrightness) {
             const changes = this.advancedMetrics.temporalChanges;
