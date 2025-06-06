@@ -454,9 +454,15 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Calculates colour variance for the current frame and updates history.
-         * @param {ImageData} imageData - The frame's ImageData.
-         * @returns {Object} Colour variance metrics.
+         * Calculates the color variance for the current video frame and updates the color history
+         * @param {ImageData} imageData - The ImageData object representing the current video frame.
+         * @returns {{current: { r: number, g: number, b: number}, temporal: { r: number, g: number, b: number}, spikes: Array<{ frame: number, channel: 'r' | 'g' | 'b', magnitude: number }>, averageChange: { r: number, g: number, b: number}
+         * }}
+         * An object containing:
+         * - `current`: Normalized standard deviation of RGB values for the current frame
+         * - `temporal`: Temporal variance across recent frames
+         * - `spikes`: Detected spikes in color change with frame index, channel, and magnitude
+         * - `averageChange`: Average absolute change between consecutive frames per channel
          */
         calculateColorVariance(imageData) {
             if (!imageData || !imageData.data) return { r: 0, g: 0, b: 0 };
