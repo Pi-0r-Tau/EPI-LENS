@@ -81,7 +81,7 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 
 ### Brightness and Flash Detection
 - **Relative Luminance (Y)**
-  - Implemented using HTML5 Canvas getImageData
+  - Implemented using HTML5 Canvas 
   - Applies ITU-R BT.709 coefficients (0.2126R + 0.7152G + 0.0722B) per pixel
   - Processes at 1/4 resolution for performance
   - Maintains 128-frame circular buffer
@@ -181,7 +181,6 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
   - FFT of autocorrelation function
   - Pattern frequency analysis
   - Sequence matching
-  - Confidence scoring
   - Real-time updates
 
 ### Impact Assessment
