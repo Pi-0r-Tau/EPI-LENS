@@ -709,9 +709,9 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Analyses spatial distribution of brightness in the frame (center, periphery, quadrants).
-         * @param {ImageData} imageData - The frame's ImageData.
-         * @returns {Object} Spatial brightness metrics.
+         * Computes average brightness in the center region, periphery, and each of the quadrants.
+         * @param {ImageData} imageData - The RGBA pixel data of the current video frame.
+         * @returns {{center: number, periphery: number, quadrants: number[]}} Spatial brightness metrics.
          */
         analyzeSpatialDistribution(imageData) {
             const width = this.canvas.width;
