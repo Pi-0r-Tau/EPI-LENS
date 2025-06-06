@@ -322,7 +322,7 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Calculates the proportion of bright pixels in the frame.
+         * Calculates the proportion of bright pixels in a given image frame.
          * @param {ImageData} imageData - The frame ImageData.
          * @returns {number} Ratio of bright pixels [0,1].
          */
