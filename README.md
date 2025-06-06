@@ -38,7 +38,9 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 
 ## Updates in progress
 -  Typed array buffering
--  Multi-scale center-weighted spatial pooling for flash detection
+-  Fast canny edge detection
+-  Edge non-maximum suppression
+-  Multi-timescale flicker detection
 
 ## Future metrics
 - Duty cycle and Flash Envelope analysis
