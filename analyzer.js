@@ -583,8 +583,9 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Detects significant colour spikes in the frame-to-frame changes.
-         * @param {Object} changes - Object with r, g, b arrays of changes.
-         * @returns {Array} List of detected spikes.
+         * Spike: When a change exceeds both the fixed threshold and two standard deviations above the mean.
+         * @param {{ r: number[], g: number[], b: number[] }} changes - Object containing arrays of brightness changes for each color channel
+         * @returns {{channel: 'r' | 'g' | 'b', frameIndex: number, magnitude: number}[]} Array of detected color spike objects.
          */
         detectColorSpikes(changes) {
             const threshold = 0.2; 
