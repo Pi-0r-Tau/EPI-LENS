@@ -628,8 +628,8 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Estimates the flicker frequency (Hz) based on brightness changes.
-         * @returns {number} Estimated flicker frequency in Hz.
+         * Estimates the flicker frequency of a video sequence based on significant brightness changes over time.
+         * @returns {number} Estimated flicker frequency in Hz, or 0 if insufficient data or no significant changes are detected.
          */
         estimateFlickerFrequency() {
             const changes = this.advancedMetrics.temporalChanges;
@@ -649,7 +649,7 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Calculates the entropy of the frame based on brightness histogram.
-         * @param {ImageData} imageData - The frame's ImageData.
+         * @param {ImageData} imageData - The RGBA pixel data of the current video frame.
          * @returns {number} Frame entropy value.
          */
         calculateFrameEntropy(imageData) {
