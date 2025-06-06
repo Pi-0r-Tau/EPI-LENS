@@ -31,6 +31,13 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 # Compatibility
 - Youtube (currently a working prototype, will be expanded to other domains)
 
+## Recent updates
+- Progress bar for video being analysed in UI
+- UI buttons for start analysis and stop analysis, play and pause the video respectively.
+
+## Updates in progress
+- Improve current O(N²) FTT by using Cooley-Turkey reducing time complexity to O(N log N)
+
 ## Future metrics
 - Duty cycle and Flash Envelope analysis
 - Chromatic Flicker Fusion Rate (CFFR)
