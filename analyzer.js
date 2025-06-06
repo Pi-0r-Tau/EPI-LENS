@@ -400,8 +400,13 @@ if (!window.VideoAnalyzer) {
         }
 
          /**
-         * Updates the risk level based on flash rate and intensity.
-         * @returns {Object} Risk assessment summary.
+         * Updates the overall risk level based on flash rate, total flash count, and average intensity.
+         * Risk levels:
+         * - `'high'`: If flash rate > 3, flash count > 30, or intensity > 0.8
+         * - `'medium'`: If flash rate > 2, flash count > 15, or intensity > 0.5
+         * - `'low'`: Else
+         * @returns {{ Level: 'low' | 'medium' | 'high', flashCount: number, flashRate: number, intensity: number}}
+         * A summary of the current risk assessment.
          */
         updateRiskLevel() {
             const flashRate = this.metrics.flashCount / (this.metrics.frameCount / 60);
@@ -426,7 +431,7 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Calculates the average intensity of detected flash sequences.
-         * @returns {number} Average flash intensity.
+         * @returns {number} The average intensity value, or `0` if no flash sequences are present.
          */
         calculateAverageIntensity() {
             if (!this.metrics.flashSequences.length) return 0;
@@ -440,7 +445,7 @@ if (!window.VideoAnalyzer) {
 
          /**
          * Analyzes risk factors based on flash rate, intensity, and sequence count.
-         * @returns {Array} List of detected risk factors.
+         * @returns {string[]} An array of detected risk factor descriptions
          */
         analyzeRiskFactors() {
             const factors = [];
