@@ -374,9 +374,10 @@ if (!window.VideoAnalyzer) {
         }
 
          /**
-         * Detects and records a flash sequence based on brightness change.
-         * @param {number} brightness - Current frame brightness.
-         * @param {number} timestamp - Current timestamp.
+         * Detects and records a flash sequence based on a significant change in brightness.
+         * If the brightness difference exceeds the UI configuration for threshold, it is recorded as a flash event.
+         * @param {number} brightness - The brightness value of the current frame.
+         * @param {number} timestamp - The timestamp associated with the current frame
          */
         detectFlashSequence(brightness, timestamp) {
             const brightnessDiff = Math.abs(brightness - this.metrics.lastFrameBrightness);
