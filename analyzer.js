@@ -406,7 +406,7 @@ if (!window.VideoAnalyzer) {
          * - `'high'`: If flash rate > 3, flash count > 30, or intensity > 0.8
          * - `'medium'`: If flash rate > 2, flash count > 15, or intensity > 0.5
          * - `'low'`: Else
-         * @returns {{ Level: 'low' | 'medium' | 'high', flashCount: number, flashRate: number, intensity: number}}
+         * @returns { Level: 'low' | 'medium' | 'high', flashCount: number, flashRate: number, intensity: number}
          * A summary of the current risk assessment.
          */
         updateRiskLevel() {
