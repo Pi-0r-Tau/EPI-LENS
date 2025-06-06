@@ -196,7 +196,7 @@ if (!window.VideoAnalyzer) {
                 // Calculate relative timestamp from start
                 const relativeTime = timestamp - this.analysisStartTime;
 
-                // Add frame rate limiting
+                // Frame rate limiting
                 const currentTime = performance.now();
                 const timeSinceLastFrame = currentTime - this.lastAnalysisTime;
 
@@ -791,7 +791,8 @@ if (!window.VideoAnalyzer) {
 
        
         /**
-         * Analyses temporal contrast in brightness over recent frames.
+         * Analyses temporal contrast in brightness over recent frames. 
+         * TASK 2380: Adjust maxRate to reasonable max.
          * @param {number} brightness - Current frame brightness. 
          * @param {number} timestamp - Current timestamp. 
          * @returns {Object} Temporal contrast metrics. 
@@ -804,15 +805,19 @@ if (!window.VideoAnalyzer) {
 
             let maxRate = 0;
             for (let i = 1; i < history.length; i++) {
-                const rate = Math.abs(history[i].brightness - history[i-1].brightness) /
-                            (history[i].timestamp - history[i-1].timestamp);
-                maxRate = Math.max(maxRate, rate);
+                const timeDiff = history[i].timestamp - history[i-1].timestamp;
+                // Safety checks for time difference
+                if (timeDiff > 0.001) { // Calculate rate if time difference is meaningful
+                    const rate = Math.abs(history[i].brightness - history[i-1].brightness) / timeDiff;
+                    // maxRate to reasonable max
+                    maxRate = Math.max(maxRate, Math.min(rate, 1000));
+                }
             }
 
             this.advancedMetrics.temporalContrast = {
                 current: maxRate,
                 history: history,
-                maxRate: Math.max(maxRate, this.advancedMetrics.temporalContrast.maxRate)
+                maxRate: Math.min(Math.max(maxRate, this.advancedMetrics.temporalContrast.maxRate), 1000)
             };
 
             return {
