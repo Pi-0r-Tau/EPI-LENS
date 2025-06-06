@@ -524,8 +524,15 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Analyzes the temporal colour history for variance, spikes, and average change.
-         * @returns {Object} Temporal variance, spikes, and average change.
+         * Analyses the temporal colour history for:
+         * - Temporal variance for each RGB channel
+         * - Detected spikes in color changes
+         * - Average frame-to-frame color changes
+         * @returns {{variance: { r: number, g: number, b: number }, spikes: Array<{frame: number, channel: 'r' | 'g' | 'b', magnitude: number}>, averageChange: { r: number, g: number, b: number }
+         * }} An Object containing:
+         * - `variance`: Normalized standard deviation of color values per channel
+         * - `spikes`: Array of detected spikes with frame index, channel, and magnitude
+         * - `averageChange`: Average absolute change between consecutive frames per channel
          */
         analyzeColorHistory() {
             const history = this.advancedMetrics.colorHistory;
