@@ -677,10 +677,11 @@ if (!window.VideoAnalyzer) {
         }
 
         /**
-         * Calculates the Photosensitive Seizure Index (PSI) score and its components.
-         * @param {number} brightness - Current frame brightness.
-         * @param {number} brightnessDiff - Difference in brightness from previous frame.
-         * @returns {Object} PSI score and component breakdown.
+         * Calculates the Photosensitive Seizure Index (PSI), a composite score estimating the risk of photosensitive seizures.
+         * Based on multiple weighted components: flash frequency, brightness intensity change, spatial coverage, flash duration and overall brightness level.
+         * @param {number} brightness - Normalized brightness value of the current frame (range: 0–1).
+         * @param {number} brightnessDiff - Difference in brightness from the previous frame (range: 0–1).
+         * @returns {{score: number, frequency: number, intensity: number, coverage: number, duration: number, brightness: number}} PSI score and component breakdown.
          */
         calculatePSI(brightness, brightnessDiff) {
             const frequency = this.metrics.flashCount / (this.metrics.frameCount / 60);
