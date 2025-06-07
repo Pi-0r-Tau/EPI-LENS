@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "EPI-LENS",
   "version": "1.0",
-  "description": "Video content analysis tool for photosensitive trigger detection.",
+  "description": "Real-time quantitative analysis of video content for photosensitive trigger detection.",
   "permissions": [
     "activeTab",
     "storage",
