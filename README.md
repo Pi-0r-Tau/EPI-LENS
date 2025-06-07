@@ -173,7 +173,6 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 ### Pattern Analysis
 - **Frame Entropy**
   - 256-bin brightness histogram
-  - Information theory calculation
   - Running entropy tracking
   - Complexity change detection
   - Pattern identification
@@ -205,7 +204,6 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
   - Real-time component updates
   - Dynamic weight adjustment
   - Risk level categorization
-  - Trend analysis and prediction
 
 ### Memory Management
 - All metrics use circular buffers
@@ -232,7 +230,6 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 - Frame rate limiting: 60fps
 - Resolution reduction: 1/4
 - Data compression: JSON/CSV optimization
-- Memory footprint: ~10MB per 1000 frames
 ## Architecture Overview
 ```mermaid
 graph TB
