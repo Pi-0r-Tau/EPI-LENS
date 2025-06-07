@@ -35,6 +35,7 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 - Progress bar for video being analysed in UI
 - UI buttons for start analysis and stop analysis, play and pause the video respectively.
 - Improve current O(N²) FTT by using Cooley-Turkey reducing time complexity to O(m log m)
+- More efficient FFT using the Cooley-Tukey algorithm with radix-2 decomposition with typed arrays
 
 ## Updates in progress
 -  Typed array buffering
@@ -311,16 +312,17 @@ graph TB
             w(n) = 0.5(1 - cos(2πn/(N-1)))"]
             PTW["Power of 2 Padding
             N = 2^⌈log₂(n)⌉"]
+            TF["Twiddle Factors Cache
+            cos/sin tables for -2πi/N"]
             BRS["Bit Reverse Shuffle
-            j = ∑(b_i·2^(r-1-i)) for i=0 to r-1
-            where r=log₂(N)"]
-            CTF["Cooley-Tukey FFT
-            X(k) = ∑[x(n)·W_N^(nk)]
-            W_N = e^(-j2π/N)"]
+            in-place reordering"]
+            BTF["Butterfly Operations
+            len=2 to N by *2"]
+
             WIN --> PTW
-            PTW --> BRS
-            BRS --> CTF
-            
+            PTW --> TF
+            TF --> BRS
+            BRS --> BTF
         end
 
         subgraph Real_Time_Metrics [Real-time Metrics]
@@ -342,7 +344,7 @@ graph TB
             P(f) = |F{ACF(t)}|"]
             CHG --> TMP["Temporal Analysis
             T = Σwi*Mi where Mi={ECR,D,ΔB}"]
-            CTF --> AGG
+            BTF --> AGG
         end
     end
 
@@ -364,7 +366,6 @@ graph TB
         EXP --> CSV[CSV Export]
         EXP --> JSN[JSON Export]
     end
-
 ```
 
 
