@@ -919,7 +919,13 @@ if (!window.VideoAnalyzer) {
                 const windowed = signal.map((x, i) =>
                     x * (0.5 * (1 - Math.cos((2 * Math.PI * i) / (signal.length - 1)))));
 
-                const spectrum = this.fft.forward(windowed);
+                // TASK 2381 Convert typed arrays to complex number objects
+                const { re, im } = this.fft.forward(windowed);
+
+                const spectrum = Array.from({ length: re.length }, (_, i) => ({
+                    re: re[i],
+                    im: im[i]
+                }));
 
                 // Calculate magnitude spectrum with normalization
                 const magnitudes = spectrum.map((bin, i) => ({
