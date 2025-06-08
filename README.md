@@ -42,6 +42,7 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 -  Fast canny edge detection
 -  Edge non-maximum suppression
 -  Multi-timescale flicker detection
+-  Flash pattern detection improvements
 
 ## Future metrics
 - Duty cycle and Flash Envelope analysis
