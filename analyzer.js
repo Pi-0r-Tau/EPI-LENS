@@ -1178,7 +1178,10 @@ if (!window.VideoAnalyzer) {
                     'Edge Change Rate'
                 ];
 
-                const allData = [...this.dataChunks.flat(), ...this.currentChunk];
+                // TASK 2383: Ensure data export is meaningful data from postive timestamped data
+                const allData = [...this.dataChunks.flat(), ...this.currentChunk]
+                    .filter(entry => entry.timestamp >= 0)
+                    .sort((a, b) => a.timestamp - b.timestamp);
 
                 console.log(`Exporting data: ${allData.length} frames, from ${this.analysisStartTime} to ${this.lastExportTime}`);
 
