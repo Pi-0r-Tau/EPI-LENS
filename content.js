@@ -383,7 +383,7 @@
                 data: messageData
             }).catch(handleMessageError);
 
-            // Update visual feedback
+            // Updates visual feedback
             updateOverlay(results.isFlash);
         } catch (error) {
             console.error('Analysis error:', error);
@@ -393,7 +393,7 @@
             }
         }
 
-        // UPDATE: Replaced method requestAnimationFrame with setTimeout for stability
+        // TASK 837: Replaced method requestAnimationFrame with setTimeout for stability
         setTimeout(() => analyzeVideo(options), 16);
     }
 
