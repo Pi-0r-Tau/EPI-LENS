@@ -39,13 +39,10 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 
 ## Updates in progress
 -  Typed array buffering
--  Fast canny edge detection
--  Edge non-maximum suppression
 -  Multi-timescale flicker detection
 -  Flash pattern detection improvements
 
 ## Future metrics
-- Duty cycle and Flash Envelope analysis
 - Chromatic Flicker Fusion Rate (CFFR)
 - Spatiotemporal Contrast Sensitivity Metric (STCSM)
 - Temporal Clustering of Flashes
@@ -169,7 +166,6 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
   - Sample rate normalization
   - Peak frequency detection
   - Harmonic analysis
-  - Updates every 64 samples
 
 ### Pattern Analysis
 - **Frame Entropy**
