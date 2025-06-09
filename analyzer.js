@@ -1514,11 +1514,12 @@ if (!window.VideoAnalyzer) {
         updateStorage(timelineEntry) {
             this.timelineData.push(timelineEntry);
 
+            // TASK 2385: Remove JSON export frame limit
             // Keep timeline data size manageable
-            if (this.timelineData.length > 300) {
-                this.timelineData.shift();
+            //if (this.timelineData.length > 300) {
+            //    this.timelineData.shift();
             }
-        }
+        
     
 
  
