@@ -1293,7 +1293,11 @@ if (!window.VideoAnalyzer) {
                         totalFlashesDetected: this.metrics.flashCount,
                         riskLevel: this.metrics.riskLevel
                     },
-                    analysis: this.timelineData.map(entry => ({
+                    // TASK 2384: Ensure data export is meaningful data from postive timestamped data
+                    analysis: [...this.dataChunks.flat(), ...this.currentChunk]
+                        .filter(entry => entry.timestamp >= 0)
+                        .sort((a, b) => a.timestamp - b.timestamp)
+                        .map(entry => ({
                         timestamp: Number(entry.timestamp || 0).toFixed(6), // Increased precision to 6 decimal places
                         brightness: Number(entry.brightness || 0).toFixed(4),
                         isFlash: entry.isFlash,
