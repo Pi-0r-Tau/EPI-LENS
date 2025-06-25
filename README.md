@@ -10,8 +10,11 @@ Think of it like PEAT (Photosensitive Epilepsy Analysis Tool) but open source, v
 
 ![image](https://github.com/user-attachments/assets/d28a2e03-6688-4b6c-90e9-3cf494bdebc1) 
 
-Graph above shows a small selection of metrics for ease of understanding.
 
+
+![image](https://github.com/user-attachments/assets/15ddabd5-3df6-41e6-aa1b-3271f953935c)
+
+Graphs above shows a small selection of metrics for ease of understanding, the first from a Python notebook and the second from the new intergated chart dashboard.
 ## Use Cases
 
 ### Machine Learning Data Collection
@@ -41,6 +44,7 @@ Graph above shows a small selection of metrics for ease of understanding.
 - UI buttons for start analysis and stop analysis, play and pause the video respectively.
 - Improve current O(N²) FTT by using Cooley-Turkey reducing time complexity to O(m log m)
 - More efficient FFT using the Cooley-Tukey algorithm with radix-2 decomposition with typed arrays
+- Integrated chart dashboard
 
 ## Updates in progress
 -  Typed array buffering
