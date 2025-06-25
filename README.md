@@ -278,7 +278,21 @@ graph TB
         EXP --> CSV[CSV Export]
         EXP --> JSN[JSON Export]
     end
-    
+
+    subgraph Interactive_Charts [Interactive Charts & Data Explorer]
+        CHARTS["Charts UI (charts.html/js)"]
+        ZOOM["Zoom & Selection"]
+        MULTI["Multi-metric Overlay"]
+        EXPORT["Export All/Selected"]
+        CHARTS --> ZOOM
+        CHARTS --> MULTI
+        CHARTS --> EXPORT
+        EXPORT --> CSV
+        EXPORT --> JSN
+    end
+
+    CHK --> CHARTS
+    CHARTS -->|User Selection| AGG
 ```
 ## Technical Architecture
 ```mermaid
@@ -365,6 +379,21 @@ graph TB
         EXP --> CSV[CSV Export]
         EXP --> JSN[JSON Export]
     end
+
+    subgraph Interactive_Charts [Interactive Charts & Data Explorer]
+        CHARTS["Charts UI (charts.html/js)"]
+        ZOOM["Zoom & Selection"]
+        MULTI["Multi-metric Overlay"]
+        EXPORT["Export All/Selected"]
+        CHARTS --> ZOOM
+        CHARTS --> MULTI
+        CHARTS --> EXPORT
+        EXPORT --> CSV
+        EXPORT --> JSN
+    end
+
+    CHK --> CHARTS
+    CHARTS -->|User Selection| AGG
 ```
 
 
