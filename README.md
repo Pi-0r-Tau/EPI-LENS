@@ -12,7 +12,9 @@ Think of it like PEAT (Photosensitive Epilepsy Analysis Tool) but open source, v
 
 
 
-![image](https://github.com/user-attachments/assets/798a1e07-c8fb-495b-ac05-529625de23c4)
+![image](https://github.com/user-attachments/assets/6d93632e-60aa-49bc-ab89-41d88a2c8f31)
+
+
 
 
 Graphs above shows a small selection of metrics for ease of understanding, the first from a Python notebook and the second from the new intergated chart dashboard.
