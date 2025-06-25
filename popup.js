@@ -21,11 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
             startBtn: document.getElementById('startAnalysis'),
             stopBtn: document.getElementById('stopAnalysis'),
             exportBtn: document.getElementById('exportCSV'),
-            exportJsonBtn: document.getElementById('exportJSON'),  
+            exportJsonBtn: document.getElementById('exportJSON'),
             flashThreshold: document.getElementById('flashThreshold'),
             intensityThreshold: document.getElementById('intensityThreshold'),
             flashThresholdValue: document.getElementById('flashThresholdValue'),
-            intensityThresholdValue: document.getElementById('intensityThresholdValue')
+            intensityThresholdValue: document.getElementById('intensityThresholdValue'),
+            openChartsTab: document.getElementById('openChartsTab'),
+            clearAllDataBtn: document.getElementById('clearAllDataBtn')
         };
 
         Object.entries(controls).forEach(([key, element]) => {
@@ -42,11 +44,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (controls.stopBtn) controls.stopBtn.addEventListener('click', stopAnalysis);
         if (controls.exportBtn) controls.exportBtn.addEventListener('click', exportResults);
         if (controls.exportJsonBtn) controls.exportJsonBtn.addEventListener('click', exportJSON);
+        if (controls.openChartsTab) {
+            controls.openChartsTab.addEventListener('click', openChartsTab);
+        }
+        if (controls.clearAllDataBtn) {
+            controls.clearAllDataBtn.addEventListener('click', clearAllData);
+        }
     }
 
     /**
      * Updates the display value for threshold sliders.
-     * @param {Event} event - The input event from the threshold slider. 
+     * @param {Event} event - The input event from the threshold slider.
      */
     function updateThresholdDisplay(event) {
         const valueElement = document.getElementById(`${event.target.id}Value`);
@@ -59,8 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Returns the correct click handler for a given control key.
-     * @param {string} key - The control key. 
-     * @returns {Function|undefined} The handler function or undefined. 
+     * @param {string} key - The control key.
+     * @returns {Function|undefined} The handler function or undefined.
      */
     function getClickHandler(key) {
         const handlers = {
@@ -78,16 +86,18 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             chrome.tabs.sendMessage(tabs[0].id, {action: 'EXPORT_DATA'}, function(response) {
                 if (response && response.csv) {
-                    const blob = new Blob([response.csv], { type: 'text/csv' });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = `flash-analysis-${new Date().toISOString()}.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    a.remove();
+                    chrome.storage.local.set({ epilensAnalysisCSV: response.csv }, function() {
+                        const blob = new Blob([response.csv], { type: 'text/csv' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = `flash-analysis-${new Date().toISOString()}.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    });
                 }
             });
         });
@@ -152,6 +162,26 @@ function stopAnalysis() {
         if (badge) {
             badge.remove();
         }
+
+        // Save latest analysis data and open charts tab TASK 2852: Redundant and repeated later on. Refer to story.
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA', format: 'json' }, function(responseJson) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA' }, function(responseCsv) {
+                const tasks = [];
+                if (responseJson && responseJson.json) {
+                    tasks.push(new Promise(resolve => {
+                        chrome.storage.local.set({ epilensAnalysisData: responseJson.json }, resolve);
+                    }));
+                }
+                if (responseCsv && responseCsv.csv) {
+                    tasks.push(new Promise(resolve => {
+                        chrome.storage.local.set({ epilensAnalysisCSV: responseCsv.csv }, resolve);
+                    }));
+                }
+                Promise.all(tasks).then(() => {
+                    chrome.tabs.create({ url: chrome.runtime.getURL('charts.html') });
+                });
+            });
+        });
     });
 }
 
@@ -189,7 +219,7 @@ function updateProgress(data) {
 }
 /**
  * Updates the entire popup UI with new analysis data.
- * @param {Object} data - The analysis data 
+ * @param {Object} data - The analysis data
  */
 function updateUI(data) {
     if (!data) return;
@@ -204,6 +234,7 @@ function updateUI(data) {
     updateFrameMetrics(data);
     updateSpectralMetrics(data);
     updateEdgeMetrics(data);
+    updateMetricsGraph(data); 
 }
 
 /**
@@ -238,7 +269,7 @@ function updateFlashCount(data) {
 
 /**
  * Updates the risk level display and indicator bar.
- * @param {Object} data - The analysis data. 
+ * @param {Object} data - The analysis data.
  */
 function updateRiskLevel(data) {
     const riskElement = document.getElementById('riskLevel');
@@ -253,7 +284,7 @@ function updateRiskLevel(data) {
 
 /**
  * Updates the advanced analytics panel with metrics.
- * @param {Object} data - The analysis data  
+ * @param {Object} data - The analysis data
  */
 function updateAnalyticsPanel(data) {
     const analyticsPanel = document.getElementById('advancedMetrics');
@@ -291,7 +322,7 @@ function updateAnalyticsPanel(data) {
 
 /**
  * Updates the PSI (Photosensitive Seizure Index) metrics panel
- * @param {Object} data - The analysis data.  
+ * @param {Object} data - The analysis data.
  */
 function updatePSIPanel(data) {
     const psiPanel = document.getElementById('psiMetrics');
@@ -325,7 +356,7 @@ function updatePSIPanel(data) {
 
 /**
  * Updates the spatial metrics panel.
- * @param {Object} data - The analysis data  
+ * @param {Object} data - The analysis data
  */
 function updateSpatialPanel(data) {
     const spatialPanel = document.getElementById('spatialMetrics');
@@ -349,7 +380,7 @@ function updateSpatialPanel(data) {
 
 /**
  * Updates the chromatic metrics panel
- * @param {Object} data - The analysis data.  
+ * @param {Object} data - The analysis data.
  */
 function updateChromaticPanel(data) {
     const chromaticPanel = document.getElementById('chromaticMetrics');
@@ -373,7 +404,7 @@ function updateChromaticPanel(data) {
 
 /**
  * Updates the frame metrics panel.
- * @param {Object} data - The analysis data.  
+ * @param {Object} data - The analysis data.
  */
 function updateFrameMetrics(data) {
     const panel = document.getElementById('frameMetrics');
@@ -397,7 +428,7 @@ function updateFrameMetrics(data) {
 
 /**
  * Updates the spectral metrics panel
- * @param {Object} data - The analysis data  
+ * @param {Object} data - The analysis data
  */
 function updateSpectralMetrics(data) {
     const panel = document.getElementById('spectralMetrics');
@@ -413,7 +444,7 @@ function updateSpectralMetrics(data) {
 
 /**
  * Updates the edge metrics panel.
- * @param {Object} data - The analysis data.  
+ * @param {Object} data - The analysis data.
  */
 function updateEdgeMetrics(data) {
     const panel = document.getElementById('edgeMetrics');
@@ -446,3 +477,136 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
         updateUI(message.data);
     }
 });
+
+// Real-time visualization
+function updateMetricsGraph(data) {
+    const canvas = document.getElementById('metricsGraph');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Store a rolling history of metrics
+    if (!window.metricsHistory) window.metricsHistory = [];
+    const maxPoints = 100;
+    window.metricsHistory.push({
+        brightness: data.brightness || 0,
+        flashIntensity: data.intensity || 0,
+        riskLevel: convertRiskToNumber(data.riskLevel)
+    });
+    if (window.metricsHistory.length > maxPoints) window.metricsHistory.shift();
+
+    drawMetricsGraph(ctx, window.metricsHistory, canvas.width, canvas.height);
+    updateMetricsLegend();
+}
+
+function drawMetricsGraph(ctx, history, width, height) {
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw axes
+    ctx.strokeStyle = "#444";
+    ctx.beginPath();
+    ctx.moveTo(30, 10);
+    ctx.lineTo(30, height - 10);
+    ctx.lineTo(width - 10, height - 10);
+    ctx.stroke();
+
+    const metrics = [
+        { key: "brightness", color: "#2196f3", label: "Brightness" },
+        { key: "flashIntensity", color: "#f44336", label: "Flash Intensity" },
+        { key: "riskLevel", color: "#ff9800", label: "Risk" }
+    ];
+
+    metrics.forEach((metric, _idx) => {
+        ctx.beginPath();
+        ctx.strokeStyle = metric.color;
+        ctx.lineWidth = 2;
+        for (let i = 0; i < history.length; i++) {
+            const x = 30 + ((width - 40) * i) / (history.length - 1);
+            let y = height - 10 - history[i][metric.key] * (height - 20);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    });
+
+    
+}
+
+function updateMetricsLegend() {
+    const legendDiv = document.getElementById('metricsLegend');
+    if (!legendDiv) return;
+    const metrics = [
+        { color: "#2196f3", label: "Brightness" },
+        { color: "#f44336", label: "Flash Intensity" },
+        { color: "#ff9800", label: "Risk" }
+    ];
+    legendDiv.innerHTML = metrics.map(m =>
+        `<span style="display:inline-flex;align-items:center;margin-right:18px;">
+            <span style="display:inline-block;width:14px;height:14px;background:${m.color};border-radius:3px;margin-right:6px;"></span>
+            <span style="color:#fff;font-size:13px;">${m.label}</span>
+        </span>`
+    ).join('');
+}
+
+function convertRiskToNumber(risk) {
+    return risk === 'high' ? 1 : risk === 'medium' ? 0.5 : 0;
+}
+
+/**
+ * Toggles video playback state between play and pause.
+ */
+function togglePlayback() {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, {action: 'TOGGLE_PLAYBACK'});
+    });
+}
+
+/**
+ * Skips the video playback by a certain number of seconds.
+ * @param {number} seconds - The number of seconds to skip. Positive to skip forward, negative to skip backward.
+ */
+function skipVideo(seconds) {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+            action: 'SKIP_VIDEO',
+            seconds: seconds
+        });
+    });
+}
+
+/**
+ * Opens the charts.html page in a new tab after pausing the video and saving analysis data.
+ */
+function openChartsTab() {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        // Pause the video
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'PAUSE_VIDEO' }, function() {
+            // Request the latest analysis data as JSON and CSV
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA', format: 'json' }, function(responseJson) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA' }, function(responseCsv) {
+                    const tasks = [];
+                    if (responseJson && responseJson.json) {
+                        tasks.push(new Promise(resolve => {
+                            chrome.storage.local.set({ epilensAnalysisData: responseJson.json }, resolve);
+                        }));
+                    }
+                    if (responseCsv && responseCsv.csv) {
+                        tasks.push(new Promise(resolve => {
+                            chrome.storage.local.set({ epilensAnalysisCSV: responseCsv.csv }, resolve);
+                        }));
+                    }
+                    Promise.all(tasks).then(() => {
+                        chrome.tabs.create({ url: chrome.runtime.getURL('charts.html') });
+                    });
+                });
+            });
+        });
+    });
+}
+
+/**
+ * Clears all stored analysis data from chrome.storage.local.
+ */
+function clearAllData() {
+    chrome.storage.local.remove(['epilensAnalysisData', 'epilensAnalysisCSV']);
+}

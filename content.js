@@ -5,6 +5,7 @@
  * and real-time video analysis overlay for Youtube.
  * Integrates with VideoAnalyzer to process video frames and send analysis results.
  */
+
 "use strict";
 
 
@@ -60,7 +61,7 @@
 
     /**
      * Sets up event listeners for play, pause, and seek events on the video element
-     * @param {HTMLVideoElement} video - The video element to attach listeners to. 
+     * @param {HTMLVideoElement} video - The video element to attach listeners to.
      */
     function setupVideoListeners(video) {
         video.addEventListener('play', () => {
@@ -139,11 +140,13 @@
                         console.error('Analysis failed:', error);
                         sendResponse({ success: false, error: error.message });
                     }
-                    return true; 
+                    
+                    break;
 
                 case 'STOP_ANALYSIS':
                     stopAnalysis();
                     sendResponse({ success: true });
+                    
                     break;
 
                 case 'EXPORT_DATA':
@@ -156,6 +159,7 @@
                     } else {
                         sendResponse({ error: 'Analyzer not initialized' });
                     }
+                   
                     break;
             }
         } catch (error) {
@@ -164,14 +168,14 @@
                 sendResponse({ success: false, error: error.message });
             }
         }
-        return true;
+        
     });
 
-    
+
 
     /**
      * Creates an overlay div for visual feedback during analysis.
-     * @returns {HTMLDivElement} The overlay element. 
+     * @returns {HTMLDivElement} The overlay element.
      */
     function createOverlay() {
         const overlay = document.createElement('div');
@@ -193,7 +197,7 @@
     /**
      * Starts the video analysis process with the given options
      * TASK 836: Start and stop video via UI buttons
-     * @param {Object} options - Analysis options and thresholds. 
+     * @param {Object} options - Analysis options and thresholds.
      * @returns {void}
      */
     function startAnalysis(options) {
@@ -245,7 +249,7 @@
         }
     }, 5000);
 
-    // Add event listener to handle any interruptions in playback
+    // Event listener to handle any interruptions in playback
     videoElement.addEventListener('pause', () => {
         if (isAnalyzing) {
             videoElement.play().catch(error => {
@@ -257,12 +261,12 @@
     analyzeVideo(options);
 }
 
-   
+
 
     /**
      * Handles extension context errors and attempts reconnection if possible
-     * @param {Error} error - The error object. 
-     * @returns {boolean} True if the error was handled. 
+     * @param {Error} error - The error object.
+     * @returns {boolean} True if the error was handled.
      */
     function handleExtensionError(error) {
         if (error.message.includes('Extension context invalidated')) {
@@ -307,7 +311,7 @@
 
     /**
      * Updates the overlay's appearance based on flash detection.
-     * @param {boolean} isFlash - Whether a flash was detected in the current frame. 
+     * @param {boolean} isFlash - Whether a flash was detected in the current frame.
      */
     function updateOverlay(isFlash) {
         const overlay = document.querySelector('.analysis-overlay');
@@ -322,7 +326,7 @@
 
     /**
      * Main loop for analyzing video frames and sending results to the extension.
-     * @param {Object} options - Analysis options.  
+     * @param {Object} options - Analysis options.
      */
     function analyzeVideo(options) {
         if (!isAnalyzing || !videoElement || videoElement.paused) return;
@@ -336,7 +340,7 @@
                 analyzer.lastExportTime = currentTime;
             }
 
-            
+
             if (results && results.timestamp) {
                 console.log('Frame analyzed at:', {
                     videoTime: currentTime,
@@ -399,7 +403,7 @@
 
     /**
      * Handles errors when sending messages to the extension.
-     * @param {Error} error - The error object. 
+     * @param {Error} error - The error object.
      */
     function handleMessageError(error) {
         console.error('Message sending failed:', error);
@@ -439,12 +443,12 @@
     function stopAnalysis() {
     isAnalyzing = false;
     removeOverlay();
-    
+
     // Pause video when analysis is stopped
     if (videoElement && !videoElement.paused) {
         videoElement.pause();
     }
-    
+
     // Hide analyzing badge in popup
     chrome.runtime.sendMessage({
         type: 'HIDE_BADGE'
