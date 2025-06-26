@@ -326,6 +326,7 @@ graph TB
         M = motionPixels/totalPixels"]
         ANA --> |Edges| EDG["Edge Detection
         |∇f| = √(Gx² + Gy²)"]
+        ANA --> |LAB ΔE| LAB[LAB ΔE Metrics]
 
         subgraph FFT_Implementation [FFT Processing]
             WIN["Window Function
@@ -354,6 +355,7 @@ graph TB
             D = Σ|It(x,y) - It-1(x,y)|/N"]
             EDG --> CHG["Edge Change Rate
             ECR = |Et - Et-1|/max(Et,Et-1)"]
+            LAB --> DELTAE[ΔE Calculation]
         end
 
         subgraph Signal_Processing [Signal Processing]
@@ -364,6 +366,7 @@ graph TB
             P(f) = |F{ACF(t)}|"]
             CHG --> TMP["Temporal Analysis
             T = Σwi*Mi where Mi={ECR,D,ΔB}"]
+            DELTAE --> |ΔE as Flash/Risk| FLA
             BTF --> AGG
         end
     end
@@ -385,6 +388,7 @@ graph TB
     subgraph Export_Formats [Export Formats]
         EXP --> CSV[CSV Export]
         EXP --> JSN[JSON Export]
+        
     end
 
     subgraph Interactive_Charts [Interactive Charts & Data Explorer]
@@ -397,6 +401,7 @@ graph TB
         CHARTS --> EXPORT
         EXPORT --> CSV
         EXPORT --> JSN
+        
     end
 
     CHK --> CHARTS
