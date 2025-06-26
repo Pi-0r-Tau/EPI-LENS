@@ -80,6 +80,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         const container = document.querySelector('.charts-container');
         if (container) container.insertBefore(zoomControls, container.firstChild.nextSibling);
     }
+
+    // Load JSON button 
+    const loadJsonBtn = document.getElementById('loadJsonBtn');
+    const jsonFileInput = document.getElementById('jsonFileInput');
+    if (loadJsonBtn && jsonFileInput) {
+        loadJsonBtn.onclick = () => jsonFileInput.click();
+        jsonFileInput.onchange = (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    if (parsed.analysis && Array.isArray(parsed.analysis)) {
+                        analysisData = parsed.analysis.map(row => flattenMetrics(row));
+                        availableFields = Object.keys(analysisData[0] || {});
+                        charts = [];
+                        playbackIndex = 0;
+                        selectionZoom = null;
+                        if (availableFields.length >= 2) {
+                            addChart('timestamp', ['brightness']);
+                        }
+                        renderAllCharts();
+                        setupPlaybackControls();
+                    } else {
+                        showError('Invalid JSON: No analysis array found.');
+                    }
+                } catch (err) {
+                    showError('Failed to parse JSON file.');
+                }
+            };
+            reader.readAsText(file);
+            // Reset input so same file can be loaded again if needed
+            jsonFileInput.value = '';
+        };
+    }
 })
 
 async function loadData() {
