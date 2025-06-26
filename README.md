@@ -58,6 +58,7 @@ Graphs above shows a small selection of metrics for ease of understanding, the f
 -  Typed array buffering
 -  Multi-timescale flicker detection
 -  Flash pattern detection improvements
+-  Load JSON feature, to get around 5mb data limit in local storage.
 
 ## Future metrics
 - Chromatic Flicker Fusion Rate (CFFR)
