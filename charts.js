@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (container) container.insertBefore(zoomControls, container.firstChild.nextSibling);
     }
 
-    // Load JSON button 
+    // Load JSON button TASK 2860
     const loadJsonBtn = document.getElementById('loadJsonBtn');
     const jsonFileInput = document.getElementById('jsonFileInput');
     if (loadJsonBtn && jsonFileInput) {
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             };
             reader.readAsText(file);
-            // Reset input so same file can be loaded again if needed
+            
             jsonFileInput.value = '';
         };
     }
