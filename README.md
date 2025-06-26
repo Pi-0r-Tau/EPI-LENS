@@ -48,8 +48,13 @@ Graphs above shows a small selection of metrics for ease of understanding, the f
 - Improve current O(N²) FTT by using Cooley-Turkey reducing time complexity to O(m log m)
 - More efficient FFT using the Cooley-Tukey algorithm with radix-2 decomposition with typed arrays
 - Integrated chart dashboard
+- Mermaid diagram updated with LAB updates in testing
 
 ## Updates in progress
+- LAB metrics:
+    - CIE76 ΔE
+    - RGB to LAB conversion
+    - ΔE calculation
 -  Typed array buffering
 -  Multi-timescale flicker detection
 -  Flash pattern detection improvements
