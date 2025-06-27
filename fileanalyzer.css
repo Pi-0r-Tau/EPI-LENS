@@ -1,0 +1,38 @@
+body {
+    background: #181818;
+    color: #fff;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+.file-analyzer-container {
+    max-width: 700px;
+    margin: 40px auto;
+    background: #232323;
+    border-radius: 8px;
+    box-shadow: 0 2px 16px #000a;
+    padding: 32px;
+}
+input[type="file"] {
+    margin: 16px 0;
+}
+button {
+    background: #2196f3;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin-right: 8px;
+    cursor: pointer;
+}
+button:hover {
+    background: #1976d2;
+}
+.results-panel {
+    background: #181818;
+    border-radius: 4px;
+    padding: 16px;
+    margin-top: 18px;
+    font-size: 1.1em;
+    min-height: 60px;
+}

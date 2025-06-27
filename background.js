@@ -74,7 +74,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 /**
  * Handles the start of an analysis session.
- * @param {Object} options - Analysis options. 
+ * @param {Object} options - Analysis options.
  */
 function handleStartAnalysis(options) {
     analysisState.isAnalyzing = true;
@@ -90,7 +90,7 @@ function handleStopAnalysis() {
 
 /**
  * Handles updates to the analysis data and notifies the UI.
- * @param {Object} data - The latest analysis data. 
+ * @param {Object} data - The latest analysis data.
  */
 function handleAnalysisUpdate(data) {
     if (!data || data.error) return;

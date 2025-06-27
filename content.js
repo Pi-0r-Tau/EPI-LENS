@@ -140,13 +140,13 @@
                         console.error('Analysis failed:', error);
                         sendResponse({ success: false, error: error.message });
                     }
-                    
+
                     break;
 
                 case 'STOP_ANALYSIS':
                     stopAnalysis();
                     sendResponse({ success: true });
-                    
+
                     break;
 
                 case 'EXPORT_DATA':
@@ -159,7 +159,7 @@
                     } else {
                         sendResponse({ error: 'Analyzer not initialized' });
                     }
-                   
+
                     break;
             }
         } catch (error) {
@@ -168,7 +168,7 @@
                 sendResponse({ success: false, error: error.message });
             }
         }
-        
+
     });
 
 

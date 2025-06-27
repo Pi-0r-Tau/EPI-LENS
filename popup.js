@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
             flashThresholdValue: document.getElementById('flashThresholdValue'),
             intensityThresholdValue: document.getElementById('intensityThresholdValue'),
             openChartsTab: document.getElementById('openChartsTab'),
-            clearAllDataBtn: document.getElementById('clearAllDataBtn')
+            clearAllDataBtn: document.getElementById('clearAllDataBtn'),
+            openFileAnalyzerTab: document.getElementById('openFileAnalyzerTab')
         };
 
         Object.entries(controls).forEach(([key, element]) => {
@@ -49,6 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (controls.clearAllDataBtn) {
             controls.clearAllDataBtn.addEventListener('click', clearAllData);
+        }
+        if (controls.openFileAnalyzerTab) {
+            controls.openFileAnalyzerTab.addEventListener('click', openFileAnalyzerTab);
         }
     }
 
@@ -234,7 +238,7 @@ function updateUI(data) {
     updateFrameMetrics(data);
     updateSpectralMetrics(data);
     updateEdgeMetrics(data);
-    updateMetricsGraph(data); 
+    updateMetricsGraph(data);
 }
 
 /**
@@ -529,7 +533,7 @@ function drawMetricsGraph(ctx, history, width, height) {
         ctx.stroke();
     });
 
-    
+
 }
 
 function updateMetricsLegend() {
@@ -602,6 +606,13 @@ function openChartsTab() {
             });
         });
     });
+}
+
+/**
+ * Opens the file analyzer tab for local video analysis.
+ */
+function openFileAnalyzerTab() {
+    chrome.tabs.create({ url: chrome.runtime.getURL('fileanalyzer.html') });
 }
 
 /**

@@ -1,6 +1,6 @@
 /**
  * @description Interactive charting module for EPI-LENS data analysis.
- * 
+ *
  * This file provides a dark themed, dependency free UI for visuals of analysis metrics
  * This includes:
  * - Dynamic chart creation (Scatter/Line/Multiline or single view)
@@ -18,21 +18,40 @@ let playbackTimer = null;
 let isPlaying = false;
 
 
-let zoomMode = 'fit'; 
-let zoomWindowSize = 40; 
+let zoomMode = 'fit';
+let zoomWindowSize = 40;
 let chartViewMode = 'multi';
 
 // selection zoom
 let selectionZoom = null; // {startIdx, endIdx} or null
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Add "Load JSON" button to header
+    let header = document.querySelector('header');
+    if (header && !document.getElementById('loadJsonBtn')) {
+        const loadBtn = document.createElement('button');
+        loadBtn.id = 'loadJsonBtn';
+        loadBtn.textContent = 'Load JSON';
+        loadBtn.style.marginLeft = '8px';
+        loadBtn.onclick = openJsonFileDialog;
+        header.querySelector('div').appendChild(loadBtn);
+
+        // Hidden file input for loading JSON
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json,application/json';
+        fileInput.style.display = 'none';
+        fileInput.id = 'jsonFileInput';
+        fileInput.onchange = handleJsonFileSelected;
+        document.body.appendChild(fileInput);
+    }
     await loadData();
     setupAddChartModal();
     setupPlaybackControls();
     if (availableFields.length >= 2) {
         addChart('timestamp', 'brightness');
     }
-    // Export all button to the page 
+    // Export all button to the page
     let exportAllBtn = document.getElementById('exportAllChartsBtn');
     if (exportAllBtn) {
         exportAllBtn.onclick = () => exportChartData();
@@ -65,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             zoomMode = 'fit';
             renderAllCharts();
         };
-        
+
         const viewBtn = document.createElement('button');
         viewBtn.textContent = 'Toggle Chart View';
         viewBtn.onclick = () => {
@@ -79,42 +98,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const container = document.querySelector('.charts-container');
         if (container) container.insertBefore(zoomControls, container.firstChild.nextSibling);
-    }
-
-    // Load JSON button TASK 2860
-    const loadJsonBtn = document.getElementById('loadJsonBtn');
-    const jsonFileInput = document.getElementById('jsonFileInput');
-    if (loadJsonBtn && jsonFileInput) {
-        loadJsonBtn.onclick = () => jsonFileInput.click();
-        jsonFileInput.onchange = (e) => {
-            const file = e.target.files && e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const parsed = JSON.parse(evt.target.result);
-                    if (parsed.analysis && Array.isArray(parsed.analysis)) {
-                        analysisData = parsed.analysis.map(row => flattenMetrics(row));
-                        availableFields = Object.keys(analysisData[0] || {});
-                        charts = [];
-                        playbackIndex = 0;
-                        selectionZoom = null;
-                        if (availableFields.length >= 2) {
-                            addChart('timestamp', ['brightness']);
-                        }
-                        renderAllCharts();
-                        setupPlaybackControls();
-                    } else {
-                        showError('Invalid JSON: No analysis array found.');
-                    }
-                } catch (err) {
-                    showError('Failed to parse JSON file.');
-                }
-            };
-            reader.readAsText(file);
-            
-            jsonFileInput.value = '';
-        };
     }
 })
 
@@ -575,7 +558,7 @@ function renderChartCard(chart, idx) {
             renderAllCharts();
         }
     };
-    // Right-click to reset selection zoom TASK 2847: This is buggy, fallback is the reset zoom button. 
+    // Right-click to reset selection zoom TASK 2847: This is buggy, fallback is the reset zoom button.
     canvas.oncontextmenu = (e) => {
         e.preventDefault();
         selectionZoom = null;
@@ -668,7 +651,7 @@ function drawIsFlashScatter(canvas, chart) {
     let data = getMultiYAxisChartData(chart);
 
     let minX = Math.min(...data.x), maxX = Math.max(...data.x);
-    let minY = 0, maxY = 1; 
+    let minY = 0, maxY = 1;
 
     // Axes
     ctx.strokeStyle = "#888";
@@ -1090,4 +1073,39 @@ function setupPlaybackControls() {
     seekBar.max = analysisData.length ? analysisData.length - 1 : 0;
     seekBar.value = playbackIndex;
     updatePlaybackTime();
+}
+
+/**
+ * Opens the file dialog to load a JSON file.
+ */
+function openJsonFileDialog() {
+    const fileInput = document.getElementById('jsonFileInput');
+    if (fileInput) fileInput.click();
+}
+
+/**
+ * Handles the selection of a JSON file for analysis data.
+ * @param {Event} e - The change event from the file input.
+ */
+function handleJsonFileSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        try {
+            const json = JSON.parse(evt.target.result);
+            if (json.analysis && Array.isArray(json.analysis)) {
+                analysisData = json.analysis.map(row => flattenMetrics(row));
+                availableFields = Object.keys(analysisData[0] || {});
+                charts = [];
+                playbackIndex = 0;
+                renderAllCharts();
+            } else {
+                showError('Invalid analysis JSON format.');
+            }
+        } catch (err) {
+            showError('Failed to parse JSON file.');
+        }
+    };
+    reader.readAsText(file);
 }

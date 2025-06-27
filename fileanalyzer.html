@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>EPI-LENS File Analyzer</title>
+    <link rel="stylesheet" href="fileanalyzer.css">
+    <style>
+        /* TASK 3211: Move CSS into fileanalyzer.css, experiemental phase complete */
+        body {
+            background: #181818;
+            color: #fff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .file-analyzer-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #232323;
+            border-radius: 10px;
+            box-shadow: 0 2px 24px #000b;
+            padding: 32px 40px 40px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .analyzer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .analyzer-header h2 {
+            margin: 0;
+            font-size: 2em;
+            letter-spacing: 1px;
+        }
+        .main-layout {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+        .video-panel {
+            flex: 1 1 420px;
+            min-width: 380px;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .video-panel video {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 8px;
+            background: #111;
+            box-shadow: 0 2px 12px #0007;
+        }
+        .controls-panel {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .metrics-panel {
+            flex: 2 1 480px;
+            min-width: 420px;
+            background: #20232a;
+            border-radius: 8px;
+            padding: 24px 24px 16px 24px;
+            box-shadow: 0 1px 8px #0006;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .metrics-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .live-chart-section {
+            margin-bottom: 18px;
+        }
+        .results-panel {
+            background: #181818;
+            border-radius: 6px;
+            padding: 18px 18px 10px 18px;
+            font-size: 1.08em;
+            min-height: 80px;
+            margin-top: 0;
+            border: 1px solid #292929;
+            box-shadow: 0 1px 4px #0004;
+        }
+        .results-panel div {
+            margin-bottom: 4px;
+        }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #292929;
+        }
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+        .live-chart-section {
+            background: #232323;
+            border-radius: 6px;
+            padding: 12px 18px 10px 18px;
+            margin-bottom: 0;
+        }
+        .metric-selector {
+            margin-bottom: 8px;
+        }
+        @media (max-width: 1100px) {
+            .main-layout {
+                flex-direction: column;
+                gap: 18px;
+            }
+            .metrics-panel, .video-panel {
+                min-width: 0;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="file-analyzer-container">
+        <div class="analyzer-header">
+            <h2>EPI-LENS Local Video Analysis Suite</h2>
+            <div style="display:flex;align-items:center;gap:18px;">
+                <input type="file" id="videoFileInput" accept="video/*" multiple style="margin-left:0;">
+                <div id="playlistInfo" style="color:#bbb;font-size:1em;"></div>
+            </div>
+        </div>
+        <div class="main-layout">
+            <div class="video-panel">
+                <video id="videoPlayer" controls style="display:none;margin-top:0;"></video>
+                <div id="analysisControls" class="controls-panel" style="display:none;gap:18px;flex-wrap:wrap;">
+                    <button id="startFileAnalysis">Start Analysis</button>
+                    <button id="stopFileAnalysis">Stop Analysis</button>
+                    <button id="exportFileCSV">Export CSV</button>
+                    <button id="exportFileJSON">Export JSON</button>
+                   
+                </div>
+            </div>
+            <div class="metrics-panel">
+                <div class="metrics-title">Live Metrics &amp; Charts</div>
+                <div id="liveChartArea" class="live-chart-section" style="display:none;">
+                    <div id="metricSelector" class="metric-selector"></div>
+                    <canvas id="liveMetricsGraph" width="700" height="160" style="width:100%;background:#181818;border-radius:4px;"></canvas>
+                    <div id="liveMetricsLegend" style="margin-top:6px;"></div>
+                </div>
+                <div id="fileAnalysisResults" class="results-panel"></div>
+            </div>
+        </div>
+    </div>
+    <script src="analyzer.js"></script>
+    <script src="fileanalyzer.js"></script>
+</body>
+</html>
