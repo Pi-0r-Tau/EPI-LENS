@@ -1,22 +1,20 @@
-
 /**
  * @file fileanalyzer.js
- * @description 
- * Local video analysis suite for EPI-LENS. 
- * Handles:
- * - UI Logic
- * - Playlist management
- * - Real-time analysis of user selected video files
- * - Batch playlist analysis 
- * 
+ * @description
+ * Local video analysis suite for EPI-LENS. Handles UI logic, playlist management, live charting, and
+ * real-time analysis of user-selected video files. Supports batch/playlist analysis, auto-export,
+ * metric selection for live charts, and seamless integration with the main VideoAnalyzer engine.
+ *
  * Features:
- * - Multi-file playlist support with auto advance and auto export (JSON/CSV) per video
- * - Real time metrics chart
- * Export, restart and charts view integration
- * 
+ * - Multi-file playlist support with auto-advance and auto-export (CSV/JSON) per video
+ * - Live metrics chart with selectable metrics
+ * - Real-time results panel with all computed metrics
+ * - Export, restart, and charts view integration
+ * - Responsive UI for analysis suite experience
+ *
  * @module fileanalyzer
- * 
  */
+
 "use strict";
 
 let analyzer = null;
@@ -26,15 +24,12 @@ let video = document.getElementById('videoPlayer');
 let fileInput = document.getElementById('videoFileInput');
 let controls = document.getElementById('analysisControls');
 let resultsPanel = document.getElementById('fileAnalysisResults');
-
-// Live chart elements
 let liveChartArea = document.getElementById('liveChartArea');
 let liveMetricsGraph = document.getElementById('liveMetricsGraph');
 let liveMetricsLegend = document.getElementById('liveMetricsLegend');
 let liveMetricsHistory = [];
 let metricSelector = null;
 
-// Available metrics for live chart
 const ALL_METRICS = [
     { key: "brightness", label: "Brightness", color: "#2196f3" },
     { key: "intensity", label: "Flash Intensity", color: "#f44336" },
@@ -44,20 +39,26 @@ const ALL_METRICS = [
     { key: "entropy", label: "Entropy", color: "#9c27b0" }
 ];
 
-// Default selected metrics
 let selectedMetrics = ["brightness", "intensity", "riskLevel"];
-
 let chartsBtn = null;
 let restartBtn = null;
 let playlist = [];
 let playlistIndex = 0;
 let playlistInfo = document.getElementById('playlistInfo');
+let flashIntensityInput = document.getElementById('flashIntensityThreshold');
+let flashesPerSecondInput = document.getElementById('flashesPerSecondThreshold');
 
-fileInput.addEventListener('change', handleFileSelect);
-document.getElementById('startFileAnalysis').addEventListener('click', startAnalysis);
-document.getElementById('stopFileAnalysis').addEventListener('click', stopAnalysis);
-document.getElementById('exportFileCSV').addEventListener('click', exportCSV);
-document.getElementById('exportFileJSON').addEventListener('click', exportJSON);
+// Threshold value displays
+if (flashIntensityInput) {
+    flashIntensityInput.addEventListener('input', () => {
+        document.getElementById('flashIntensityValue').textContent = Number(flashIntensityInput.value).toFixed(2);
+    });
+}
+if (flashesPerSecondInput) {
+    flashesPerSecondInput.addEventListener('input', () => {
+        document.getElementById('flashesPerSecondValue').textContent = Number(flashesPerSecondInput.value).toFixed(1);
+    });
+}
 
 window.addEventListener('DOMContentLoaded', () => {
     if (!chartsBtn) {
@@ -87,7 +88,30 @@ window.addEventListener('DOMContentLoaded', () => {
             btn.style.marginBottom = '8px';
         });
     }
+    const flashesList = document.getElementById('SummaryFlashesList');
+    const toggleBtn = document.getElementById('toggleFlashesListBtn');
+    if (toggleBtn && flashesList) {
+        toggleBtn.onclick = function() {
+            if (flashesList.style.display === 'none' || flashesList.style.display === '') {
+                flashesList.style.display = 'block';
+                toggleBtn.textContent = 'Hide';
+            } else {
+                flashesList.style.display = 'none';
+                toggleBtn.textContent = 'Show';
+            }
+        };
+        // Default to hidden
+        flashesList.style.display = 'none';
+        toggleBtn.textContent = 'Show';
+    }
 });
+
+fileInput.addEventListener('change', handleFileSelect);
+document.getElementById('startFileAnalysis').addEventListener('click', startAnalysis);
+document.getElementById('stopFileAnalysis').addEventListener('click', stopAnalysis);
+document.getElementById('exportFileCSV').addEventListener('click', exportCSV);
+document.getElementById('exportFileJSON').addEventListener('click', exportJSON);
+
 
 function openChartsView() {
     if (!analyzer) return;
@@ -137,18 +161,40 @@ function startAnalysis() {
     if (!video.src) return;
     if (!analyzer) analyzer = new VideoAnalyzer();
     analyzer.reset();
+
+    let intensity = 0.2, flashesPerSecond = 3;
+    if (flashIntensityInput && flashesPerSecondInput) {
+        intensity = parseFloat(flashIntensityInput.value);
+        flashesPerSecond = parseFloat(flashesPerSecondInput.value);
+    }
+    analyzer.updateThresholds({
+        intensity: intensity,
+        flashesPerSecond: flashesPerSecond
+    });
+
+    try {
+        const imageData = analyzer.captureFrame(video);
+        if (imageData) {
+            analyzer.metrics.lastFrameBrightness = analyzer.calculateAverageBrightness(imageData.data);
+        }
+    } catch (e) {
+    }
     isAnalyzing = true;
     resultsPanel.innerHTML = '<div>Analyzing...</div>';
     liveMetricsHistory = [];
     drawLiveMetricsGraph();
+    setSummaryPanelStatus("Analyzing");
+    setSummaryPanelFile();
     if (video.paused) video.play();
     analyzeFrameLoop();
+
 }
 
 function stopAnalysis() {
     isAnalyzing = false;
     if (analysisTimer) clearTimeout(analysisTimer);
     if (!video.paused) video.pause();
+    updateSummaryPanelStatus(); 
 }
 
 function restartAnalysis() {
@@ -161,26 +207,81 @@ function restartAnalysis() {
     selectedMetrics = ["brightness", "intensity", "riskLevel"];
     renderMetricSelector();
     if (video) video.currentTime = 0;
+    updateSummaryPanelStatus();
 }
 
-video.addEventListener('play', () => { if (isAnalyzing) analyzeFrameLoop(); });
-video.addEventListener('pause', () => { stopAnalysis(); });
+video.addEventListener('play', () => {
+    if (isAnalyzing) analyzeFrameLoop();
+    updateSummaryPanelStatus();
+});
+video.addEventListener('pause', () => {
+    stopAnalysis();
+    updateSummaryPanelStatus();
+});
 video.addEventListener('ended', () => {
-    // Auto-export on video end
     if (analyzer) {
         exportCSV(true);
         exportJSON(true);
     }
-    // Move to next video in playlist if available
+
+    try {
+        if (analyzer && analyzer.timelineData && analyzer.timelineData.length > 0) {
+            const psiScores = analyzer.timelineData
+                .map(entry => Number(entry.psi?.score))
+                .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
+            if (psiScores.length > 0) {
+                const avgPsi = psiScores.reduce((a, b) => a + b, 0) / psiScores.length;
+                const maxPsi = Math.max(...psiScores);
+                document.getElementById('SummaryAvgPSI').textContent = avgPsi.toFixed(4);
+                document.getElementById('SummaryMaxPSI').textContent = maxPsi.toFixed(4);
+            } else {
+                document.getElementById('SummaryAvgPSI').textContent = '-';
+                document.getElementById('SummaryMaxPSI').textContent = '-';
+            }
+
+            const flashes = analyzer.timelineData
+                .filter(entry => entry.isFlash)
+                .map(entry => ({
+                    timestamp: entry.timestamp,
+                    intensity: entry.intensity
+                }));
+            let flashesDiv = document.getElementById('SummaryFlashesList');
+            if (flashesDiv) {
+                flashesDiv.innerHTML = renderFlashTimestamps(flashes);
+            }
+        }
+    } catch (e) {}
     if (playlistIndex < playlist.length - 1) {
         playlistIndex++;
         loadVideoFromPlaylist(playlistIndex);
-        // Auto-start analysis and playback for the next video
         setTimeout(() => {
             startAnalysis();
         }, 300); 
     }
 });
+
+// Renders flash metrics as table 
+function renderFlashTimestamps(flashes) {
+    if (!flashes || flashes.length === 0) {
+        return '<div style="color:#888;">None</div>';
+    }
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:0.98em;">
+        <thead>
+            <tr>
+                <th style="text-align:left;padding:2px 6px;color:#90caf9;">t (s)</th>
+                <th style="text-align:left;padding:2px 6px;color:#90caf9;">intensity</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    flashes.forEach(f => {
+        html += `<tr>
+            <td style="padding:2px 6px;">${Number(f.timestamp).toFixed(2)}</td>
+            <td style="padding:2px 6px;">${Number(f.intensity).toFixed(4)}</td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    return html;
+}
 
 function updateResults(result) {
     resultsPanel.innerHTML = `
@@ -204,8 +305,54 @@ function updateResults(result) {
         <div><b>Edge Count:</b> ${(result.edgeDetection?.edgeCount ?? 0)}</div>
         <div><b>Edge Change Rate:</b> ${(result.edgeDetection?.temporalEdgeChange ?? 0).toFixed(4)}</div>
     `;
+
+    updateSummaryPanelFields(result);
+    try {
+        if (analyzer && analyzer.timelineData) {
+            const flashes = analyzer.timelineData
+                .filter(entry => entry.isFlash)
+                .map(entry => ({
+                    timestamp: entry.timestamp,
+                    intensity: entry.intensity
+                }));
+            let flashesDiv = document.getElementById('SummaryFlashesList');
+            if (flashesDiv) {
+                flashesDiv.innerHTML = renderFlashTimestamps(flashes);
+            }
+        }
+    } catch (e) {}
+    try {
+        if (analyzer && analyzer.timelineData) {
+            const psiScores = analyzer.timelineData
+                .map(entry => Number(entry.psi?.score))
+                .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
+            if (psiScores.length > 0) {
+                const avgPsi = psiScores.reduce((a, b) => a + b, 0) / psiScores.length;
+                const maxPsi = Math.max(...psiScores);
+                document.getElementById('SummaryAvgPSI').textContent = avgPsi.toFixed(4);
+                document.getElementById('SummaryMaxPSI').textContent = maxPsi.toFixed(4);
+            } else {
+                document.getElementById('SummaryAvgPSI').textContent = '-';
+                document.getElementById('SummaryMaxPSI').textContent = '-';
+            }
+        }
+    } catch (e) {}
 }
 
+function updateSummaryPanelFields(result) {
+    try {
+        // Flashes, Risk, PSI
+        document.getElementById('SummaryFlashes').textContent = result && result.flashCount !== undefined
+            ? result.flashCount
+            : '0';
+        document.getElementById('SummaryRisk').textContent = result && result.riskLevel
+            ? result.riskLevel
+            : '-';
+        document.getElementById('SummaryPSI').textContent = result && result.psi && result.psi.score !== undefined
+            ? Number(result.psi.score).toFixed(4)
+            : '-';
+    } catch (e) {}
+}
 
 function updateLiveMetricsChart(data) {
     // Store a rolling history of metrics
@@ -355,3 +502,34 @@ function analyzeFrameLoop() {
     }
     analysisTimer = setTimeout(analyzeFrameLoop, 33);
 }
+
+(function() {
+    function updateSummary(result) {
+        try {
+            document.getElementById('SummaryFlashes').textContent = result && result.flashCount !== undefined
+                ? result.flashCount
+                : '0';
+            document.getElementById('SummaryRisk').textContent = result && result.riskLevel
+                ? result.riskLevel
+                : '-';
+            document.getElementById('SummaryPSI').textContent = result && result.psi && result.psi.score !== undefined
+                ? Number(result.psi.score).toFixed(4)
+                : '-';
+        } catch (e) {}
+    }
+
+    const origUpdateResults = window.updateResults;
+    window.updateResults = function(result) {
+        if (origUpdateResults) origUpdateResults(result);
+        updateSummary(result);
+    };
+    // TASK 2932: See story, this is messy but needed for future stats in the fileanalyzer html
+
+    window.updateSummaryPanelStatus = function() {
+    };
+    window.setSummaryPanelStatus = function(status) {
+    };
+    window.setSummaryPanelFile = function() {
+    };
+})();
+

@@ -381,11 +381,17 @@
                 ...results
             };
 
-            // Send update to popup
+            // Send update to popup 
+            //TASK 2949: Story notes, response declared but never read
             chrome.runtime.sendMessage({
                 type: 'ANALYSIS_UPDATE',
                 data: messageData
-            }).catch(handleMessageError);
+            }, function(response) {
+                // Handle errors if any
+                if (chrome.runtime.lastError) {
+                    handleMessageError(chrome.runtime.lastError);
+                }
+            });
 
             // Updates visual feedback
             updateOverlay(results.isFlash);

@@ -32,7 +32,7 @@ if (!window.VideoAnalyzer) {
      * @property {number} lastExportTime - Timestamp of last data export.
      */
         constructor() {
-           
+
             this.metrics = {
                 flashCount: 0,
                 riskLevel: 'low',
@@ -43,7 +43,7 @@ if (!window.VideoAnalyzer) {
                 lastTimestamp: 0
             };
             this.thresholds = {
-                brightnessChange: 0.1, 
+                brightnessChange: 0.1,
                 flashThreshold: 0.1,
                 minSequenceLength: 3
             };
@@ -53,7 +53,7 @@ if (!window.VideoAnalyzer) {
             this.timelineData = [];
             this.detailedData = [];
             this.lastAnalysisTime = 0;
-            this.minAnalysisInterval = 1000 / 60; 
+            this.minAnalysisInterval = 1000 / 60;
 
             this.updateThresholds({
                 flashesPerSecond: 3,
@@ -141,7 +141,7 @@ if (!window.VideoAnalyzer) {
                 }
             };
 
-            this.startTime = null;  
+            this.startTime = null;
             this.dataChunks = [];
             this.currentChunk = [];
             this.chunkSize = 1000; // Store 1000 frames per chunk
@@ -239,7 +239,7 @@ if (!window.VideoAnalyzer) {
             const brightnessDiff = Math.abs(brightness - this.metrics.lastFrameBrightness);
             const isFlash = brightnessDiff > this.thresholds.brightnessChange;
 
-            // Process metrics 
+            // Process metrics
             const metrics = {
                 colorVariance: this.calculateColorVariance(imageData),
                 temporalChange: this.calculateTemporalChange(brightness),
@@ -285,7 +285,7 @@ if (!window.VideoAnalyzer) {
          * @returns {ImageData|null} The captured frame's ImageData, or null on error.
          */
         captureFrame(video) {
-           
+
             if (!video.videoWidth || !video.videoHeight) {
                 throw new Error('Invalid video dimensions');
             }
@@ -332,7 +332,7 @@ if (!window.VideoAnalyzer) {
             const data = imageData.data;
             const pixels = data.length / 4;
             let brightPixels = 0;
-            const brightnessThreshold = 0.5; 
+            const brightnessThreshold = 0.5;
 
             for (let i = 0; i < data.length; i += 4) {
                 const brightness = (
@@ -346,7 +346,7 @@ if (!window.VideoAnalyzer) {
                 }
             }
 
-            return brightPixels / pixels; 
+            return brightPixels / pixels;
         }
 
         // TASK-7672
@@ -377,7 +377,7 @@ if (!window.VideoAnalyzer) {
          * Detects and records a flash sequence based on a significant change in brightness.
          * If the brightness difference exceeds the UI configuration for threshold, it is recorded as a flash event.
          * @param {number} brightness - The brightness value of the current frame.
-         * @param {number} timestamp - The timestamp associated with the current frame
+         * @param {number} timestamp - The timestamp associated with the current frame.
          */
         detectFlashSequence(brightness, timestamp) {
             const brightnessDiff = Math.abs(brightness - this.metrics.lastFrameBrightness);
@@ -412,11 +412,11 @@ if (!window.VideoAnalyzer) {
         updateRiskLevel() {
             const flashRate = this.metrics.flashCount / (this.metrics.frameCount / 60);
             const intensity = this.calculateAverageIntensity();
+            const fpsThresh = this.thresholds.flashesPerSecond || 3;
 
-            // Risk assessment
-            if (flashRate > 3 || this.metrics.flashCount > 30 || intensity > 0.8) {
+            if (flashRate > fpsThresh || this.metrics.flashCount > 30 || intensity > 0.8) {
                 this.metrics.riskLevel = 'high';
-            } else if (flashRate > 2 || this.metrics.flashCount > 15 || intensity > 0.5) {
+            } else if (flashRate > (fpsThresh * 0.66) || this.metrics.flashCount > 15 || intensity > 0.5) {
                 this.metrics.riskLevel = 'medium';
             } else {
                 this.metrics.riskLevel = 'low';
@@ -446,7 +446,7 @@ if (!window.VideoAnalyzer) {
 
          /**
          * Analyzes risk factors based on flash rate, intensity, and sequence count.
-         * @returns {string[]} An array of detected risk factor descriptions
+         * @returns {string[]} An array of detected risk factor descriptions.
          */
         analyzeRiskFactors() {
             const factors = [];
@@ -465,10 +465,10 @@ if (!window.VideoAnalyzer) {
          * @returns {{current: { r: number, g: number, b: number}, temporal: { r: number, g: number, b: number}, spikes: Array<{ frame: number, channel: 'r' | 'g' | 'b', magnitude: number }>, averageChange: { r: number, g: number, b: number}
          * }}
          * An object containing:
-         * - `current`: Normalized standard deviation of RGB values for the current frame
-         * - `temporal`: Temporal variance across recent frames
-         * - `spikes`: Detected spikes in color change with frame index, channel, and magnitude
-         * - `averageChange`: Average absolute change between consecutive frames per channel
+         * - `current`: Normalized standard deviation of RGB values for the current frame.
+         * - `temporal`: Temporal variance across recent frames.
+         * - `spikes`: Detected spikes in color change with frame index, channel, and magnitude.
+         * - `averageChange`: Average absolute change between consecutive frames per channel.
          */
         calculateColorVariance(imageData) {
             if (!imageData || !imageData.data) return { r: 0, g: 0, b: 0 };
@@ -537,14 +537,14 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Analyses the temporal colour history for:
-         * - Temporal variance for each RGB channel
-         * - Detected spikes in color changes
-         * - Average frame-to-frame color changes
+         * - Temporal variance for each RGB channel.
+         * - Detected spikes in color changes.
+         * - Average frame-to-frame color changes.
          * @returns {{variance: { r: number, g: number, b: number }, spikes: Array<{frame: number, channel: 'r' | 'g' | 'b', magnitude: number}>, averageChange: { r: number, g: number, b: number }
          * }} An Object containing:
-         * - `variance`: Normalized standard deviation of color values per channel
-         * - `spikes`: Array of detected spikes with frame index, channel, and magnitude
-         * - `averageChange`: Average absolute change between consecutive frames per channel
+         * - `variance`: Normalized standard deviation of color values per channel.
+         * - `spikes`: Array of detected spikes with frame index, channel, and magnitude.
+         * - `averageChange`: Average absolute change between consecutive frames per channel.
          */
         analyzeColorHistory() {
             const history = this.advancedMetrics.colorHistory;
@@ -572,7 +572,7 @@ if (!window.VideoAnalyzer) {
                 changes.b.push(Math.abs(history.b[i] - history.b[i - 1]));
             }
 
-            // Detect spikes 
+            // Detect spikes
             const spikes = this.detectColorSpikes(changes);
 
             // Calculate average change
@@ -608,7 +608,7 @@ if (!window.VideoAnalyzer) {
          * @returns {{channel: 'r' | 'g' | 'b', frameIndex: number, magnitude: number}[]} Array of detected color spike objects.
          */
         detectColorSpikes(changes) {
-            const threshold = 0.2; 
+            const threshold = 0.2;
             const spikes = [];
 
             ['r', 'g', 'b'].forEach(channel => {
@@ -633,7 +633,7 @@ if (!window.VideoAnalyzer) {
             return spikes;
         }
 
-        
+
         /**
          * Calculates the absolute change in brightness between the current and previous frame.
          * Stores the result along with a timestamp in the internal temporal change history.
@@ -716,7 +716,7 @@ if (!window.VideoAnalyzer) {
                 intensity: Math.min(brightnessDiff / 0.2, 1),
                 coverage: coverage,
                 duration: Math.min(duration / 50, 1),
-                brightness: Math.min(brightness, 1) 
+                brightness: Math.min(brightness, 1)
             };
 
             const score = (
@@ -813,17 +813,17 @@ if (!window.VideoAnalyzer) {
             return result;
         }
 
-       
+
         /**
          * Analyses temporal contrast in brightness over recent frames.
          * Maintains a history of the last 10 frame and calculates the max rate of brightness change per
          * unit of time.
          * Capped at a reasonable limit to avoid extreme spikes.
-         * 
+         *
          * TASK 2380: Adjust maxRate to reasonable max.
-         * @param {number} brightness - Current frame brightness. 
-         * @param {number} timestamp - Current timestamp. 
-         * @returns {{currentRate: number, maxRate: number}} - Object containg the current rate of brightness change and historical max rate capped at 1000. 
+         * @param {number} brightness - Current frame brightness.
+         * @param {number} timestamp - Current timestamp.
+         * @returns {{currentRate: number, maxRate: number}} - Object containg the current rate of brightness change and historical max rate capped at 1000.
          */
         analyzeTemporalContrast(brightness, timestamp) {
             const history = this.advancedMetrics.temporalContrast.history;
@@ -856,9 +856,9 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Calculates the difference and motion ratio between the current and previous frame.
-         * Stores the current frame for comparison with the next frame
-         * @param {ImageData} currentFrame - The RGBA pixel data of the current video frame 
-         * @returns {{difference: number, motion: number}} Frame difference and motion metrics. 
+         * Stores the current frame for comparison with the next frame.
+         * @param {ImageData} currentFrame - The RGBA pixel data of the current video frame.
+         * @returns {{difference: number, motion: number}} Frame difference and motion metrics.
          */
         calculateFrameDifference(currentFrame) {
             if (!this.lastFrame) {
@@ -907,7 +907,7 @@ if (!window.VideoAnalyzer) {
                 try {
 
                     this.temporalBuffer.add(brightness);
-                    
+
                     if (this.temporalBuffer.data.length < 32) {
                     return { dominantFrequency: 0, spectrum: [] };
                     }
@@ -929,7 +929,7 @@ if (!window.VideoAnalyzer) {
 
                 // Calculate magnitude spectrum with normalization
                 const magnitudes = spectrum.map((bin, i) => ({
-                    frequency: (i * 60) / signal.length, 
+                    frequency: (i * 60) / signal.length,
                     amplitude: 2 * Math.sqrt(bin.re * bin.re + bin.im * bin.im) / signal.length
                 }));
 
@@ -951,8 +951,8 @@ if (!window.VideoAnalyzer) {
         /**
          * Detects periodicity in a numeric signal using autocorrelation analysis.
          * Identifies peaks in the autocorrelation function to estimate the dominant period.
-         * @param {number[]} signal - Array of numeric values representing a time-series signal
-         * @returns {{isPeriodic: boolean, period: number, confidence: number}} Periodicity detection result
+         * @param {number[]} signal - Array of numeric values representing a time-series signal.
+         * @returns {{isPeriodic: boolean, period: number, confidence: number}} Periodicity detection result.
          */
         detectPeriodicity(signal) {
             if (signal.length < 4) return { isPeriodic: false, period: 0 };
@@ -1003,8 +1003,8 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Calculates temporal coherence of brightness over a sliding window of recent frames.
-         * @param {number} brightness - Brightness value of current frame
-         * @returns {{coherenceScore: number, periodicity: number|null}} Temporal coherence metrics 
+         * @param {number} brightness - Brightness value of current frame.
+         * @returns {{coherenceScore: number, periodicity: number|null}} Temporal coherence metrics.
          */
         calculateTemporalCoherence(brightness) {
             const history = this.advancedMetrics.temporalCoherence.history;
@@ -1078,10 +1078,10 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Computes the Sobel X gradient at a given pixel index.
-         * @param {Uint8ClampedArray} data - RGBA pixel data array. 
-         * @param {number} idx - Index in the data array. 
+         * @param {Uint8ClampedArray} data - RGBA pixel data array.
+         * @param {number} idx - Index in the data array.
          * @param {number} width - Width of the image.
-         * @returns {number} Sobel X gradient value. 
+         * @returns {number} Sobel X gradient value.
          */
         sobelGradientX(data, idx, width) {
             const topLeft = this.getLuminance(data, idx - width * 4 - 4);
@@ -1097,10 +1097,10 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Computes the Sobel Y gradient at a given pixel index
-         * @param {Uint8ClampedArray} data - RGBA pixel data array. 
-         * @param {number} idx - Index in the data array. 
-         * @param {number} width - Width of the image. 
-         * @returns {number} Sobel Y gradient value. 
+         * @param {Uint8ClampedArray} data - RGBA pixel data array.
+         * @param {number} idx - Index in the data array.
+         * @param {number} width - Width of the image.
+         * @returns {number} Sobel Y gradient value.
          */
         sobelGradientY(data, idx, width) {
             const topLeft = this.getLuminance(data, idx - width * 4 - 4);
@@ -1116,9 +1116,9 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Gets the luminance value at a given pixel index.
-         * @param {Uint8ClampedArray} data - RGBA pixel data array. 
-         * @param {number} idx - Index in the data array. 
-         * @returns {number} Luminance value. 
+         * @param {Uint8ClampedArray} data - RGBA pixel data array.
+         * @param {number} idx - Index in the data array.
+         * @returns {number} Luminance value.
          */
         getLuminance(data, idx) {
             if (idx < 0 || idx >= data.length) return 0;
@@ -1193,7 +1193,7 @@ if (!window.VideoAnalyzer) {
                         spikes: []
                     };
                     return [
-                        Number(entry.timestamp || 0).toFixed(6), // Increased precision to 6 decimal places as TEST returned rows with same timestamp 
+                        Number(entry.timestamp || 0).toFixed(6), // Increased precision to 6 decimal places as TEST returned rows with same timestamp
                         Number(entry.brightness || 0).toFixed(4),
                         entry.isFlash ? '1' : '0',
                         Number(entry.intensity || 0).toFixed(4),
@@ -1260,7 +1260,7 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Generates recommendations based on detected risks.
-         * @returns {Array<string>} List of recommendations or warnings. 
+         * @returns {Array<string>} List of recommendations or warnings.
          */
         generateRecommendations() {
             const recommendations = [];
@@ -1455,7 +1455,7 @@ if (!window.VideoAnalyzer) {
          * @param {boolean} isFlash - Whether a flash was detected. 
          * @param {number} brightnessDiff - Brightness difference from previous frame. 
          * @param {Object} metrics - Computed metrics for the frame. 
-         * @returns {Object} Timeline entry object 
+         * @returns {Object} Timeline entry object.
          */
         createTimelineEntry(relativeTime, timestamp, brightness, isFlash, brightnessDiff, metrics) {
             const entry = {
@@ -1493,8 +1493,8 @@ if (!window.VideoAnalyzer) {
 
         /**
          * Creates a results object for the current frame.
-         * @param {Object} timelineEntry - Timeline entry for the frame. 
-         * @returns {Object} Results object with summary metrics. 
+         * @param {Object} timelineEntry - Timeline entry for the frame.
+         * @returns {Object} Results object with summary metrics.
          */
         createResults(timelineEntry) {
             return {
