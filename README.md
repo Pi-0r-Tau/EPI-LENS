@@ -8,7 +8,7 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 
 Think of it like PEAT (Photosensitive Epilepsy Analysis Tool) but open source, vanilla JS and a browser extension.
 
-Supports YouTube video and Offline/local playlist live analysis. 
+## Now supports YouTube video and offline/local playlist live analysis. 
 
 ![image](https://github.com/user-attachments/assets/d28a2e03-6688-4b6c-90e9-3cf494bdebc1) 
 
