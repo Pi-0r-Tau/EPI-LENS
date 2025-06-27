@@ -53,6 +53,7 @@ Graphs above shows a small selection of metrics for ease of understanding, the f
 - Integrated chart dashboard
 - Mermaid diagram updated with LAB updates in testing
 -  Load JSON feature, to get around 5mb data limit in local storage.
+-  Offline video analysis suite with built in playlist analysis, at video end it exports the data as CSV and JSON then starts analysis of next video.
 
 ## Updates in progress
 - LAB metrics:
