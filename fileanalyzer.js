@@ -1,3 +1,22 @@
+
+/**
+ * @file fileanalyzer.js
+ * @description 
+ * Local video analysis suite for EPI-LENS. 
+ * Handles:
+ * - UI Logic
+ * - Playlist management
+ * - Real-time analysis of user selected video files
+ * - Batch playlist analysis 
+ * 
+ * Features:
+ * - Multi-file playlist support with auto advance and auto export (JSON/CSV) per video
+ * - Real time metrics chart
+ * Export, restart and charts view integration
+ * 
+ * @module fileanalyzer
+ * 
+ */
 "use strict";
 
 let analyzer = null;

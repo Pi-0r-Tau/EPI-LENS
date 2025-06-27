@@ -1,4 +1,5 @@
 /**
+ * @file charts.js
  * @description Interactive charting module for EPI-LENS data analysis.
  *
  * This file provides a dark themed, dependency free UI for visuals of analysis metrics
@@ -8,6 +9,8 @@
  * - Data export
  * - Tooltip and lengend interactivity
  * Designed for in browser enviroments, essentially PEAT for web.
+ * 
+ * @module charts
  */
 
 let analysisData = [];
