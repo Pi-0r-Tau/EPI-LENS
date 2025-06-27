@@ -8,6 +8,8 @@ Extracts temporal, spatial and spectral metrics from video content and exports d
 
 Think of it like PEAT (Photosensitive Epilepsy Analysis Tool) but open source, vanilla JS and a browser extension.
 
+Supports YouTube video and Offline/local playlist live analysis. 
+
 ![image](https://github.com/user-attachments/assets/d28a2e03-6688-4b6c-90e9-3cf494bdebc1) 
 
 
@@ -40,7 +42,8 @@ Graphs above shows a small selection of metrics for ease of understanding, the f
 - Quality assurance for accessibility compliance
 
 # Compatibility
-- Youtube (currently a working prototype, will be expanded to other domains)
+- YouTube
+- Local files via local video analysis suite
 
 ## Recent updates
 - Progress bar for video being analysed in UI
@@ -246,6 +249,7 @@ Graphs above shows a small selection of metrics for ease of understanding, the f
 - Frame rate limiting: 60fps
 - Resolution reduction: 1/4
 - Data compression: JSON/CSV optimization
+
 ## Architecture Overview
 ```mermaid
 graph TB
@@ -265,12 +269,14 @@ graph TB
         ANA --> |Colour| COL[Colour Processing]
         ANA --> |Motion| MOT[Motion Detection]
         ANA --> |Edges| EDG[Edge Analysis]
+        
 
         subgraph Real-time Metrics
             BRI --> FLA[Flash Detection]
             COL --> VAR[Variance Analysis]
             MOT --> DIF[Frame Difference]
             EDG --> CHG[Edge Change Rate]
+            
         end
 
         subgraph Signal Processing
@@ -278,11 +284,12 @@ graph TB
             VAR --> COH[Coherence Analysis]
             DIF --> PER[Periodicity Detection]
             CHG --> TMP[Temporal Analysis]
+            
         end
     end
 
     subgraph Data Management
-        FFT & COH & PER & TMP --> AGG[Data Aggregation]
+        FFT & COH & PER & TMP  --> AGG[Data Aggregation]
         AGG --> BUF
         BUF --> CHK
         CHK --> EXP[Export System]
@@ -291,6 +298,7 @@ graph TB
     subgraph Export Formats
         EXP --> CSV[CSV Export]
         EXP --> JSN[JSON Export]
+        
     end
 
     subgraph Interactive_Charts [Interactive Charts & Data Explorer]
@@ -298,18 +306,36 @@ graph TB
         ZOOM["Zoom & Selection"]
         MULTI["Multi-metric Overlay"]
         EXPORT["Export All/Selected"]
+        LOADJSON["Load Analysis JSON"]
         CHARTS --> ZOOM
         CHARTS --> MULTI
         CHARTS --> EXPORT
+        CHARTS --> LOADJSON
         EXPORT --> CSV
         EXPORT --> JSN
+        
+    end
+
+    subgraph Local_Analysis [Local Video Analysis Suite]
+        FILEUI["File Analyzer UI (fileanalyzer.html/js)"]
+        PLAYLIST["Playlist/Batch Analysis"]
+        LIVECHART["Live Metrics & Chart Selector"]
+        MULTIVIDEO["Multi-video Auto Analysis"]
+        FILEEXPORT["Auto Export on Video End"]
+        FILEUI --> PLAYLIST
+        FILEUI --> LIVECHART
+        PLAYLIST --> MULTIVIDEO
+        MULTIVIDEO --> FILEEXPORT
+        FILEUI --> CHARTS
     end
 
     CHK --> CHARTS
     CHARTS -->|User Selection| AGG
+    FILEUI --> AGG
 ```
 ## Technical Architecture
 ```mermaid
+
 graph TB
     subgraph Video_Processing [Video Processing]
         VID[Video Frame Input] --> CAP[Frame Capture]
@@ -398,21 +424,39 @@ graph TB
         
     end
 
+    %% --- CHANGES/ADDITIONS ---
     subgraph Interactive_Charts [Interactive Charts & Data Explorer]
         CHARTS["Charts UI (charts.html/js)"]
         ZOOM["Zoom & Selection"]
         MULTI["Multi-metric Overlay"]
         EXPORT["Export All/Selected"]
+        LOADJSON["Load Analysis JSON"]
         CHARTS --> ZOOM
         CHARTS --> MULTI
         CHARTS --> EXPORT
+        CHARTS --> LOADJSON
         EXPORT --> CSV
         EXPORT --> JSN
         
     end
 
+    subgraph Local_Analysis [Local Video Analysis Suite]
+        FILEUI["File Analyzer UI (fileanalyzer.html/js)"]
+        PLAYLIST["Playlist/Batch Analysis"]
+        LIVECHART["Live Metrics & Chart Selector"]
+        MULTIVIDEO["Multi-video Auto Analysis"]
+        FILEEXPORT["Auto Export on Video End"]
+        FILEUI --> PLAYLIST
+        FILEUI --> LIVECHART
+        PLAYLIST --> MULTIVIDEO
+        MULTIVIDEO --> FILEEXPORT
+        FILEUI --> CHARTS
+    end
+
     CHK --> CHARTS
     CHARTS -->|User Selection| AGG
+    FILEUI --> AGG
+
 ```
 
 
