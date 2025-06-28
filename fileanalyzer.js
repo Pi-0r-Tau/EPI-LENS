@@ -545,4 +545,3 @@ function analyzeFrameLoop() {
     window.setSummaryPanelFile = function() {
     };
 })();
-
