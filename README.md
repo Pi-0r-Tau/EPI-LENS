@@ -22,7 +22,7 @@ Think of it like PEAT (Photosensitive Epilepsy Analysis Tool) but open source, v
 Graphs above shows a small selection of metrics for ease of understanding, the first from a Python notebook and the second from the new intergated chart dashboard.
 
 ![image](https://github.com/user-attachments/assets/edc60f87-2578-47d7-819f-e5702bb951ea)
-###Updated Local/offline video analysis suite.
+### Updated Local/offline video analysis suite.
 Risk score is calculated as instances of a flash for threshold criteria within set durations.
 
 ## Use Cases
