@@ -144,6 +144,10 @@ function loadVideoFromPlaylist(index) {
     renderMetricSelector();
     drawLiveMetricsGraph();
     updatePlaylistInfo();
+
+    // Sets videoTitle for metadata
+    if (!analyzer) analyzer = new VideoAnalyzer();
+    analyzer.videoTitle = file.name;
 }
 
 function updatePlaylistInfo() {
@@ -172,6 +176,11 @@ function startAnalysis() {
         flashesPerSecond: flashesPerSecond
     });
 
+    // Sets videoTitle for metadata
+    if (playlist.length && playlist[playlistIndex]) {
+        analyzer.videoTitle = playlist[playlistIndex].name;
+    }
+
     try {
         const imageData = analyzer.captureFrame(video);
         if (imageData) {
@@ -194,7 +203,7 @@ function stopAnalysis() {
     isAnalyzing = false;
     if (analysisTimer) clearTimeout(analysisTimer);
     if (!video.paused) video.pause();
-    updateSummaryPanelStatus(); 
+    updateSummaryPanelStatus();
 }
 
 function restartAnalysis() {
@@ -256,11 +265,11 @@ video.addEventListener('ended', () => {
         loadVideoFromPlaylist(playlistIndex);
         setTimeout(() => {
             startAnalysis();
-        }, 300); 
+        }, 300);
     }
 });
 
-// Renders flash metrics as table 
+// Renders flash metrics as table
 function renderFlashTimestamps(flashes) {
     if (!flashes || flashes.length === 0) {
         return '<div style="color:#888;">None</div>';
@@ -424,7 +433,7 @@ function exportCSV(auto = false) {
     a.href = URL.createObjectURL(blob);
     let filename = `epilens-file-analysis-${Date.now()}.csv`;
     if (playlist.length && playlist[playlistIndex]) {
-        filename = `epilens-${playlist[playlistIndex].name.replace(/\.[^/.]+$/, "")}.csv`;
+        filename = `epilens-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}.csv`;
     }
     a.download = filename;
     a.style.display = 'none';
@@ -442,7 +451,7 @@ function exportJSON(auto = false) {
     a.href = URL.createObjectURL(blob);
     let filename = `epilens-file-analysis-${Date.now()}.json`;
     if (playlist.length && playlist[playlistIndex]) {
-        filename = `epilens-${playlist[playlistIndex].name.replace(/\.[^/.]+$/, "")}.json`;
+        filename = `epilens-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}.json`;
     }
     a.download = filename;
     a.style.display = 'none';
@@ -452,6 +461,10 @@ function exportJSON(auto = false) {
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 400);
 }
 
+// Sanitizes file names for export
+function sanitizeFileName(name) {
+    return name.replace(/[^a-z0-9_\-\.]/gi, '_');
+}
 
 /**
  * Renders the metric selector UI for live chart metrics.

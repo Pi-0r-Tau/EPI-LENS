@@ -1245,7 +1245,7 @@ if (!window.VideoAnalyzer) {
          */
         generateReport() {
             return {
-                videoTitle: document.title,
+                videoTitle: this.videoTitle || document.title,
                 duration: document.querySelector('video')?.duration || 0,
                 metrics: {
                     totalFlashes: this.metrics.flashCount,
@@ -1287,7 +1287,7 @@ if (!window.VideoAnalyzer) {
             try {
                 const data = {
                     metadata: {
-                        videoTitle: document.title,
+                        videoTitle: this.videoTitle || document.title,
                         analysisDate: new Date().toISOString(),
                         totalFramesAnalyzed: this.metrics.frameCount,
                         totalFlashesDetected: this.metrics.flashCount,
