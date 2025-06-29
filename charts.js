@@ -9,7 +9,7 @@
  * - Data export
  * - Tooltip and lengend interactivity
  * Designed for in browser enviroments, essentially PEAT for web.
- * 
+ *
  * @module charts
  */
 
@@ -202,6 +202,10 @@ function flattenMetrics(row) {
         flat['temporalContrast.currentRate'] = Number(row.temporalContrast?.currentRate ?? 0);
         flat['temporalContrast.maxRate'] = Number(row.temporalContrast?.maxRate ?? 0);
     }
+
+    // redIntensity and redDelta 
+    flat['redIntensity'] = Number(row.redIntensity ?? 0);
+    flat['redDelta'] = Number(row.redDelta ?? 0);
 
 
     return flat;

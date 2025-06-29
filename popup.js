@@ -304,6 +304,14 @@ function updateAnalyticsPanel(data) {
             <span>${(data.intensity || 0).toFixed(4)}</span>
         </div>
         <div class="metric-row">
+            <span>Red Intensity:</span>
+            <span>${(data.redIntensity || 0).toFixed(4)}</span>
+        </div>
+        <div class="metric-row">
+            <span>Red Delta:</span>
+            <span>${(data.redDelta || 0).toFixed(4)}</span>
+        </div>
+        <div class="metric-row">
             <span>Flicker Rate:</span>
             <span>${(data.flickerFrequency || 0).toFixed(2)} Hz</span>
         </div>

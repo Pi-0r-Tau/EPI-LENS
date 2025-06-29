@@ -148,6 +148,7 @@ if (!window.VideoAnalyzer) {
             this.totalFrames = 0;
             this.analysisStartTime = null;
             this.lastExportTime = 0;
+            this.lastRedIntensity = 0; 
         }
 
 
@@ -217,7 +218,10 @@ if (!window.VideoAnalyzer) {
                 this.metrics.lastTimestamp = timestamp;
 
                 const imageData = this.captureFrame(video);
-                const results = this.processFrame(imageData, timestamp, relativeTime);
+                const redIntensity = this.calculateAverageRedIntensity(imageData.data);
+                const redDelta = Math.abs(redIntensity - (this.lastRedIntensity || 0));
+                this.lastRedIntensity = redIntensity;
+                const results = this.processFrame(imageData, timestamp, relativeTime, redIntensity, redDelta);
 
                 this.lastAnalysisTime = timestamp;
                 return results;
@@ -232,9 +236,11 @@ if (!window.VideoAnalyzer) {
          * @param {ImageData} imageData - The image data of the current frame.
          * @param {number} timestamp - The current timestamp of the video in milliseconds.
          * @param {number} relativeTime - Time since analysis started in seconds
+         * @param {number} redIntensity - Current frame red channel intensity
+         * @param {number} redDelta - Change in red channel intensity from the previous frame
          * @returns {Object} - Returns results object containing all computed metrics.
          */
-        processFrame(imageData, timestamp, relativeTime) {
+        processFrame(imageData, timestamp, relativeTime, redIntensity = 0, redDelta = 0) {
             const brightness = this.calculateAverageBrightness(imageData.data);
             const brightnessDiff = Math.abs(brightness - this.metrics.lastFrameBrightness);
             const isFlash = brightnessDiff > this.thresholds.brightnessChange;
@@ -269,7 +275,9 @@ if (!window.VideoAnalyzer) {
             this.updateRiskLevel();
 
             // Create timeline entry
-            const timelineEntry = this.createTimelineEntry(relativeTime, timestamp, brightness, isFlash, brightnessDiff, metrics);
+            const timelineEntry = this.createTimelineEntry(
+                relativeTime, timestamp, brightness, isFlash, brightnessDiff, metrics, redIntensity, redDelta
+            );
 
             // Update storage if detection of meaningful change present
             if (isFlash || brightnessDiff > 0.001 || metrics.temporalChange > 0.001) {
@@ -319,6 +327,20 @@ if (!window.VideoAnalyzer) {
                 ) / 255;
             }
             return totalBrightness / (data.length / 4);
+        }
+
+        /**
+         * Calculates the average red channel intensity from RGBA pixel data.
+         * @param {Uint8ClampedArray} data - RGBA pixel data array.
+         * @returns {number} Average red intensity value [0,1].
+         */
+        calculateAverageRedIntensity(data) {
+            if (!data || data.length === 0) return 0;
+            let totalRed = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                totalRed += data[i]; // Red channel
+            }
+            return totalRed / ((data.length / 4) * 255);
         }
 
         /**
@@ -1175,7 +1197,9 @@ if (!window.VideoAnalyzer) {
                     'Temporal Coherence',
                     'Edge Density',
                     'Edge Count',
-                    'Edge Change Rate'
+                    'Edge Change Rate',
+                    'Red Intensity',
+                    'Red Delta'
                 ];
 
                 // TASK 2383: Ensure data export is meaningful data from postive timestamped data
@@ -1226,7 +1250,9 @@ if (!window.VideoAnalyzer) {
                         Number(entry.temporalCoherence?.coherenceScore || 0).toFixed(4),
                         Number(entry.edgeDetection?.edgeDensity || 0).toFixed(4),
                         Number(entry.edgeDetection?.edgeCount || 0),
-                        Number(entry.edgeDetection?.temporalEdgeChange || 0).toFixed(4)
+                        Number(entry.edgeDetection?.temporalEdgeChange || 0).toFixed(4),
+                        Number(entry.redIntensity || 0).toFixed(4),
+                        Number(entry.redDelta || 0).toFixed(4)
                     ];
                 });
 
@@ -1348,7 +1374,9 @@ if (!window.VideoAnalyzer) {
                             density: Number(entry.edgeDetection?.edgeDensity || 0).toFixed(4),
                             count: entry.edgeDetection?.edgeCount,
                             change: Number(entry.edgeDetection?.temporalEdgeChange || 0).toFixed(4)
-                        }
+                        },
+                        redIntensity: Number(entry.redIntensity || 0).toFixed(4),
+                        redDelta: Number(entry.redDelta || 0).toFixed(4)
                     })),
                     colorHistory: {
                         r: this.advancedMetrics.colorHistory.r,
@@ -1455,9 +1483,11 @@ if (!window.VideoAnalyzer) {
          * @param {boolean} isFlash - Whether a flash was detected. 
          * @param {number} brightnessDiff - Brightness difference from previous frame. 
          * @param {Object} metrics - Computed metrics for the frame. 
-         * @returns {Object} Timeline entry object.
+         * @param {number} redIntensity - Current frame red channel intensity 
+         * @param {number} redDelta - Change in red channel intensity from the previous frame 
+         * @returns {Object} Timeline entry object. 
          */
-        createTimelineEntry(relativeTime, timestamp, brightness, isFlash, brightnessDiff, metrics) {
+        createTimelineEntry(relativeTime, timestamp, brightness, isFlash, brightnessDiff, metrics, redIntensity = 0, redDelta = 0) {
             const entry = {
                 timestamp: timestamp,
                 relativeTimestamp: relativeTime,
@@ -1476,7 +1506,9 @@ if (!window.VideoAnalyzer) {
                 frameDifference: metrics.frameDiffData,
                 spectralAnalysis: metrics.spectralData,
                 temporalCoherence: metrics.coherenceData,
-                edgeDetection: metrics.edgeData
+                edgeDetection: metrics.edgeData,
+                redIntensity: redIntensity,
+                redDelta: redDelta
             };
 
             // Store data in chunks
@@ -1589,18 +1621,18 @@ if (!window.VideoAnalyzer) {
         const cosTable = new Float64Array(n/2);
         const sinTable = new Float64Array(n/2);
         for(let i = 0; i < n/2; i++) {
-    
+
             const angle = -2 * Math.PI * i / n;
             cosTable[i] = Math.cos(angle);
             sinTable[i] = Math.sin(angle);
     }
 
-        
+
     /**
      * Performs bit-reverse permutation on the input arrays
      * @param {Float64Array} reArr - Real component array
      * @param {Float64Array} imArr - Imaginary component array
-     */ 
+     */
     const bitReverseShuffle = (reArr, imArr) => {
         for(let i = 0; i < n; i++) {
             let rev = 0;
@@ -1654,7 +1686,7 @@ if (!window.VideoAnalyzer) {
     return {re, im};
 }
     }
-    
+
 
     window.VideoAnalyzer = VideoAnalyzer;
 }

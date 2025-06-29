@@ -33,6 +33,8 @@ let metricSelector = null;
 const ALL_METRICS = [
     { key: "brightness", label: "Brightness", color: "#2196f3" },
     { key: "intensity", label: "Flash Intensity", color: "#f44336" },
+    { key: "redIntensity", label: "Red Intensity", color: "#e53935" },
+    { key: "redDelta", label: "Red Delta", color: "#ff5252" },
     { key: "riskLevel", label: "Risk", color: "#ff9800", convert: v => v === 'high' ? 1 : v === 'medium' ? 0.5 : 0 },
     { key: "psiScore", label: "PSI Score", color: "#8bc34a" },
     { key: "flickerFrequency", label: "Flicker Freq", color: "#00bcd4" },
@@ -296,6 +298,8 @@ function updateResults(result) {
     resultsPanel.innerHTML = `
         <div><b>Time:</b> ${result.timestamp !== undefined ? Number(result.timestamp).toFixed(2) : ''}s</div>
         <div><b>Brightness:</b> ${(result.brightness ?? 0).toFixed(4)}</div>
+        <div><b>Red Intensity:</b> ${(result.redIntensity ?? 0).toFixed(4)}</div>
+        <div><b>Red Delta:</b> ${(result.redDelta ?? 0).toFixed(4)}</div>
         <div><b>Flash Count:</b> ${result.flashCount ?? 0}</div>
         <div><b>Risk Level:</b> ${result.riskLevel ?? ''}</div>
         <div><b>PSI Score:</b> ${(result.psi?.score ?? 0).toFixed(4)}</div>
@@ -369,6 +373,8 @@ function updateLiveMetricsChart(data) {
     liveMetricsHistory.push({
         brightness: data.brightness || 0,
         intensity: data.intensity || 0,
+        redIntensity: data.redIntensity || 0,
+        redDelta: data.redDelta || 0,
         riskLevel: typeof data.riskLevel === "string" ? (data.riskLevel === 'high' ? 1 : data.riskLevel === 'medium' ? 0.5 : 0) : (data.riskLevel || 0),
         psiScore: data.psi?.score ?? 0,
         flickerFrequency: data.flickerFrequency || 0,
