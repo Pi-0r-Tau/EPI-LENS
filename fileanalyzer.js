@@ -309,6 +309,7 @@ function updateResults(result) {
         <div><b>Frame Diff:</b> ${(result.frameDifference?.difference ?? 0).toFixed(4)}</div>
         <div><b>Motion Ratio:</b> ${(result.frameDifference?.motion ?? 0).toFixed(4)}</div>
         <div><b>Dominant Frequency:</b> ${(result.spectralAnalysis?.dominantFrequency ?? 0).toFixed(2)} Hz</div>
+        <div><b>Intensity:</b> ${(result.intensity ?? 0).toFixed(4)}</div>
         <div><b>Center Intensity:</b> ${(result.spatialMap?.center ?? 0).toFixed(4)}</div>
         <div><b>Peripheral Intensity:</b> ${(result.spatialMap?.periphery ?? 0).toFixed(4)}</div>
         <div><b>Red-Green Contrast:</b> ${(result.chromaticFlashes?.redGreen ?? 0).toFixed(4)}</div>
