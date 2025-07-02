@@ -726,6 +726,7 @@ function renderMetricSelector() {
 
 /**
  * Main loop for analyzing video frames and updating UI.
+ * @returns {void}
  */
 function analyzeFrameLoop() {
     if (!isAnalyzing || video.paused || video.ended) return;
