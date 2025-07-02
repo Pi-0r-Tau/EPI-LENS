@@ -369,7 +369,11 @@ video.addEventListener('ended', () => {
     }
 });
 
-// Renders flash metrics as table
+/**
+ * Renders flash metrics as table
+ * @param {Array<{timestamp: number, intensity: number}>} flashes - An array of flash event objects
+ * @returns {string} An HTML string of flash data in a table format
+ */
 function renderFlashTimestamps(flashes) {
     if (!flashes || flashes.length === 0) {
         return '<div style="color:#888;">None</div>';
