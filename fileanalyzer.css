@@ -25,14 +25,14 @@ body {
 }
 .main-layout {
     display: flex;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 32px auto;
     gap: 32px;
 }
 .sidebar {
-    flex: 0 0 320px;
+    flex: 0 0 340px;
     background: #232323;
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 2px 12px #0002;
     padding: 28px 22px 22px 22px;
     display: flex;
@@ -42,17 +42,20 @@ body {
 }
 .panel {
     background: #181818;
-    border-radius: 6px;
+    border-radius: 8px;
     box-shadow: 0 1px 6px #0001;
     padding: 18px 16px 14px 16px;
     margin-bottom: 0;
+    margin-top: 0;
 }
 .panel h3 {
-    margin: 0 0 10px 0;
-    font-size: 1.1em;
+    margin: 0 0 12px 0;
+    font-size: 1.13em;
     color: #90caf9;
     font-weight: 600;
     letter-spacing: 0.5px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 4px;
 }
 .panel label {
     font-weight: 500;
@@ -67,12 +70,13 @@ body {
 }
 .summary-panel {
     background: #232323;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 14px 16px 10px 16px;
     margin-bottom: 0;
     color: #90caf9;
     font-size: 1.08em;
     box-shadow: 0 1px 6px #2196f322;
+    border: 1.5px solid #333;
 }
 .summary-panel .summary-row {
     display: flex;
@@ -137,24 +141,30 @@ body {
     flex: 1 1 0;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 28px;
+    background: #20232a;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px #0002;
+    padding: 24px 24px 18px 24px;
 }
 .video-panel {
     background: #232323;
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 1px 8px #0002;
     padding: 18px 18px 10px 18px;
     margin-bottom: 0;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    border: 1.5px solid #333;
 }
 .video-panel video {
-    width: 100%;
-    max-width: 100%;
+    display: block;
+    margin: 0 auto;
     border-radius: 6px;
     background: #111;
     box-shadow: 0 2px 12px #0003;
+    transition: width 0.2s, height 0.2s;
 }
 .controls-panel {
     display: flex;
@@ -164,27 +174,31 @@ body {
 }
 .metrics-panel {
     background: #232323;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 22px 18px 12px 18px;
     box-shadow: 0 1px 8px #0001;
     margin-top: 0;
+    border: 1.5px solid #333;
 }
 .metrics-title {
-    font-size: 1.15em;
+    font-size: 1.18em;
     font-weight: bold;
     color: #90caf9;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     letter-spacing: 0.5px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 4px;
 }
 .live-chart-section {
     margin-bottom: 18px;
     background: #181818;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 12px 18px 10px 18px;
+    border: 1px solid #292929;
 }
 .results-panel {
     background: #181818;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 18px 18px 10px 18px;
     font-size: 1.08em;
     min-height: 80px;
@@ -276,6 +290,30 @@ body {
     background: transparent !important;
     color: #fff !important;
     border: 1.5px solid #fff !important;
+}
+.resize-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+.resize-controls button {
+    background: #181818;
+    color: #90caf9;
+    border: 1px solid #333;
+    border-radius: 3px;
+    padding: 2px 10px;
+    margin: 0 2px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+.resize-controls button:hover {
+    background: #232323;
+    color: #fff;
+    border-color: #90caf9;
+}
+.resize-controls span {
+    color: #fff !important;
 }
 
 @media (max-width: 1100px) {
