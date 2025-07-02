@@ -106,6 +106,65 @@ window.addEventListener('DOMContentLoaded', () => {
         flashesList.style.display = 'none';
         toggleBtn.textContent = 'Show';
     }
+
+    // Video resizing
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoSizeDown = document.getElementById('videoSizeDown');
+    const videoSizeUp = document.getElementById('videoSizeUp');
+    let videoSizes = [
+        { width: "320px", height: "180px" },
+        { width: "480px", height: "270px" },
+        { width: "640px", height: "360px" },
+        { width: "800px", height: "450px" },
+        { width: "100%", height: "auto" }
+    ];
+    let videoSizeIdx = 2;
+    
+    function applyVideoSize() {
+        if (!videoPlayer) return;
+        const sz = videoSizes[videoSizeIdx];
+        videoPlayer.style.width = sz.width;
+        videoPlayer.style.height = sz.height;
+        videoPlayer.style.maxWidth = "100%";
+        videoPlayer.style.maxHeight = "600px";
+    }
+    if (videoPlayer) applyVideoSize();
+    if (videoSizeDown) videoSizeDown.onclick = function() {
+        if (videoSizeIdx > 0) { videoSizeIdx--; applyVideoSize(); }
+    };
+    if (videoSizeUp) videoSizeUp.onclick = function() {
+        if (videoSizeIdx < videoSizes.length - 1) { videoSizeIdx++; applyVideoSize(); }
+    };
+
+    // Graoh resizing
+    const liveMetricsGraph = document.getElementById('liveMetricsGraph');
+    const graphSizeDown = document.getElementById('graphSizeDown');
+    const graphSizeUp = document.getElementById('graphSizeUp');
+    let graphSizes = [
+        { w: 400, h: 200 },
+        { w: 600, h: 300 },
+        { w: 750, h: 400 },
+        { w: 1000, h: 500 },
+        { w: 1200, h: 600 }
+    ];
+    let graphSizeIdx = 2;
+
+    function applyGraphSize() {
+        if (!liveMetricsGraph) return;
+        const sz = graphSizes[graphSizeIdx];
+        liveMetricsGraph.width = sz.w;
+        liveMetricsGraph.height = sz.h;
+        liveMetricsGraph.style.width = "100%";
+        liveMetricsGraph.style.height = sz.h + "px";
+        drawLiveMetricsGraph();
+    }
+    if (liveMetricsGraph) applyGraphSize();
+    if (graphSizeDown) graphSizeDown.onclick = function() {
+        if (graphSizeIdx > 0) { graphSizeIdx--; applyGraphSize(); }
+    };
+    if (graphSizeUp) graphSizeUp.onclick = function() {
+        if (graphSizeIdx < graphSizes.length - 1) { graphSizeIdx++; applyGraphSize(); }
+    };
 });
 
 fileInput.addEventListener('change', handleFileSelect);
@@ -326,7 +385,7 @@ function updateResults(result) {
         </table>
     </div>
     `;
-    
+
     updateSummaryPanelFields(result);
     try {
         if (analyzer && analyzer.timelineData) {
