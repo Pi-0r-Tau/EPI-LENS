@@ -647,7 +647,7 @@ function exportCSV(auto = false) {
     a.style.display = 'none';
     document.body.appendChild(a);
     if (!auto) a.click();
-    else setTimeout(() => a.click(), 100); // Delay for auto to avoid race condition with JSON
+    else setTimeout(() => a.click(), 100); 
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 200);
 }
 
@@ -677,7 +677,7 @@ function exportJSON(auto = false) {
     a.style.display = 'none';
     document.body.appendChild(a);
     if (!auto) a.click();
-    else setTimeout(() => a.click(), 200); // Delay for auto to avoid race condition with CSV
+    else setTimeout(() => a.click(), 200);
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 400);
 }
 
@@ -688,6 +688,7 @@ function sanitizeFileName(name) {
 
 /**
  * Renders the metric selector UI for live chart metrics.
+ * @returns {void}
  */
 function renderMetricSelector() {
     if (!liveChartArea) return;
