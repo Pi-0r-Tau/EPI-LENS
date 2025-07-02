@@ -59,11 +59,12 @@ Risk score is calculated as instances of a flash for threshold criteria within s
 - More efficient FFT using the Cooley-Tukey algorithm with radix-2 decomposition with typed arrays
 - Integrated chart dashboard
 - Mermaid diagram updated with LAB updates in testing
--  Load JSON feature, to get around 5mb data limit in local storage.
--  Offline video analysis suite with built in playlist analysis, at video end it exports the data as CSV and JSON then starts analysis of next video.
--  Further updates to analysis suite with clearer and more helpful formatting and stats report.
--  Red intensity and red delta metrics for improved detection of color based flashes and rapid red channel changes.
--  Metric panel for analysis suite updated to improve formatting with dark mode, less clustered.
+- Load JSON feature, to get around 5mb data limit in local storage.
+- Offline video analysis suite with built in playlist analysis, at video end it exports the data as CSV and JSON then starts analysis of next video.
+- Further updates to analysis suite with clearer and more helpful formatting and stats report.
+- Red intensity and red delta metrics for improved detection of color based flashes and rapid red channel changes.
+- Metric panel for analysis suite updated to improve formatting with dark mode, less clustered.
+- Offline video analysis suite now has dynamic controls for sizes of video preview and live metric graph
 
 ## Updates in progress
 - LAB metrics:
