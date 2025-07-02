@@ -396,6 +396,44 @@ function renderFlashTimestamps(flashes) {
     return html;
 }
 
+/**
+ * Updates the results panel with a detailed analysis summary.
+ *
+ * Generates a styled HTML table displaying various metrics from the video analysis result and injects it into the `resultsPanel` element.
+ *
+ * @param {Object} result - The analysis result object containing computed metrics.
+ * @param {number} [result.timestamp] - Time in seconds of the analyzed frame.
+ * @param {number} [result.brightness] - Average brightness of the frame.
+ * @param {number} [result.redIntensity] - Red channel intensity.
+ * @param {number} [result.redDelta] - Change in red intensity.
+ * @param {number} [result.flashCount] - Number of detected flashes.
+ * @param {string} [result.riskLevel] - Risk level classification
+ * @param {Object} [result.psi] - Photosensitive seizure index data.
+ * @param {number} [result.psi.score] - PSI score value.
+ * @param {number} [result.flickerFrequency] - Frequency of flickering in Hz.
+ * @param {number} [result.entropy] - Entropy of the frame.
+ * @param {number} [result.temporalChange] - Temporal change metric.
+ * @param {Object} [result.frameDifference] - Frame difference analysis.
+ * @param {number} [result.frameDifference.difference] - Pixel difference.
+ * @param {number} [result.frameDifference.motion] - Motion ratio.
+ * @param {Object} [result.spectralAnalysis] - Frequency domain analysis.
+ * @param {number} [result.spectralAnalysis.dominantFrequency] - Dominant frequency in Hz.
+ * @param {number} [result.intensity] - Overall flash intensity.
+ * @param {Object} [result.spatialMap] - Spatial intensity distribution.
+ * @param {number} [result.spatialMap.center] - Intensity at the center.
+ * @param {number} [result.spatialMap.periphery] - Intensity at the periphery.
+ * @param {Object} [result.chromaticFlashes] - Chromatic contrast metrics.
+ * @param {number} [result.chromaticFlashes.redGreen] - Red-green contrast.
+ * @param {number} [result.chromaticFlashes.blueYellow] - Blue-yellow contrast.
+ * @param {Object} [result.temporalContrast] - Temporal contrast metrics.
+ * @param {number} [result.temporalContrast.currentRate] - Current contrast rate.
+ * @param {Object} [result.edgeDetection] - Edge detection metrics.
+ * @param {number} [result.edgeDetection.edgeDensity] - Density of edges.
+ * @param {number} [result.edgeDetection.edgeCount] - Total number of edges.
+ * @param {number} [result.edgeDetection.temporalEdgeChange] - Rate of edge change over time.
+ *
+ * @returns {void}
+ */
 function updateResults(result) {
     resultsPanel.innerHTML = `
     <div style="background:transparent;max-width:720px;margin:auto;">
