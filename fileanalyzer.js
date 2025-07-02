@@ -503,7 +503,7 @@ function updateResults(result) {
 /**
  * Updates summary panel fields with the latest analysis results.
  *
- * Updates the following DOM elements:
+ * Updates the DOM elements:
  * - `#SummaryFlashes`: Displays the number of detected flashes.
  * - `#SummaryRisk`: Displays the risk level
  * - `#SummaryPSI`: Displays the PSI score
@@ -529,7 +529,32 @@ function updateSummaryPanelFields(result) {
     } catch (e) {}
 }
 
-
+/**
+ * Updates the live metrics chart with the latest frame analysis data.
+ *
+ * Appends a new data point to the `liveMetricsHistory` array, maintaining a rolling window of up to 120 entries. 
+ * Extracts key metrics
+ * from the `data` object, applies default values if required, and normalizes the `riskLevel` to a numeric scale:
+ * - `high` → 1
+ * - `medium` → 0.5
+ * - `low` or undefined → 0
+ *
+ * @param {Object} data - The latest frame analysis data.
+ * @param {number} [data.brightness=0] - Average brightness of the frame.
+ * @param {number} [data.intensity=0] - Flash intensity.
+ * @param {number} [data.redIntensity=0] - Red channel intensity.
+ * @param {number} [data.redDelta=0] - Change in red intensity.
+ * @param {string|number} [data.riskLevel=0] - Risk level as a string/ numeric value.
+ * @param {Object} [data.psi] - PSI score container.
+ * @param {number} [data.psi.score=0] - PSI score value.
+ * @param {number} [data.flickerFrequency=0] - Flicker frequency in Hz.
+ * @param {number} [data.entropy=0] - Entropy of the frame.
+ * @param {number} [data.temporalChange=0] - Temporal change metric.
+ * @param {Object} [data.frameDifference] - Frame difference metrics.
+ * @param {number} [data.frameDifference.difference=0] - Pixel frame difference.
+ *
+ * @returns {void}
+ */
 function updateLiveMetricsChart(data) {
     const maxPoints = 120;
     liveMetricsHistory.push({
