@@ -226,6 +226,10 @@ function loadVideoFromPlaylist(index) {
     analyzer.videoTitle = file.name;
 }
 
+/**
+ * Updates the playlist information display based on the current playlist state
+ * @returns {void}
+ */
 function updatePlaylistInfo() {
     if (!playlistInfo) return;
     if (playlist.length > 1) {
@@ -237,6 +241,18 @@ function updatePlaylistInfo() {
     }
 }
 
+/**
+ * Initiates the video analysis workflow
+ * @param {HTMLVideoElement} video - The video element to be analysed, must have a valid `src`.
+ * @param {HTMLInputElement} flashIntensityInput - Input element for flash intensity threshold.
+ * @param {HTMLInputElement} flashesPerSecondInput - Input element for flashes per second threshold.
+ * @param {Array<Object>} playlist - Array of video metadata objects.
+ * @param {number} playlistIndex - Index of the currently selected video in the playlist.
+ * @param {VideoAnalyzer} analyzer - Instance of the `videoAnalyzer` class used for analysis.
+ * @param {HTMLElement} resultsPanel - DOM element for displaying analysis status.
+ * @returns {void}
+ * @throws {Error} Errors during frame capture or brightness calculation.
+ */
 function startAnalysis() {
     if (!video.src) return;
     if (!analyzer) analyzer = new VideoAnalyzer();
