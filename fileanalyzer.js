@@ -611,6 +611,10 @@ function drawLiveMetricsGraph() {
     });
 }
 
+/**
+ * Updates the legend for the live metrics chart
+ * @returns {void}
+ */
 function updateLiveMetricsLegend() {
     if (!liveMetricsLegend) return;
     const metrics = ALL_METRICS.filter(m => selectedMetrics.includes(m.key));
