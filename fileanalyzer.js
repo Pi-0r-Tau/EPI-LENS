@@ -201,6 +201,11 @@ function handleFileSelect(e) {
     updatePlaylistInfo();
 }
 
+/**
+ * Loads a video file form the playlist at the specified indx and prepares UI for playback and analysis
+ * @param {number} index - The index of the video file in the playlist to load
+ * @returns {void}
+ */
 function loadVideoFromPlaylist(index) {
     if (index < 0 || index >= playlist.length) return;
     const file = playlist[index];
