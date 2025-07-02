@@ -188,6 +188,11 @@ function openChartsView() {
     });
 }
 
+/**
+ * Handles the file selction event via input element
+ * @param {Event} e - File selection event triggered by the input element
+ * @returns {void}
+ */
 function handleFileSelect(e) {
     playlist = Array.from(e.target.files);
     playlistIndex = 0;
