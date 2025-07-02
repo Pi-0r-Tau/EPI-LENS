@@ -57,10 +57,25 @@
         </aside>
         <main class="main-content">
             <div class="video-panel">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <h3 style="margin:0;color:#90caf9;">Video Preview</h3>
+                    <div class="resize-controls" id="videoResizeControls">
+                        <span style="color:#bbb;font-size:0.98em;margin-right:6px;">Video Size:</span>
+                        <button type="button" id="videoSizeDown" title="Decrease video size" style="font-size:1.2em;">−</button>
+                        <button type="button" id="videoSizeUp" title="Increase video size" style="font-size:1.2em;">+</button>
+                    </div>
+                </div>
                 <video id="videoPlayer" controls style="display:none;margin-top:0;"></video>
             </div>
             <div class="metrics-panel">
-                <div class="metrics-title">Live Metrics</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div class="metrics-title">Live Metrics</div>
+                    <div class="resize-controls" id="graphResizeControls">
+                        <span style="color:#bbb;font-size:0.98em;margin-right:6px;">Graph Size:</span>
+                        <button type="button" id="graphSizeDown" title="Decrease graph size" style="font-size:1.2em;">−</button>
+                        <button type="button" id="graphSizeUp" title="Increase graph size" style="font-size:1.2em;">+</button>
+                    </div>
+                </div>
                 <div id="liveChartArea" class="live-chart-section" style="display:none;">
                     <div id="metricSelector" class="metric-selector"></div>
                     <canvas id="liveMetricsGraph" width="750" height="400" style="width:100%;background:#181818;border-radius:4px;"></canvas>
@@ -74,6 +89,5 @@
     <script src="fileanalyzer.js"></script>
 </body>
 </html>
-
 
 
