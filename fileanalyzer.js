@@ -574,6 +574,10 @@ function updateLiveMetricsChart(data) {
     updateLiveMetricsLegend();
 }
 
+/**
+ * Renders the live metrics graph on a canvas element.
+ * @returns {void}
+ */
 function drawLiveMetricsGraph() {
     if (!liveMetricsGraph) return;
     const ctx = liveMetricsGraph.getContext('2d');
