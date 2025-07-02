@@ -500,9 +500,23 @@ function updateResults(result) {
     } catch (e) {}
 }
 
+/**
+ * Updates summary panel fields with the latest analysis results.
+ *
+ * Updates the following DOM elements:
+ * - `#SummaryFlashes`: Displays the number of detected flashes.
+ * - `#SummaryRisk`: Displays the risk level
+ * - `#SummaryPSI`: Displays the PSI score
+ *
+ * @param {Object} result - The result object containing analysis metrics.
+ * @param {number} [result.flashCount] - Number of detected flashes.
+ * @param {string} [result.riskLevel] - Risk level classification.
+ * @param {Object} [result.psi] - PSI score container.
+ * @param {number} [result.psi.score] - PSI score value.
+ * @returns {void}
+ */
 function updateSummaryPanelFields(result) {
     try {
-        // Flashes, Risk, PSI
         document.getElementById('SummaryFlashes').textContent = result && result.flashCount !== undefined
             ? result.flashCount
             : '0';
@@ -515,8 +529,8 @@ function updateSummaryPanelFields(result) {
     } catch (e) {}
 }
 
+
 function updateLiveMetricsChart(data) {
-    // Store a rolling history of metrics
     const maxPoints = 120;
     liveMetricsHistory.push({
         brightness: data.brightness || 0,
