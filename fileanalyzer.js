@@ -626,6 +626,13 @@ function updateLiveMetricsLegend() {
     ).join('');
 }
 
+/**
+ * Exports the current video analysis data as a CSV file.
+ * @param {boolean} [auto=false] - Whether to trigger the download automatically
+ * with a delay.
+ *
+ * @returns {void}
+ */
 function exportCSV(auto = false) {
     if (!analyzer) return;
     const csv = analyzer.generateCSV();
@@ -644,6 +651,18 @@ function exportCSV(auto = false) {
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 200);
 }
 
+/**
+ * Exports the current video analysis data as a JSON file.
+ *
+ * Serializes the analysis data using `analyzer.generateJSON()`,
+ * creates a downloadable Blob from the JSON string, and triggers a download
+ * in the browser.
+ *
+ * @param {boolean} [auto=false] - Whether to trigger the download automatically
+ * with a delay.
+ *
+ * @returns {void}
+ */
 function exportJSON(auto = false) {
     if (!analyzer) return;
     const json = analyzer.generateJSON();
