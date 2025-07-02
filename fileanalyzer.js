@@ -173,7 +173,12 @@ document.getElementById('stopFileAnalysis').addEventListener('click', stopAnalys
 document.getElementById('exportFileCSV').addEventListener('click', exportCSV);
 document.getElementById('exportFileJSON').addEventListener('click', exportJSON);
 
-
+/**
+ * Opens the charts view in a new browser tab using the analysis data
+ * @param {object} analyzer - An object with `generateJSON` that returns analysis data
+ * @param {HTMLVideoElement} video - The video element to be paused if playing
+ * @returns {void}
+ */
 function openChartsView() {
     if (!analyzer) return;
     if (!video.paused) video.pause();
