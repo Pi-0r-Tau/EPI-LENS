@@ -291,6 +291,10 @@ function startAnalysis() {
 
 }
 
+/**
+ * Stops the video analysis process
+ * @returns {void}
+ */
 function stopAnalysis() {
     isAnalyzing = false;
     if (analysisTimer) clearTimeout(analysisTimer);
@@ -298,6 +302,10 @@ function stopAnalysis() {
     updateSummaryPanelStatus();
 }
 
+/**
+ * Restarts the analysis process from the beginning, performing a full reset of the analysis state and UI
+ * @returns {void}
+ */
 function restartAnalysis() {
     stopAnalysis();
     if (analyzer) analyzer.reset();
