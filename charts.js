@@ -1,15 +1,5 @@
 /**
  * @file charts.js
- * @description Interactive charting module for EPI-LENS data analysis.
- *
- * This file provides a dark themed, dependency free UI for visuals of analysis metrics
- * This includes:
- * - Dynamic chart creation (Scatter/Line/Multiline or single view)
- * - Playback controls for timestamped data
- * - Data export
- * - Tooltip and lengend interactivity
- * Designed for in browser enviroments, essentially PEAT for web.
- *
  * @module charts
  */
 
@@ -29,7 +19,7 @@ let chartViewMode = 'multi';
 let selectionZoom = null; // {startIdx, endIdx} or null
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Add "Load JSON" button to header
+
     let header = document.querySelector('header');
     if (header && !document.getElementById('loadJsonBtn')) {
         const loadBtn = document.createElement('button');
@@ -39,7 +29,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadBtn.onclick = openJsonFileDialog;
         header.querySelector('div').appendChild(loadBtn);
 
-        // Hidden file input for loading JSON
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.accept = '.json,application/json';
@@ -126,9 +115,29 @@ async function loadData() {
         showError('chrome.storage.local not available.');
     }
 }
+
+const ALL_METRICS = [
+    { key: "brightness", label: "Brightness", color: "#2196f3" },
+    { key: "intensity", label: "Flash Intensity", color: "#f44336" },
+    { key: "redIntensity", label: "Red Intensity", color: "#e53935" },
+    { key: "redDelta", label: "Red Delta", color: "#ff5252" },
+    { key: "riskLevel", label: "Risk", color: "#ff9800", convert: v => v === 'high' ? 1 : v === 'medium' ? 0.5 : 0 },
+    { key: "psiScore", label: "PSI Score", color: "#8bc34a" },
+    { key: "flickerFrequency", label: "Flicker Freq", color: "#00bcd4" },
+    { key: "entropy", label: "Entropy", color: "#9c27b0" },
+    { key: "dominantColorR", label: "DomColor R", color: "#ff1744" },
+    { key: "dominantColorG", label: "DomColor G", color: "#00e676" },
+    { key: "dominantColorB", label: "DomColor B", color: "#2979ff" },
+    { key: "dominantLabL", label: "DomLab L", color: "#fff176" },
+    { key: "dominantLabA", label: "DomLab a", color: "#f06292" },
+    { key: "dominantLabB", label: "DomLab b", color: "#ba68c8" },
+    { key: "cie76Delta", label: "CIE76 Δ", color: "#ffea00" },
+    { key: "patternedStimulusScore", label: "Patterned Stimulus", color: "#00e5ff" }
+];
+
 /**
  * Flattens nested metrics for charting and table display.
- * @param {Object} row - The analysis data row.
+ * @param {Object} row 
  * @returns {Object} Flattened row.
  */
 function flattenMetrics(row) {
@@ -203,17 +212,38 @@ function flattenMetrics(row) {
         flat['temporalContrast.maxRate'] = Number(row.temporalContrast?.maxRate ?? 0);
     }
 
-    // redIntensity and redDelta 
+    // redIntensity and redDelta
     flat['redIntensity'] = Number(row.redIntensity ?? 0);
     flat['redDelta'] = Number(row.redDelta ?? 0);
 
+
+    // dominantColor
+    if (row.dominantColor) {
+        flat['dominantColor.r'] = Number(row.dominantColor?.r ?? 0);
+        flat['dominantColor.g'] = Number(row.dominantColor?.g ?? 0);
+        flat['dominantColor.b'] = Number(row.dominantColor?.b ?? 0);
+    }
+    // dominantLab
+    if (row.dominantLab) {
+        flat['dominantLab.L'] = Number(row.dominantLab?.L ?? 0);
+        flat['dominantLab.a'] = Number(row.dominantLab?.a ?? 0);
+        flat['dominantLab.b'] = Number(row.dominantLab?.b ?? 0);
+    }
+    // cie76Delta
+    if (typeof row.cie76Delta !== "undefined") {
+        flat['cie76Delta'] = Number(row.cie76Delta ?? 0);
+    }
+    // Patterned Stimulus
+    if (typeof row.patternedStimulusScore !== "undefined") {
+        flat['patternedStimulusScore'] = Number(row.patternedStimulusScore ?? 0);
+    }
 
     return flat;
 }
 
 /**
  * Displays an error message in the document body.
- * @param {string} msg - The error message.
+ * @param {string} msg 
  */
 function showError(msg) {
     document.body.innerHTML = `<div style="color:#f44336;padding:32px;text-align:center;">${msg}</div>`;
@@ -330,8 +360,8 @@ function setupAddChartModal() {
 }
 /**
  * Adds a new chart configuration to the charts array and renders all charts.
- * @param {string} xField - The field for the X axis.
- * @param {string[]} yFields - The fields for the Y axes.
+ * @param {string} xField 
+ * @param {string[]} yFields 
  */
 function addChart(xField, yFields) {
     if (!xField || !Array.isArray(yFields) || !yFields.length) return;
@@ -346,9 +376,6 @@ function addChart(xField, yFields) {
     renderAllCharts();
 }
 
-/**
- * Renders all chart cards in the charts container.
- */
 function renderAllCharts() {
     const area = document.getElementById('chartsArea');
     area.innerHTML = '';
@@ -383,8 +410,8 @@ function renderAllCharts() {
 }
 /**
  * Renders a single chart card, including header, legend, chart, and data table.
- * @param {Object} chart - Chart configuration.
- * @param {number} idx - Chart index.
+ * @param {Object} chart 
+ * @param {number} idx 
  * @returns {HTMLElement} The chart card element.
  */
 function renderChartCard(chart, idx) {
@@ -458,7 +485,7 @@ function renderChartCard(chart, idx) {
 
     card.appendChild(header);
 
-    // Legend for toggling series
+    // Legend for toggling
     const legend = document.createElement('div');
     legend.style.marginBottom = '6px';
     chart.y.forEach((yMetric, yIdx) => {
@@ -494,7 +521,7 @@ function renderChartCard(chart, idx) {
     }
     card.appendChild(canvas);
 
-    // Draw chart (no flash overlay) TASK 2848: Implement flash overlay correctly, there is the groundwork but it needs to be implemented correctly.
+    // Draw chart (no flash overlay) TASK 2848: Review flash overlay, there is the groundwork but it needs to be implemented correctly.
     if (chart.y.length === 1 && chart.y[0] === 'isFlash') {
         drawIsFlashScatter(canvas, chart);
     } else if (chart.x === 'timestamp') {
@@ -542,9 +569,9 @@ function renderChartCard(chart, idx) {
         selectionRect && (selectionRect.style.display = 'none');
         const rect = canvas.getBoundingClientRect();
         selectEnd = e.clientX - rect.left;
-        // Calculate indices for zoom
+        // Indices for zoom
         const data = getMultiYAxisChartData(chart);
-        const [start, end] = getZoomedIndices(data.x.length);
+        const [start, _end] = getZoomedIndices(data.x.length);
         const xVals = data.x;
         const left = 40, right = 10, w = canvas.width - left - right;
         let minPx = Math.min(selectStart, selectEnd);
@@ -572,7 +599,6 @@ function renderChartCard(chart, idx) {
         renderAllCharts();
     };
 
-    // Tooltip
     const tooltip = document.createElement('div');
     tooltip.style.position = 'absolute';
     tooltip.style.pointerEvents = 'none';
@@ -642,104 +668,32 @@ function renderChartCard(chart, idx) {
     return card;
 }
 
-/**
- * Draws a scatter plot for isFlash metric.
- * TASK 2848: This is the groundwork, need to fix this feature refer to TASK 2848 in notes.
- * @param {HTMLCanvasElement} canvas
- * @param {Object} chart
- */
-function drawIsFlashScatter(canvas, chart) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const left = 40, right = 10, top = 20, bottom = 30;
-    const w = canvas.width - left - right;
-    const h = canvas.height - top - bottom;
-    let data = getMultiYAxisChartData(chart);
-
-    let minX = Math.min(...data.x), maxX = Math.max(...data.x);
-    let minY = 0, maxY = 1;
-
-    // Axes
-    ctx.strokeStyle = "#888";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(left, top);
-    ctx.lineTo(left, canvas.height - bottom);
-    ctx.lineTo(canvas.width - right, canvas.height - bottom);
-    ctx.stroke();
-
-    // Axis labels
-    ctx.fillStyle = "#bbb";
-    ctx.font = "12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(chart.x, left + w / 2, canvas.height - 6);
-    ctx.save();
-    ctx.translate(14, top + h / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText('isFlash', 0, 0);
-    ctx.restore();
-
-    // Ticks
-    ctx.fillStyle = "#666";
-    ctx.font = "11px sans-serif";
-    for (let i = 0; i <= 1; ++i) {
-        let y = top + h - (h * (i / 1));
-        ctx.fillText(i.toString(), left - 8, y + 3);
-        ctx.beginPath();
-        ctx.moveTo(left - 3, y);
-        ctx.lineTo(left, y);
-        ctx.stroke();
-    }
-    for (let i = 0; i <= 5; ++i) {
-        let xVal = minX + (maxX - minX) * (i / 5);
-        let x = left + w * (i / 5);
-        ctx.fillText(xVal.toFixed(2), x, canvas.height - bottom + 16);
-        ctx.beginPath();
-        ctx.moveTo(x, canvas.height - bottom);
-        ctx.lineTo(x, canvas.height - bottom + 3);
-        ctx.stroke();
-    }
-
-    // Draw scatter points
-    ctx.fillStyle = "#ff9800";
-    for (let i = 0; i < data.x.length; i++) {
-        let x = left + ((data.x[i] - minX) / (maxX - minX)) * w;
-        let y = top + h - ((data.y[0][i] - minY) / (maxY - minY)) * h;
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, 2 * Math.PI);
-        ctx.fill();
-    }
+function getChartArea(canvas) {
+    return { left: 40, right: 10, top: 20, bottom: 30,
+        width: canvas.width - 40 - 10,
+        height: canvas.height - 20 - 30
+    };
 }
-/**
- * Draws a multi-Y-axis line chart for timestamp X axis.
- * @param {HTMLCanvasElement} canvas
- * @param {Object} chart
- */
-function drawMultiYAxisChart(canvas, chart) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const { xVals, yVals, left, w, h, minX, maxX, minY, maxY } = getChartDataForDraw(canvas, chart);
-
+function drawAxes(ctx, area, minX, maxX, minY, maxY, xLabel, yLabel, _isScatter = false) {
     // Axes
     ctx.strokeStyle = "#888";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(left, 20);
-    ctx.lineTo(left, canvas.height - 30);
-    ctx.lineTo(canvas.width - 10, canvas.height - 30);
+    ctx.moveTo(area.left, area.top);
+    ctx.lineTo(area.left, area.top + area.height);
+    ctx.lineTo(area.left + area.width, area.top + area.height);
     ctx.stroke();
 
     // Axis labels
     ctx.fillStyle = "#bbb";
     ctx.font = "12px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(chart.x, left + w / 2, canvas.height - 6);
+    ctx.fillText(xLabel, area.left + area.width / 2, area.top + area.height + 24);
     ctx.save();
-    ctx.translate(14, 20 + h / 2);
+    ctx.translate(14, area.top + area.height / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText(chart.y.join(', '), 0, 0);
+    ctx.fillText(yLabel, 0, 0);
     ctx.restore();
 
     // Y axis ticks
@@ -747,33 +701,75 @@ function drawMultiYAxisChart(canvas, chart) {
     ctx.font = "11px sans-serif";
     for (let i = 0; i <= 5; ++i) {
         let yVal = minY + (maxY - minY) * (i / 5);
-        let y = 20 + h - (h * (i / 5));
-        ctx.fillText(yVal.toFixed(2), left - 8, y + 3);
+        let y = area.top + area.height - (area.height * (i / 5));
+        ctx.fillText(yVal.toFixed(2), area.left - 8, y + 3);
         ctx.beginPath();
-        ctx.moveTo(left - 3, y);
-        ctx.lineTo(left, y);
+        ctx.moveTo(area.left - 3, y);
+        ctx.lineTo(area.left, y);
         ctx.stroke();
     }
     // X axis ticks
     for (let i = 0; i <= 5; ++i) {
         let xVal = minX + (maxX - minX) * (i / 5);
-        let x = left + w * (i / 5);
-        ctx.fillText(xVal.toFixed(2), x, canvas.height - 30 + 16);
+        let x = area.left + area.width * (i / 5);
+        ctx.fillText(xVal.toFixed(2), x, area.top + area.height + 16);
         ctx.beginPath();
-        ctx.moveTo(x, canvas.height - 30);
-        ctx.lineTo(x, canvas.height - 30 + 3);
+        ctx.moveTo(x, area.top + area.height);
+        ctx.lineTo(x, area.top + area.height + 3);
         ctx.stroke();
     }
+}
 
-    // Draw each metric as a line
+/**
+ * Gets min/max for X and Y values, with fallback if all values arw equal.
+ */
+function getMinMax(xVals, yVals) {
+    let minX = Math.min(...xVals), maxX = Math.max(...xVals);
+    let minY = Math.min(...yVals.flat()), maxY = Math.max(...yVals.flat());
+    if (minX === maxX) maxX += 1;
+    if (minY === maxY) maxY += 1;
+    return { minX, maxX, minY, maxY };
+}
+
+function drawIsFlashScatter(canvas, chart) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const area = getChartArea(canvas);
+    let data = getMultiYAxisChartData(chart);
+    let minX = Math.min(...data.x), maxX = Math.max(...data.x);
+    let minY = 0, maxY = 1;
+
+    drawAxes(ctx, area, minX, maxX, minY, maxY, chart.x, 'isFlash', true);
+
+    ctx.fillStyle = "#ff9800";
+    for (let i = 0; i < data.x.length; i++) {
+        let x = area.left + ((data.x[i] - minX) / (maxX - minX)) * area.width;
+        let y = area.top + area.height - ((data.y[0][i] - minY) / (maxY - minY)) * area.height;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+}
+
+function drawMultiYAxisChart(canvas, chart) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const { xVals, yVals } = getMultiYAxisChartData(chart);
+    const area = getChartArea(canvas);
+    const { minX, maxX, minY, maxY } = getMinMax(xVals, yVals);
+
+    drawAxes(ctx, area, minX, maxX, minY, maxY, chart.x, chart.y.join(', '));
+
     chart.y.forEach((yMetric, yIdx) => {
         if (!chart.visible[yIdx]) return;
         ctx.beginPath();
         ctx.strokeStyle = getMetricColor(yMetric);
         ctx.lineWidth = 2;
         for (let i = 0; i < xVals.length; i++) {
-            let x = left + ((xVals[i] - minX) / (maxX - minX)) * w;
-            let y = 20 + h - ((yVals[yIdx][i] - minY) / (maxY - minY)) * h;
+            let x = area.left + ((xVals[i] - minX) / (maxX - minX)) * area.width;
+            let y = area.top + area.height - ((yVals[yIdx][i] - minY) / (maxY - minY)) * area.height;
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
         }
@@ -781,74 +777,22 @@ function drawMultiYAxisChart(canvas, chart) {
     });
 }
 
-/**
- * Draws a multi-Y-axis scatter plot for non-timestamp X axis.
- * @param {HTMLCanvasElement} canvas
- * @param {Object} chart
- */
 function drawMultiYAxisScatter(canvas, chart) {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const left = 40, right = 10, top = 20, bottom = 30;
-    const w = canvas.width - left - right;
-    const h = canvas.height - top - bottom;
+    const area = getChartArea(canvas);
     let data = getMultiYAxisChartData(chart);
+    const { minX, maxX, minY, maxY } = getMinMax(data.x, data.y);
 
-    let minX = Math.min(...data.x), maxX = Math.max(...data.x);
-    let minY = Math.min(...data.y.flat()), maxY = Math.max(...data.y.flat());
-    if (minX === maxX) maxX += 1;
-    if (minY === maxY) maxY += 1;
-
-    // Axes
-    ctx.strokeStyle = "#888";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(left, top);
-    ctx.lineTo(left, canvas.height - bottom);
-    ctx.lineTo(canvas.width - right, canvas.height - bottom);
-    ctx.stroke();
-
-    // Axis labels
-    ctx.fillStyle = "#bbb";
-    ctx.font = "12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(chart.x, left + w / 2, canvas.height - 6);
-    ctx.save();
-    ctx.translate(14, top + h / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText(chart.y.join(', '), 0, 0);
-    ctx.restore();
-
-    // Y axis ticks
-    ctx.fillStyle = "#666";
-    ctx.font = "11px sans-serif";
-    for (let i = 0; i <= 5; ++i) {
-        let yVal = minY + (maxY - minY) * (i / 5);
-        let y = top + h - (h * (i / 5));
-        ctx.fillText(yVal.toFixed(2), left - 8, y + 3);
-        ctx.beginPath();
-        ctx.moveTo(left - 3, y);
-        ctx.lineTo(left, y);
-        ctx.stroke();
-    }
-    // X axis ticks
-    for (let i = 0; i <= 5; ++i) {
-        let xVal = minX + (maxX - minX) * (i / 5);
-        let x = left + w * (i / 5);
-        ctx.fillText(xVal.toFixed(2), x, canvas.height - bottom + 16);
-        ctx.beginPath();
-        ctx.moveTo(x, canvas.height - bottom);
-        ctx.lineTo(x, canvas.height - bottom + 3);
-        ctx.stroke();
-    }
+    drawAxes(ctx, area, minX, maxX, minY, maxY, chart.x, chart.y.join(', '), true);
 
     chart.y.forEach((yMetric, yIdx) => {
         if (!chart.visible[yIdx]) return;
         ctx.fillStyle = getMetricColor(yMetric);
         for (let i = 0; i < data.x.length; i++) {
-            let x = left + ((data.x[i] - minX) / (maxX - minX)) * w;
-            let y = top + h - ((data.y[yIdx][i] - minY) / (maxY - minY)) * h;
+            let x = area.left + ((data.x[i] - minX) / (maxX - minX)) * area.width;
+            let y = area.top + area.height - ((data.y[yIdx][i] - minY) / (maxY - minY)) * area.height;
             ctx.beginPath();
             ctx.arc(x, y, 3, 0, 2 * Math.PI);
             ctx.fill();
@@ -857,7 +801,7 @@ function drawMultiYAxisScatter(canvas, chart) {
 }
 
 /**
- * Gets chart data for the current chart, respecting selection zoom.
+ * Gets chart data for the current chart, alowing for zoom if applied
  * @param {Object} chart
  * @returns {{x: any[], y: any[][]}}
  */
@@ -887,7 +831,7 @@ function getZoomedIndices(dataLen) {
     if (zoomMode === 'fit' || !isPlaying) {
         return [0, dataLen];
     }
-    // 'window' mode: show a window around playbackIndex
+
     const half = Math.floor(zoomWindowSize / 2);
     let start = Math.max(0, playbackIndex - half);
     let end = Math.min(dataLen, playbackIndex + half + 1);
@@ -920,7 +864,6 @@ function getChartDataForDraw(canvas, chart) {
 function exportChartData(selectedCharts) {
     // If not specified, export all
     if (!selectedCharts) selectedCharts = charts;
-    // Gather all unique metrics
     let allMetrics = new Set();
     selectedCharts.forEach(chart => {
         allMetrics.add(chart.x);
@@ -928,20 +871,19 @@ function exportChartData(selectedCharts) {
     });
     allMetrics = Array.from(allMetrics);
 
-    // Build CSV
+    // CSV
     let csv = allMetrics.join(',') + '\n';
     for (let i = 0; i < analysisData.length; ++i) {
         csv += allMetrics.map(m => analysisData[i][m] ?? '').join(',') + '\n';
     }
 
-    // Build JSON
+    // JSON
     let json = analysisData.map(row => {
         const obj = {};
         allMetrics.forEach(m => obj[m] = row[m]);
         return obj;
     });
 
-    // Download dialog
     const blobCsv = new Blob([csv], { type: 'text/csv' });
     const blobJson = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
     const aCsv = document.createElement('a');
@@ -979,7 +921,7 @@ function formatCell(val, key) {
         // Show the key in the tooltip for context
         return `<pre title="Field: ${key}" style="white-space:pre-wrap;font-size:11px;">${JSON.stringify(val, null, 1)}</pre>`;
     }
-    // Also show the key as a tooltip for all cells TASK 2849: This is buggy at the moment refer to notes regarding the Story.
+    // Show the key as a tooltip for all cells TASK 2849: This is buggy at the moment refer to notes regarding the Story.
     return `<span title="Field: ${key}">${val}</span>`;
 }
 
@@ -1082,9 +1024,7 @@ function setupPlaybackControls() {
     updatePlaybackTime();
 }
 
-/**
- * Opens the file dialog to load a JSON file.
- */
+
 function openJsonFileDialog() {
     const fileInput = document.getElementById('jsonFileInput');
     if (fileInput) fileInput.click();
@@ -1092,7 +1032,7 @@ function openJsonFileDialog() {
 
 /**
  * Handles the selection of a JSON file for analysis data.
- * @param {Event} e - The change event from the file input.
+ * @param {Event} e
  */
 function handleJsonFileSelected(e) {
     const file = e.target.files[0];
