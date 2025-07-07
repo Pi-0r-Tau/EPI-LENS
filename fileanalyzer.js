@@ -1,21 +1,11 @@
 /**
  * @file fileanalyzer.js
- * @description
- * Local video analysis suite for EPI-LENS. Handles UI logic, playlist management, live charting, and
- * real-time analysis of user-selected video files. Supports batch/playlist analysis, auto-export,
- * metric selection for live charts, and seamless integration with the main VideoAnalyzer engine.
- *
- * Features:
- * - Multi-file playlist support with auto-advance and auto-export (CSV/JSON) per video
- * - Live metrics chart with selectable metrics
- * - Real-time results panel with all computed metrics
- * - Export, restart, and charts view integration
- * - Responsive UI for analysis suite experience
- *
  * @module fileanalyzer
  */
 
 "use strict";
+
+import VideoAnalyzer from './VideoAnalyzerCore.js';
 
 let analyzer = null;
 let isAnalyzing = false;
@@ -28,7 +18,7 @@ let liveChartArea = document.getElementById('liveChartArea');
 let liveMetricsGraph = document.getElementById('liveMetricsGraph');
 let liveMetricsLegend = document.getElementById('liveMetricsLegend');
 let liveMetricsHistory = [];
-let metricSelector = null;
+let metricSelector = null; // TODO: review implemenation 
 
 const ALL_METRICS = [
     { key: "brightness", label: "Brightness", color: "#2196f3" },
@@ -38,7 +28,15 @@ const ALL_METRICS = [
     { key: "riskLevel", label: "Risk", color: "#ff9800", convert: v => v === 'high' ? 1 : v === 'medium' ? 0.5 : 0 },
     { key: "psiScore", label: "PSI Score", color: "#8bc34a" },
     { key: "flickerFrequency", label: "Flicker Freq", color: "#00bcd4" },
-    { key: "entropy", label: "Entropy", color: "#9c27b0" }
+    { key: "entropy", label: "Entropy", color: "#9c27b0" },
+    { key: "dominantColorR", label: "DomColor R", color: "#ff1744" },
+    { key: "dominantColorG", label: "DomColor G", color: "#00e676" },
+    { key: "dominantColorB", label: "DomColor B", color: "#2979ff" },
+    { key: "dominantLabL", label: "DomLab L", color: "#fff176" },
+    { key: "dominantLabA", label: "DomLab a", color: "#f06292" },
+    { key: "dominantLabB", label: "DomLab b", color: "#ba68c8" },
+    { key: "cie76Delta", label: "CIE76 Δ", color: "#ffea00" },
+    { key: "patternedStimulusScore", label: "Patterned Stimulus", color: "#00e5ff" }
 ];
 
 let selectedMetrics = ["brightness", "intensity", "riskLevel"];
@@ -119,7 +117,7 @@ window.addEventListener('DOMContentLoaded', () => {
         { width: "100%", height: "auto" }
     ];
     let videoSizeIdx = 2;
-    
+
     function applyVideoSize() {
         if (!videoPlayer) return;
         const sz = videoSizes[videoSizeIdx];
@@ -173,12 +171,7 @@ document.getElementById('stopFileAnalysis').addEventListener('click', stopAnalys
 document.getElementById('exportFileCSV').addEventListener('click', exportCSV);
 document.getElementById('exportFileJSON').addEventListener('click', exportJSON);
 
-/**
- * Opens the charts view in a new browser tab using the analysis data
- * @param {object} analyzer - An object with `generateJSON` that returns analysis data
- * @param {HTMLVideoElement} video - The video element to be paused if playing
- * @returns {void}
- */
+
 function openChartsView() {
     if (!analyzer) return;
     if (!video.paused) video.pause();
@@ -188,11 +181,7 @@ function openChartsView() {
     });
 }
 
-/**
- * Handles the file selction event via input element
- * @param {Event} e - File selection event triggered by the input element
- * @returns {void}
- */
+
 function handleFileSelect(e) {
     playlist = Array.from(e.target.files);
     playlistIndex = 0;
@@ -201,11 +190,7 @@ function handleFileSelect(e) {
     updatePlaylistInfo();
 }
 
-/**
- * Loads a video file form the playlist at the specified indx and prepares UI for playback and analysis
- * @param {number} index - The index of the video file in the playlist to load
- * @returns {void}
- */
+
 function loadVideoFromPlaylist(index) {
     if (index < 0 || index >= playlist.length) return;
     const file = playlist[index];
@@ -243,15 +228,15 @@ function updatePlaylistInfo() {
 
 /**
  * Initiates the video analysis workflow
- * @param {HTMLVideoElement} video - The video element to be analysed, must have a valid `src`.
- * @param {HTMLInputElement} flashIntensityInput - Input element for flash intensity threshold.
- * @param {HTMLInputElement} flashesPerSecondInput - Input element for flashes per second threshold.
- * @param {Array<Object>} playlist - Array of video metadata objects.
- * @param {number} playlistIndex - Index of the currently selected video in the playlist.
- * @param {VideoAnalyzer} analyzer - Instance of the `videoAnalyzer` class used for analysis.
- * @param {HTMLElement} resultsPanel - DOM element for displaying analysis status.
+ * @param {HTMLVideoElement} video 
+ * @param {HTMLInputElement} flashIntensityInput 
+ * @param {HTMLInputElement} flashesPerSecondInput 
+ * @param {Array<Object>} playlist 
+ * @param {number} playlistIndex 
+ * @param {VideoAnalyzer} analyzer 
+ * @param {HTMLElement} resultsPanel
  * @returns {void}
- * @throws {Error} Errors during frame capture or brightness calculation.
+ * @throws {Error}
  */
 function startAnalysis() {
     if (!video.src) return;
@@ -371,8 +356,8 @@ video.addEventListener('ended', () => {
 
 /**
  * Renders flash metrics as table
- * @param {Array<{timestamp: number, intensity: number}>} flashes - An array of flash event objects
- * @returns {string} An HTML string of flash data in a table format
+ * @param {Array<{timestamp: number, intensity: number}>} flashes
+ * @returns {string}
  */
 function renderFlashTimestamps(flashes) {
     if (!flashes || flashes.length === 0) {
@@ -396,44 +381,6 @@ function renderFlashTimestamps(flashes) {
     return html;
 }
 
-/**
- * Updates the results panel with a detailed analysis summary.
- *
- * Generates a styled HTML table displaying various metrics from the video analysis result and injects it into the `resultsPanel` element.
- *
- * @param {Object} result - The analysis result object containing computed metrics.
- * @param {number} [result.timestamp] - Time in seconds of the analyzed frame.
- * @param {number} [result.brightness] - Average brightness of the frame.
- * @param {number} [result.redIntensity] - Red channel intensity.
- * @param {number} [result.redDelta] - Change in red intensity.
- * @param {number} [result.flashCount] - Number of detected flashes.
- * @param {string} [result.riskLevel] - Risk level classification
- * @param {Object} [result.psi] - Photosensitive seizure index data.
- * @param {number} [result.psi.score] - PSI score value.
- * @param {number} [result.flickerFrequency] - Frequency of flickering in Hz.
- * @param {number} [result.entropy] - Entropy of the frame.
- * @param {number} [result.temporalChange] - Temporal change metric.
- * @param {Object} [result.frameDifference] - Frame difference analysis.
- * @param {number} [result.frameDifference.difference] - Pixel difference.
- * @param {number} [result.frameDifference.motion] - Motion ratio.
- * @param {Object} [result.spectralAnalysis] - Frequency domain analysis.
- * @param {number} [result.spectralAnalysis.dominantFrequency] - Dominant frequency in Hz.
- * @param {number} [result.intensity] - Overall flash intensity.
- * @param {Object} [result.spatialMap] - Spatial intensity distribution.
- * @param {number} [result.spatialMap.center] - Intensity at the center.
- * @param {number} [result.spatialMap.periphery] - Intensity at the periphery.
- * @param {Object} [result.chromaticFlashes] - Chromatic contrast metrics.
- * @param {number} [result.chromaticFlashes.redGreen] - Red-green contrast.
- * @param {number} [result.chromaticFlashes.blueYellow] - Blue-yellow contrast.
- * @param {Object} [result.temporalContrast] - Temporal contrast metrics.
- * @param {number} [result.temporalContrast.currentRate] - Current contrast rate.
- * @param {Object} [result.edgeDetection] - Edge detection metrics.
- * @param {number} [result.edgeDetection.edgeDensity] - Density of edges.
- * @param {number} [result.edgeDetection.edgeCount] - Total number of edges.
- * @param {number} [result.edgeDetection.temporalEdgeChange] - Rate of edge change over time.
- *
- * @returns {void}
- */
 function updateResults(result) {
     resultsPanel.innerHTML = `
     <div style="background:transparent;max-width:720px;margin:auto;">
@@ -462,6 +409,21 @@ function updateResults(result) {
                 <tr><td style="padding:7px 12px;">Edge Density</td><td style="padding:7px 12px;">${(result.edgeDetection?.edgeDensity ?? 0).toFixed(4)}</td></tr>
                 <tr><td style="padding:7px 12px;">Edge Count</td><td style="padding:7px 12px;">${(result.edgeDetection?.edgeCount ?? 0)}</td></tr>
                 <tr><td style="padding:7px 12px;">Edge Change Rate</td><td style="padding:7px 12px;">${(result.edgeDetection?.temporalEdgeChange ?? 0).toFixed(4)}</td></tr>
+                <!-- New: Dominant Color/Lab/CIE76 -->
+                <tr><td style="padding:7px 12px;">Dominant Color (R,G,B)</td><td style="padding:7px 12px;">
+                    ${result.dominantColor ?
+                        `${Number(result.dominantColor.r).toFixed(1)}, ${Number(result.dominantColor.g).toFixed(1)}, ${Number(result.dominantColor.b).toFixed(1)}` : '-'
+                    }</td></tr>
+                <tr><td style="padding:7px 12px;">Dominant Lab (L,a,b)</td><td style="padding:7px 12px;">
+                    ${result.dominantLab ?
+                        `${Number(result.dominantLab.L).toFixed(2)}, ${Number(result.dominantLab.a).toFixed(2)}, ${Number(result.dominantLab.b).toFixed(2)}` : '-'
+                    }</td></tr>
+                <tr><td style="padding:7px 12px;">CIE76 Δ</td><td style="padding:7px 12px;">
+                    ${typeof result.cie76Delta !== "undefined" ? Number(result.cie76Delta).toFixed(4) : '-'}
+                </td></tr>
+                <tr><td style="padding:7px 12px;">Patterned Stimulus Score</td><td style="padding:7px 12px;">
+                    ${typeof result.patternedStimulusScore !== "undefined" ? Number(result.patternedStimulusScore).toFixed(4) : '-'}
+                </td></tr>
             </tbody>
         </table>
     </div>
@@ -508,11 +470,11 @@ function updateResults(result) {
  * - `#SummaryRisk`: Displays the risk level
  * - `#SummaryPSI`: Displays the PSI score
  *
- * @param {Object} result - The result object containing analysis metrics.
- * @param {number} [result.flashCount] - Number of detected flashes.
- * @param {string} [result.riskLevel] - Risk level classification.
- * @param {Object} [result.psi] - PSI score container.
- * @param {number} [result.psi.score] - PSI score value.
+ * @param {Object} result 
+ * @param {number} [result.flashCount] 
+ * @param {string} [result.riskLevel] 
+ * @param {Object} [result.psi] 
+ * @param {number} [result.psi.score] 
  * @returns {void}
  */
 function updateSummaryPanelFields(result) {
@@ -529,32 +491,6 @@ function updateSummaryPanelFields(result) {
     } catch (e) {}
 }
 
-/**
- * Updates the live metrics chart with the latest frame analysis data.
- *
- * Appends a new data point to the `liveMetricsHistory` array, maintaining a rolling window of up to 120 entries. 
- * Extracts key metrics
- * from the `data` object, applies default values if required, and normalizes the `riskLevel` to a numeric scale:
- * - `high` → 1
- * - `medium` → 0.5
- * - `low` or undefined → 0
- *
- * @param {Object} data - The latest frame analysis data.
- * @param {number} [data.brightness=0] - Average brightness of the frame.
- * @param {number} [data.intensity=0] - Flash intensity.
- * @param {number} [data.redIntensity=0] - Red channel intensity.
- * @param {number} [data.redDelta=0] - Change in red intensity.
- * @param {string|number} [data.riskLevel=0] - Risk level as a string/ numeric value.
- * @param {Object} [data.psi] - PSI score container.
- * @param {number} [data.psi.score=0] - PSI score value.
- * @param {number} [data.flickerFrequency=0] - Flicker frequency in Hz.
- * @param {number} [data.entropy=0] - Entropy of the frame.
- * @param {number} [data.temporalChange=0] - Temporal change metric.
- * @param {Object} [data.frameDifference] - Frame difference metrics.
- * @param {number} [data.frameDifference.difference=0] - Pixel frame difference.
- *
- * @returns {void}
- */
 function updateLiveMetricsChart(data) {
     const maxPoints = 120;
     liveMetricsHistory.push({
@@ -567,17 +503,22 @@ function updateLiveMetricsChart(data) {
         flickerFrequency: data.flickerFrequency || 0,
         entropy: data.entropy || 0,
         temporalChange: data.temporalChange || 0,
-        frameDiff: data.frameDifference?.difference || 0
+        frameDiff: data.frameDifference?.difference || 0,
+        dominantColorR: data.dominantColor?.r ?? 0,
+        dominantColorG: data.dominantColor?.g ?? 0,
+        dominantColorB: data.dominantColor?.b ?? 0,
+        dominantLabL: data.dominantLab?.L ?? 0,
+        dominantLabA: data.dominantLab?.a ?? 0,
+        dominantLabB: data.dominantLab?.b ?? 0,
+        cie76Delta: data.cie76Delta ?? 0,
+        patternedStimulusScore: data.patternedStimulusScore ?? 0
     });
     if (liveMetricsHistory.length > maxPoints) liveMetricsHistory.shift();
     drawLiveMetricsGraph();
     updateLiveMetricsLegend();
 }
 
-/**
- * Renders the live metrics graph on a canvas element.
- * @returns {void}
- */
+
 function drawLiveMetricsGraph() {
     if (!liveMetricsGraph) return;
     const ctx = liveMetricsGraph.getContext('2d');
@@ -611,10 +552,6 @@ function drawLiveMetricsGraph() {
     });
 }
 
-/**
- * Updates the legend for the live metrics chart
- * @returns {void}
- */
 function updateLiveMetricsLegend() {
     if (!liveMetricsLegend) return;
     const metrics = ALL_METRICS.filter(m => selectedMetrics.includes(m.key));
@@ -628,9 +565,7 @@ function updateLiveMetricsLegend() {
 
 /**
  * Exports the current video analysis data as a CSV file.
- * @param {boolean} [auto=false] - Whether to trigger the download automatically
- * with a delay.
- *
+ * @param {boolean} [auto=false] 
  * @returns {void}
  */
 function exportCSV(auto = false) {
@@ -647,20 +582,13 @@ function exportCSV(auto = false) {
     a.style.display = 'none';
     document.body.appendChild(a);
     if (!auto) a.click();
-    else setTimeout(() => a.click(), 100); 
+    else setTimeout(() => a.click(), 100);
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 200);
 }
 
 /**
  * Exports the current video analysis data as a JSON file.
- *
- * Serializes the analysis data using `analyzer.generateJSON()`,
- * creates a downloadable Blob from the JSON string, and triggers a download
- * in the browser.
- *
- * @param {boolean} [auto=false] - Whether to trigger the download automatically
- * with a delay.
- *
+ * @param {boolean} [auto=false] 
  * @returns {void}
  */
 function exportJSON(auto = false) {
@@ -686,10 +614,6 @@ function sanitizeFileName(name) {
     return name.replace(/[^a-z0-9_\-\.]/gi, '_');
 }
 
-/**
- * Renders the metric selector UI for live chart metrics.
- * @returns {void}
- */
 function renderMetricSelector() {
     if (!liveChartArea) return;
     let metricSelectorDiv = document.getElementById('metricSelector');
@@ -724,10 +648,6 @@ function renderMetricSelector() {
     });
 }
 
-/**
- * Main loop for analyzing video frames and updating UI.
- * @returns {void}
- */
 function analyzeFrameLoop() {
     if (!isAnalyzing || video.paused || video.ended) return;
     const result = analyzer.analyzeFrame(video, video.currentTime);
