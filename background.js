@@ -9,10 +9,10 @@
 /**
  * Holds the current analysis state.
  * @typedef {Object} AnalysisState
- * @property {boolean} isAnalyzing - Indicates if analysis is currently running.
- * @property {string} mode - The current analysis mode, in debugging other modes are used instead of professional.
- * @property {Object|null} results - The latest analysis results, or null if not available.
- * @property {number} [lastUpdate] - Timestamp of the last update, used for throttling updates.
+ * @property {boolean} isAnalyzing 
+ * @property {string} mode 
+ * @property {Object|null} results 
+ * @property {number} [lastUpdate] 
  */
 let analysisState = {
     isAnalyzing: false,
@@ -50,10 +50,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 /**
- * Handles messages from other extension components (popup, content, analyzer).
- * @param {Object} message - The message object containing the type and data.
- * @param {Object} _sender - The sender of the message (Not used: TASK-6872)
- * @param {function} sendResponse - Callback function to send a response.
+ * Handles messages from other components 
+ * @param {Object} message 
+ * @param {Object} _sender - (Not used: TASK-6872)
+ * @param {function} sendResponse 
  */
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     switch(message.type) {
@@ -72,25 +72,18 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
 });
 
-/**
- * Handles the start of an analysis session.
- * @param {Object} options - Analysis options.
- */
 function handleStartAnalysis(options) {
     analysisState.isAnalyzing = true;
     analysisState.mode = options.mode;
 }
 
-/**
- * Handles stopping of the analysis session.
- */
 function handleStopAnalysis() {
     analysisState.isAnalyzing = false;
 }
 
 /**
  * Handles updates to the analysis data and notifies the UI.
- * @param {Object} data - The latest analysis data.
+ * @param {Object} data 
  */
 function handleAnalysisUpdate(data) {
     if (!data || data.error) return;
@@ -110,7 +103,7 @@ function handleAnalysisUpdate(data) {
         });
     } catch (error) {
         console.error('Error updating analysis state:', error);
-        // If the extension context is invalid, the tab probably needs to be reloaded
+        // If the extension context is invalid, the tab needs to be reloaded
         if (error.message.includes('Extension context invalidated')) {
             chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
                 if (tabs[0]) {
