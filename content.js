@@ -1,9 +1,5 @@
 /**
  * @file content.js
- * @description
- * Content script for EPI-LENS browser extension. Handles initialisation, video detection, communication with background, popup scripts
- * and real-time video analysis overlay for Youtube.
- * Integrates with VideoAnalyzer to process video frames and send analysis results.
  */
 
 "use strict";
@@ -23,9 +19,6 @@
         }
     }
 
-    /**
-     * Initialises the VideoAnalyzer instance and sets up the enviroment.
-     */
     initializeAnalyzer();
 
     let isAnalyzing = false;
@@ -34,9 +27,6 @@
     let reconnectAttempts = 0;
     const MAX_RECONNECT_ATTEMPTS = 3;
 
-    /**
-     * Sets up a perdiodic check for the Youtube video player and initialises handlers when found.
-     */
     function setupYouTubeHandler() {
         const checkForPlayer = setInterval(() => {
             const player = document.querySelector('.html5-video-player');
@@ -48,21 +38,14 @@
         }, 1000);
     }
 
-    /**
-     * Handles existing video elements on the page and sets up listeners
-     */
     function handleExistingVideos() {
         const videos = document.querySelectorAll('video');
         if (videos.length > 0) {
-            videoElement = videos[0]; // One video element for Youtube
+            videoElement = videos[0]; 
             setupVideoListeners(videoElement);
         }
     }
 
-    /**
-     * Sets up event listeners for play, pause, and seek events on the video element
-     * @param {HTMLVideoElement} video - The video element to attach listeners to.
-     */
     function setupVideoListeners(video) {
         video.addEventListener('play', () => {
             if (!isAnalyzing) {
@@ -86,9 +69,6 @@
         });
     }
 
-    /**
-     * Notifies the extension that analysis has started
-     */
     function notifyAnalysisStarted() {
         chrome.runtime.sendMessage({
             type: 'ANALYSIS_STATUS',
@@ -100,9 +80,6 @@
         });
     }
 
-    /**
-     * Sets up a MutationObserver to detect dynamically added video elements.
-     */
     function setupVideoMutationObserver() {
         const observer = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
@@ -124,10 +101,10 @@
 
     /**
      * Handles incoming messages from the extension (start/stop/export analysis)
-     * @param {Object} message - The message object from the extension.
-     * @param {Object} _sender - The sender of the message. (Not used: TASK-6872)
-     * @param {Function} sendResponse - Callback to send a response
-     * @returns {boolean} True if the response will be sent asynchronously.
+     * @param {Object} message - 
+     * @param {Object} _sender - (Not used: TASK-6872)
+     * @param {Function} sendResponse 
+     * @returns {boolean}
      */
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         try {
@@ -175,7 +152,7 @@
 
     /**
      * Creates an overlay div for visual feedback during analysis.
-     * @returns {HTMLDivElement} The overlay element.
+     * @returns {HTMLDivElement} 
      */
     function createOverlay() {
         const overlay = document.createElement('div');
@@ -193,13 +170,6 @@
         return overlay;
     }
 
-
-    /**
-     * Starts the video analysis process with the given options
-     * TASK 836: Start and stop video via UI buttons
-     * @param {Object} options - Analysis options and thresholds.
-     * @returns {void}
-     */
     function startAnalysis(options) {
     reconnectAttempts = 0;
     videoElement = document.querySelector('video');
@@ -216,14 +186,12 @@
     videoElement.parentElement.appendChild(overlay);
 
     if (analyzer) {
-        analyzer.reset(); // Reset metrics and startTime before starting new analysis
+        analyzer.reset(); 
     }
 
-    // Store initial video time
     const initialTime = videoElement.currentTime;
     console.log('Starting analysis at video time:', initialTime);
 
-    // Automatically play the video when analysis starts
     if (videoElement.paused) {
         videoElement.play()
             .then(() => {
@@ -249,7 +217,6 @@
         }
     }, 5000);
 
-    // Event listener to handle any interruptions in playback
     videoElement.addEventListener('pause', () => {
         if (isAnalyzing) {
             videoElement.play().catch(error => {
@@ -265,8 +232,8 @@
 
     /**
      * Handles extension context errors and attempts reconnection if possible
-     * @param {Error} error - The error object.
-     * @returns {boolean} True if the error was handled.
+     * @param {Error} error
+     * @returns {boolean} 
      */
     function handleExtensionError(error) {
         if (error.message.includes('Extension context invalidated')) {
@@ -299,9 +266,6 @@
         return false;
     }
 
-    /**
-     * Removes the analysis overlay from the video player
-     */
     function removeOverlay() {
         const overlay = document.querySelector('.analysis-overlay');
         if (overlay) {
@@ -311,7 +275,7 @@
 
     /**
      * Updates the overlay's appearance based on flash detection.
-     * @param {boolean} isFlash - Whether a flash was detected in the current frame.
+     * @param {boolean} isFlash 
      */
     function updateOverlay(isFlash) {
         const overlay = document.querySelector('.analysis-overlay');
@@ -326,7 +290,7 @@
 
     /**
      * Main loop for analyzing video frames and sending results to the extension.
-     * @param {Object} options - Analysis options.
+     * @param {Object} options 
      */
     function analyzeVideo(options) {
         if (!isAnalyzing || !videoElement || videoElement.paused) return;
@@ -335,7 +299,6 @@
             const currentTime = videoElement.currentTime;
             const results = analyzer.analyzeFrame(videoElement, currentTime);
 
-            // Update last export time
             if (analyzer) {
                 analyzer.lastExportTime = currentTime;
             }
@@ -349,13 +312,12 @@
                 });
             }
 
-            // Skip if frame was dropped due to timing
             if (!results) {
                 requestAnimationFrame(() => analyzeVideo(options));
                 return;
             }
 
-            // Create a clean data object for messaging
+            // Data object for messaging
             const messageData = {
                 flashCount: results.flashCount || 0,
                 riskLevel: results.riskLevel || 'low',
@@ -382,34 +344,28 @@
             };
 
             // Send update to popup 
-            //TASK 2949: Story notes, response declared but never read
             chrome.runtime.sendMessage({
                 type: 'ANALYSIS_UPDATE',
                 data: messageData
-            }, function(response) {
-                // Handle errors if any
+            }, function(_response) {
                 if (chrome.runtime.lastError) {
                     handleMessageError(chrome.runtime.lastError);
                 }
             });
 
-            // Updates visual feedback
             updateOverlay(results.isFlash);
         } catch (error) {
             console.error('Analysis error:', error);
-            // Error recovery
             if (error.message.includes('Extension context invalidated')) {
                 handleExtensionError(error);
             }
         }
-
-        // TASK 837: Replaced method requestAnimationFrame with setTimeout for stability
         setTimeout(() => analyzeVideo(options), 16);
     }
 
     /**
      * Handles errors when sending messages to the extension.
-     * @param {Error} error - The error object.
+     * @param {Error} error
      */
     function handleMessageError(error) {
         console.error('Message sending failed:', error);
@@ -419,16 +375,10 @@
         }
     }
 
-    /**
-     * Pauses the analysis loop
-     */
     function pauseAnalysis() {
         isAnalyzing = false;
     }
 
-    /**
-     * Resumes the analysis loop if a video element is present
-     */
     function resumeAnalysis() {
         if (videoElement) {
             isAnalyzing = true;
@@ -436,9 +386,6 @@
         }
     }
 
-    /**
-     * Handles video seek events to reset brightness tracking
-     */
     function handleVideoSeek() {
         // Reset last brightness value to prevent false positives
         if (analyzer) {
@@ -450,7 +397,6 @@
     isAnalyzing = false;
     removeOverlay();
 
-    // Pause video when analysis is stopped
     if (videoElement && !videoElement.paused) {
         videoElement.pause();
     }
