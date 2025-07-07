@@ -99,13 +99,6 @@
         });
     }
 
-    /**
-     * Handles incoming messages from the extension (start/stop/export analysis)
-     * @param {Object} message - 
-     * @param {Object} _sender - (Not used: TASK-6872)
-     * @param {Function} sendResponse 
-     * @returns {boolean}
-     */
     chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         try {
             switch(message.action) {
@@ -148,12 +141,6 @@
 
     });
 
-
-
-    /**
-     * Creates an overlay div for visual feedback during analysis.
-     * @returns {HTMLDivElement} 
-     */
     function createOverlay() {
         const overlay = document.createElement('div');
         overlay.className = 'analysis-overlay';
@@ -275,7 +262,7 @@
 
     /**
      * Updates the overlay's appearance based on flash detection.
-     * @param {boolean} isFlash 
+     * @param {boolean} isFlash
      */
     function updateOverlay(isFlash) {
         const overlay = document.querySelector('.analysis-overlay');
@@ -287,11 +274,6 @@
         }
     }
 
-
-    /**
-     * Main loop for analyzing video frames and sending results to the extension.
-     * @param {Object} options 
-     */
     function analyzeVideo(options) {
         if (!isAnalyzing || !videoElement || videoElement.paused) return;
 
@@ -343,11 +325,10 @@
                 ...results
             };
 
-            // Send update to popup 
             chrome.runtime.sendMessage({
                 type: 'ANALYSIS_UPDATE',
                 data: messageData
-            }, function(_response) {
+            }, function(response) {
                 if (chrome.runtime.lastError) {
                     handleMessageError(chrome.runtime.lastError);
                 }
@@ -360,13 +341,10 @@
                 handleExtensionError(error);
             }
         }
+
         setTimeout(() => analyzeVideo(options), 16);
     }
 
-    /**
-     * Handles errors when sending messages to the extension.
-     * @param {Error} error
-     */
     function handleMessageError(error) {
         console.error('Message sending failed:', error);
         if (error.message.includes('Message length exceeded')) {

@@ -27,13 +27,7 @@
   },
   "content_scripts": [{
     "matches": ["*://*.youtube.com/*"],
-    "js": [
-      "analyzerUtils.js",
-      "VideoAnalyzerCore.js",
-      "videoAnalyzer.js",
-      "analyzer.js",
-      "content.js"
-    ],
+    "js": [ "analyzer-helpers.js", "analyzer.js", "content.js"],
     "run_at": "document_start"
   }],
   "icons": {
@@ -45,9 +39,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "charts.html", "charts.js", "charts.css",
-        "fileanalyzer.html", "fileanalyzer.js", "fileanalyzer.css",
-        "analyzerUtils.js", "VideoAnalyzerCore.js", "videoAnalyzer.js"
+        "charts.html", "charts-helpers.js","tooltip-helpers.js", "charts.js", "charts.css",
+        "fileanalyzer.html", "fileanalyzer.js", "fileanalyzer.css"
       ],
       "matches": ["<all_urls>"]
     }

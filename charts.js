@@ -1,5 +1,6 @@
 /**
  * @file charts.js
+ * @description Chart drawing has uses the charts-helpers.js
  * @module charts
  */
 
@@ -19,7 +20,6 @@ let chartViewMode = 'multi';
 let selectionZoom = null; // {startIdx, endIdx} or null
 
 document.addEventListener('DOMContentLoaded', async () => {
-
     let header = document.querySelector('header');
     if (header && !document.getElementById('loadJsonBtn')) {
         const loadBtn = document.createElement('button');
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (availableFields.length >= 2) {
         addChart('timestamp', 'brightness');
     }
-    // Export all button to the page
+
     let exportAllBtn = document.getElementById('exportAllChartsBtn');
     if (exportAllBtn) {
         exportAllBtn.onclick = () => exportChartData();
@@ -241,10 +241,6 @@ function flattenMetrics(row) {
     return flat;
 }
 
-/**
- * Displays an error message in the document body.
- * @param {string} msg 
- */
 function showError(msg) {
     document.body.innerHTML = `<div style="color:#f44336;padding:32px;text-align:center;">${msg}</div>`;
 }
@@ -254,7 +250,7 @@ const METRIC_COLORS = [
     "#ffc107", "#3f51b5", "#607d8b", "#ff5722", "#cddc39", "#795548", "#673ab7", "#009688"
 ];
 /**
- * Returns a deterministic color for a metric name.
+ * Returns a color for a metric name.
  * @param {string} metric
  * @returns {string}
  */
@@ -263,11 +259,7 @@ function getMetricColor(metric) {
     return METRIC_COLORS[idx];
 }
 
-/**
- * Hashes a string to a numeric value.
- * @param {string} str
- * @returns {number}
- */
+
 function hashString(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i);
@@ -358,11 +350,7 @@ function setupAddChartModal() {
         }
     };
 }
-/**
- * Adds a new chart configuration to the charts array and renders all charts.
- * @param {string} xField 
- * @param {string[]} yFields 
- */
+
 function addChart(xField, yFields) {
     if (!xField || !Array.isArray(yFields) || !yFields.length) return;
     // Prevent adding charts with the same x/y combo
@@ -408,12 +396,7 @@ function renderAllCharts() {
         }
     });
 }
-/**
- * Renders a single chart card, including header, legend, chart, and data table.
- * @param {Object} chart 
- * @param {number} idx 
- * @returns {HTMLElement} The chart card element.
- */
+
 function renderChartCard(chart, idx) {
     const card = document.createElement('div');
     card.className = 'chart-card';
@@ -429,7 +412,6 @@ function renderChartCard(chart, idx) {
         card.style.margin = '';
     }
 
-    // Header
     const header = document.createElement('div');
     header.className = 'chart-header';
     const title = document.createElement('span');
@@ -437,7 +419,6 @@ function renderChartCard(chart, idx) {
     title.textContent = `${chart.y.join(', ')} vs ${chart.x}`;
     header.appendChild(title);
 
-    // Actions
     const actions = document.createElement('div');
     actions.className = 'chart-actions';
     const upBtn = document.createElement('button');
@@ -485,7 +466,6 @@ function renderChartCard(chart, idx) {
 
     card.appendChild(header);
 
-    // Legend for toggling
     const legend = document.createElement('div');
     legend.style.marginBottom = '6px';
     chart.y.forEach((yMetric, yIdx) => {
@@ -505,7 +485,6 @@ function renderChartCard(chart, idx) {
     });
     card.appendChild(legend);
 
-    // Chart canvas
     const canvas = document.createElement('canvas');
     canvas.className = 'chart-canvas';
     if (chartViewMode === 'single') {
@@ -521,16 +500,14 @@ function renderChartCard(chart, idx) {
     }
     card.appendChild(canvas);
 
-    // Draw chart (no flash overlay) TASK 2848: Review flash overlay, there is the groundwork but it needs to be implemented correctly.
     if (chart.y.length === 1 && chart.y[0] === 'isFlash') {
-        drawIsFlashScatter(canvas, chart);
+        window.ChartHelpers.drawIsFlashScatter(canvas, chart, getMultiYAxisChartData);
     } else if (chart.x === 'timestamp') {
-        drawMultiYAxisChart(canvas, chart);
+        window.ChartHelpers.drawMultiYAxisChart(canvas, chart, getChartDataForDraw, getMetricColor);
     } else {
-        drawMultiYAxisScatter(canvas, chart);
+        window.ChartHelpers.drawMultiYAxisScatter(canvas, chart, getMultiYAxisChartData, getMetricColor);
     }
 
-    // Selection zoom logic
     let isSelecting = false;
     let selectStart = null;
     let selectEnd = null;
@@ -569,14 +546,12 @@ function renderChartCard(chart, idx) {
         selectionRect && (selectionRect.style.display = 'none');
         const rect = canvas.getBoundingClientRect();
         selectEnd = e.clientX - rect.left;
-        // Indices for zoom
         const data = getMultiYAxisChartData(chart);
-        const [start, _end] = getZoomedIndices(data.x.length);
+        const [start, end] = getZoomedIndices(data.x.length);
         const xVals = data.x;
         const left = 40, right = 10, w = canvas.width - left - right;
         let minPx = Math.min(selectStart, selectEnd);
         let maxPx = Math.max(selectStart, selectEnd);
-        // Find closest indices
         let minIdx = 0, maxIdx = xVals.length - 1;
         for (let i = 0; i < xVals.length; ++i) {
             let px = left + ((i) / (xVals.length - 1)) * w;
@@ -599,53 +574,11 @@ function renderChartCard(chart, idx) {
         renderAllCharts();
     };
 
-    const tooltip = document.createElement('div');
-    tooltip.style.position = 'absolute';
-    tooltip.style.pointerEvents = 'none';
-    tooltip.style.background = '#222';
-    tooltip.style.color = '#fff';
-    tooltip.style.padding = '4px 8px';
-    tooltip.style.borderRadius = '4px';
-    tooltip.style.fontSize = '12px';
-    tooltip.style.display = 'none';
-    tooltip.style.zIndex = 10;
-    card.appendChild(tooltip);
-
-    canvas.onmousemove = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-        const { xVals, yVals, left, w, h, minX, maxX, minY, maxY } = getChartDataForDraw(canvas, chart);
-        let closestIdx = -1, minDist = 1e9;
-        for (let i = 0; i < xVals.length; ++i) {
-            const px = left + ((xVals[i] - minX) / (maxX - minX)) * w;
-            const pyArr = yVals.map((arr, j) => chart.visible[j] ? (canvas.height - 30 - ((arr[i] - minY) / (maxY - minY)) * h) : null);
-            pyArr.forEach((py, j) => {
-                if (py !== null) {
-                    const dist = Math.abs(mx - px) + Math.abs(my - py);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        closestIdx = i;
-                    }
-                }
-            });
-        }
-        if (closestIdx >= 0 && minDist < 20) {
-            tooltip.style.display = 'block';
-            tooltip.style.left = (mx + 10) + 'px';
-            tooltip.style.top = (my - 10) + 'px';
-            let html = `<b>${chart.x}:</b> ${xVals[closestIdx]}<br>`;
-            chart.y.forEach((yMetric, j) => {
-                if (chart.visible[j]) {
-                    html += `<span style="color:${getMetricColor(yMetric)}">${yMetric}:</span> ${yVals[j][closestIdx]}<br>`;
-                }
-            });
-            tooltip.innerHTML = html;
-        } else {
-            tooltip.style.display = 'none';
-        }
-    };
-    canvas.onmouseleave = () => { tooltip.style.display = 'none'; };
+    if (window.TooltipHelpers && window.TooltipHelpers.setupChartTooltipAndInteraction) {
+        window.TooltipHelpers.setupChartTooltipAndInteraction(
+            canvas, card, chart, getChartDataForDraw, getMetricColor
+        );
+    }
 
     if (chart.showData) {
         const table = document.createElement('table');
@@ -668,143 +601,6 @@ function renderChartCard(chart, idx) {
     return card;
 }
 
-function getChartArea(canvas) {
-    return { left: 40, right: 10, top: 20, bottom: 30,
-        width: canvas.width - 40 - 10,
-        height: canvas.height - 20 - 30
-    };
-}
-
-function drawAxes(ctx, area, minX, maxX, minY, maxY, xLabel, yLabel, _isScatter = false) {
-    // Axes
-    ctx.strokeStyle = "#888";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(area.left, area.top);
-    ctx.lineTo(area.left, area.top + area.height);
-    ctx.lineTo(area.left + area.width, area.top + area.height);
-    ctx.stroke();
-
-    // Axis labels
-    ctx.fillStyle = "#bbb";
-    ctx.font = "12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(xLabel, area.left + area.width / 2, area.top + area.height + 24);
-    ctx.save();
-    ctx.translate(14, area.top + area.height / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText(yLabel, 0, 0);
-    ctx.restore();
-
-    // Y axis ticks
-    ctx.fillStyle = "#666";
-    ctx.font = "11px sans-serif";
-    for (let i = 0; i <= 5; ++i) {
-        let yVal = minY + (maxY - minY) * (i / 5);
-        let y = area.top + area.height - (area.height * (i / 5));
-        ctx.fillText(yVal.toFixed(2), area.left - 8, y + 3);
-        ctx.beginPath();
-        ctx.moveTo(area.left - 3, y);
-        ctx.lineTo(area.left, y);
-        ctx.stroke();
-    }
-    // X axis ticks
-    for (let i = 0; i <= 5; ++i) {
-        let xVal = minX + (maxX - minX) * (i / 5);
-        let x = area.left + area.width * (i / 5);
-        ctx.fillText(xVal.toFixed(2), x, area.top + area.height + 16);
-        ctx.beginPath();
-        ctx.moveTo(x, area.top + area.height);
-        ctx.lineTo(x, area.top + area.height + 3);
-        ctx.stroke();
-    }
-}
-
-/**
- * Gets min/max for X and Y values, with fallback if all values arw equal.
- */
-function getMinMax(xVals, yVals) {
-    let minX = Math.min(...xVals), maxX = Math.max(...xVals);
-    let minY = Math.min(...yVals.flat()), maxY = Math.max(...yVals.flat());
-    if (minX === maxX) maxX += 1;
-    if (minY === maxY) maxY += 1;
-    return { minX, maxX, minY, maxY };
-}
-
-function drawIsFlashScatter(canvas, chart) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const area = getChartArea(canvas);
-    let data = getMultiYAxisChartData(chart);
-    let minX = Math.min(...data.x), maxX = Math.max(...data.x);
-    let minY = 0, maxY = 1;
-
-    drawAxes(ctx, area, minX, maxX, minY, maxY, chart.x, 'isFlash', true);
-
-    ctx.fillStyle = "#ff9800";
-    for (let i = 0; i < data.x.length; i++) {
-        let x = area.left + ((data.x[i] - minX) / (maxX - minX)) * area.width;
-        let y = area.top + area.height - ((data.y[0][i] - minY) / (maxY - minY)) * area.height;
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, 2 * Math.PI);
-        ctx.fill();
-    }
-}
-
-function drawMultiYAxisChart(canvas, chart) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const { xVals, yVals } = getMultiYAxisChartData(chart);
-    const area = getChartArea(canvas);
-    const { minX, maxX, minY, maxY } = getMinMax(xVals, yVals);
-
-    drawAxes(ctx, area, minX, maxX, minY, maxY, chart.x, chart.y.join(', '));
-
-    chart.y.forEach((yMetric, yIdx) => {
-        if (!chart.visible[yIdx]) return;
-        ctx.beginPath();
-        ctx.strokeStyle = getMetricColor(yMetric);
-        ctx.lineWidth = 2;
-        for (let i = 0; i < xVals.length; i++) {
-            let x = area.left + ((xVals[i] - minX) / (maxX - minX)) * area.width;
-            let y = area.top + area.height - ((yVals[yIdx][i] - minY) / (maxY - minY)) * area.height;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-    });
-}
-
-function drawMultiYAxisScatter(canvas, chart) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const area = getChartArea(canvas);
-    let data = getMultiYAxisChartData(chart);
-    const { minX, maxX, minY, maxY } = getMinMax(data.x, data.y);
-
-    drawAxes(ctx, area, minX, maxX, minY, maxY, chart.x, chart.y.join(', '), true);
-
-    chart.y.forEach((yMetric, yIdx) => {
-        if (!chart.visible[yIdx]) return;
-        ctx.fillStyle = getMetricColor(yMetric);
-        for (let i = 0; i < data.x.length; i++) {
-            let x = area.left + ((data.x[i] - minX) / (maxX - minX)) * area.width;
-            let y = area.top + area.height - ((data.y[yIdx][i] - minY) / (maxY - minY)) * area.height;
-            ctx.beginPath();
-            ctx.arc(x, y, 3, 0, 2 * Math.PI);
-            ctx.fill();
-        }
-    });
-}
-
-/**
- * Gets chart data for the current chart, alowing for zoom if applied
- * @param {Object} chart
- * @returns {{x: any[], y: any[][]}}
- */
 function getMultiYAxisChartData(chart) {
     let data = { x: [], y: chart.y.map(() => []) };
     analysisData.forEach(row => {
@@ -812,7 +608,6 @@ function getMultiYAxisChartData(chart) {
         chart.y.forEach((y, j) => data.y[j].push(row[y]));
     });
     let [start, end] = getZoomedIndices(data.x.length);
-    // If selection zoom is active, override start/end
     if (selectionZoom && selectionZoom.start != null && selectionZoom.end != null) {
         start = selectionZoom.start;
         end = selectionZoom.end;
@@ -822,11 +617,6 @@ function getMultiYAxisChartData(chart) {
     return data;
 }
 
-/**
- * Gets the data range indices for the current zoom mode.
- * @param {number} dataLen
- * @returns {[number, number]}
- */
 function getZoomedIndices(dataLen) {
     if (zoomMode === 'fit' || !isPlaying) {
         return [0, dataLen];
@@ -857,12 +647,7 @@ function getChartDataForDraw(canvas, chart) {
     return { xVals: data.x, yVals: data.y, left, w, h, minX, maxX, minY, maxY };
 }
 
-/**
- * Exports chart data as CSV and JSON for all or selected charts. TASK 2850: Refer to story regarding current JSON only export, works better with large data but CSV would also be helpful too.
- * @param {Object[]} [selectedCharts]
- */
 function exportChartData(selectedCharts) {
-    // If not specified, export all
     if (!selectedCharts) selectedCharts = charts;
     let allMetrics = new Set();
     selectedCharts.forEach(chart => {
@@ -883,6 +668,7 @@ function exportChartData(selectedCharts) {
         allMetrics.forEach(m => obj[m] = row[m]);
         return obj;
     });
+
 
     const blobCsv = new Blob([csv], { type: 'text/csv' });
     const blobJson = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
@@ -909,12 +695,7 @@ function exportChartData(selectedCharts) {
     }, 100);
 }
 
-/**
- * Formats a value for display in a data table cell.
- * @param {*} val
- * @param {string} key
- * @returns {string}
- */
+
 function formatCell(val, key) {
     if (val == null) return '';
     if (typeof val === 'object') {
@@ -925,9 +706,6 @@ function formatCell(val, key) {
     return `<span title="Field: ${key}">${val}</span>`;
 }
 
-/**
- * Sets up playback controls for chart playback and animation.
- */
 function setupPlaybackControls() {
     const playBtn = document.getElementById('playBtn');
     const pauseBtn = document.getElementById('pauseBtn');
@@ -1024,16 +802,11 @@ function setupPlaybackControls() {
     updatePlaybackTime();
 }
 
-
 function openJsonFileDialog() {
     const fileInput = document.getElementById('jsonFileInput');
     if (fileInput) fileInput.click();
 }
 
-/**
- * Handles the selection of a JSON file for analysis data.
- * @param {Event} e
- */
 function handleJsonFileSelected(e) {
     const file = e.target.files[0];
     if (!file) return;

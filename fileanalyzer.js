@@ -5,8 +5,6 @@
 
 "use strict";
 
-import VideoAnalyzer from './videoAnalyzerCore.js';
-
 let analyzer = null;
 let isAnalyzing = false;
 let analysisTimer = null;
@@ -18,7 +16,7 @@ let liveChartArea = document.getElementById('liveChartArea');
 let liveMetricsGraph = document.getElementById('liveMetricsGraph');
 let liveMetricsLegend = document.getElementById('liveMetricsLegend');
 let liveMetricsHistory = [];
-let metricSelector = null; // TODO: review implemenation 
+let metricSelector = null;
 
 const ALL_METRICS = [
     { key: "brightness", label: "Brightness", color: "#2196f3" },
@@ -171,7 +169,6 @@ document.getElementById('stopFileAnalysis').addEventListener('click', stopAnalys
 document.getElementById('exportFileCSV').addEventListener('click', exportCSV);
 document.getElementById('exportFileJSON').addEventListener('click', exportJSON);
 
-
 function openChartsView() {
     if (!analyzer) return;
     if (!video.paused) video.pause();
@@ -189,7 +186,6 @@ function handleFileSelect(e) {
     loadVideoFromPlaylist(playlistIndex);
     updatePlaylistInfo();
 }
-
 
 function loadVideoFromPlaylist(index) {
     if (index < 0 || index >= playlist.length) return;
@@ -211,10 +207,6 @@ function loadVideoFromPlaylist(index) {
     analyzer.videoTitle = file.name;
 }
 
-/**
- * Updates the playlist information display based on the current playlist state
- * @returns {void}
- */
 function updatePlaylistInfo() {
     if (!playlistInfo) return;
     if (playlist.length > 1) {
@@ -226,18 +218,6 @@ function updatePlaylistInfo() {
     }
 }
 
-/**
- * Initiates the video analysis workflow
- * @param {HTMLVideoElement} video 
- * @param {HTMLInputElement} flashIntensityInput 
- * @param {HTMLInputElement} flashesPerSecondInput 
- * @param {Array<Object>} playlist 
- * @param {number} playlistIndex 
- * @param {VideoAnalyzer} analyzer 
- * @param {HTMLElement} resultsPanel
- * @returns {void}
- * @throws {Error}
- */
 function startAnalysis() {
     if (!video.src) return;
     if (!analyzer) analyzer = new VideoAnalyzer();
@@ -276,10 +256,6 @@ function startAnalysis() {
 
 }
 
-/**
- * Stops the video analysis process
- * @returns {void}
- */
 function stopAnalysis() {
     isAnalyzing = false;
     if (analysisTimer) clearTimeout(analysisTimer);
@@ -354,11 +330,6 @@ video.addEventListener('ended', () => {
     }
 });
 
-/**
- * Renders flash metrics as table
- * @param {Array<{timestamp: number, intensity: number}>} flashes
- * @returns {string}
- */
 function renderFlashTimestamps(flashes) {
     if (!flashes || flashes.length === 0) {
         return '<div style="color:#888;">None</div>';
@@ -464,17 +435,16 @@ function updateResults(result) {
 
 /**
  * Updates summary panel fields with the latest analysis results.
- *
  * Updates the DOM elements:
  * - `#SummaryFlashes`: Displays the number of detected flashes.
  * - `#SummaryRisk`: Displays the risk level
  * - `#SummaryPSI`: Displays the PSI score
  *
  * @param {Object} result 
- * @param {number} [result.flashCount] 
- * @param {string} [result.riskLevel] 
- * @param {Object} [result.psi] 
- * @param {number} [result.psi.score] 
+ * @param {number} [result.flashCount]
+ * @param {string} [result.riskLevel]
+ * @param {Object} [result.psi]
+ * @param {number} [result.psi.score]
  * @returns {void}
  */
 function updateSummaryPanelFields(result) {
@@ -517,7 +487,6 @@ function updateLiveMetricsChart(data) {
     drawLiveMetricsGraph();
     updateLiveMetricsLegend();
 }
-
 
 function drawLiveMetricsGraph() {
     if (!liveMetricsGraph) return;

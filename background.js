@@ -6,14 +6,6 @@
  */
 "use strict";
 
-/**
- * Holds the current analysis state.
- * @typedef {Object} AnalysisState
- * @property {boolean} isAnalyzing 
- * @property {string} mode 
- * @property {Object|null} results 
- * @property {number} [lastUpdate] 
- */
 let analysisState = {
     isAnalyzing: false,
     mode: 'professional',
@@ -49,12 +41,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
 });
 
-/**
- * Handles messages from other components 
- * @param {Object} message 
- * @param {Object} _sender - (Not used: TASK-6872)
- * @param {function} sendResponse 
- */
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     switch(message.type) {
         case 'START_ANALYSIS':
@@ -72,19 +59,18 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
 });
 
+
 function handleStartAnalysis(options) {
     analysisState.isAnalyzing = true;
     analysisState.mode = options.mode;
 }
 
+
 function handleStopAnalysis() {
     analysisState.isAnalyzing = false;
 }
 
-/**
- * Handles updates to the analysis data and notifies the UI.
- * @param {Object} data 
- */
+
 function handleAnalysisUpdate(data) {
     if (!data || data.error) return;
 
@@ -103,7 +89,6 @@ function handleAnalysisUpdate(data) {
         });
     } catch (error) {
         console.error('Error updating analysis state:', error);
-        // If the extension context is invalid, the tab needs to be reloaded
         if (error.message.includes('Extension context invalidated')) {
             chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
                 if (tabs[0]) {
@@ -114,9 +99,6 @@ function handleAnalysisUpdate(data) {
     }
 }
 
-/**
- * Monitors for port disconnections and logs errors if any occur.
- */
 chrome.runtime.onConnect.addListener(function(port) {
     port.onDisconnect.addListener(function() {
         if (chrome.runtime.lastError) {

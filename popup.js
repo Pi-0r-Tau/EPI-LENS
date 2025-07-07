@@ -1,7 +1,5 @@
 /**
  * @file popup.js
- * @descripton Handles the popup UI logic for the EPI-LENS browser extension, including control initialisation,
- * threshold updates, analysis start/stop, exporting results, and updating UI panels with analysis data.
  * @module popup
  */
 "use strict";
@@ -67,9 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return handlers[key];
     }
 
-    /**
-     * Sends a message to the content script to export analysis results as CSV.
-     */
     function exportResults() {
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             chrome.tabs.sendMessage(tabs[0].id, {action: 'EXPORT_DATA'}, function(response) {
@@ -91,9 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Sends a message to the content script to export analysis results as JSON.
-     */
     function exportJSON() {
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             chrome.tabs.sendMessage(tabs[0].id, {action: 'EXPORT_DATA', format: 'json'}, function(response) {
@@ -126,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.innerHTML = '<span class="pulse"></span> Analyzing...';
         document.body.appendChild(badge);
 
+        // Send message to content script
         chrome.tabs.sendMessage(tabs[0].id, {
             action: 'START_ANALYSIS',
             options: {
@@ -144,6 +137,7 @@ function stopAnalysis() {
             action: 'STOP_ANALYSIS'
         });
 
+        // Remove the analyzing badge
         const badge = document.getElementById('analyzingBadge');
         if (badge) {
             badge.remove();
@@ -249,7 +243,6 @@ function updateRiskLevel(data) {
     }
 }
 
-
 function updateAnalyticsPanel(data) {
     const analyticsPanel = document.getElementById('advancedMetrics');
     if (!analyticsPanel) return;
@@ -316,7 +309,6 @@ function updateAnalyticsPanel(data) {
     `;
 }
 
-
 function updatePSIPanel(data) {
     const psiPanel = document.getElementById('psiMetrics');
     if (!psiPanel || !data.psi) return;
@@ -347,7 +339,6 @@ function updatePSIPanel(data) {
     `;
 }
 
-
 function updateSpatialPanel(data) {
     const spatialPanel = document.getElementById('spatialMetrics');
     if (!spatialPanel || !data.spatialMap) return;
@@ -367,7 +358,6 @@ function updateSpatialPanel(data) {
         </div>
     `;
 }
-
 
 function updateChromaticPanel(data) {
     const chromaticPanel = document.getElementById('chromaticMetrics');
@@ -389,7 +379,6 @@ function updateChromaticPanel(data) {
     `;
 }
 
-
 function updateFrameMetrics(data) {
     const panel = document.getElementById('frameMetrics');
     if (!panel || !data.frameDifference) return;
@@ -410,7 +399,6 @@ function updateFrameMetrics(data) {
     `;
 }
 
-
 function updateSpectralMetrics(data) {
     const panel = document.getElementById('spectralMetrics');
     if (!panel || !data.spectralAnalysis) return;
@@ -422,7 +410,6 @@ function updateSpectralMetrics(data) {
         </div>
     `;
 }
-
 
 function updateEdgeMetrics(data) {
     const panel = document.getElementById('edgeMetrics');
@@ -450,7 +437,6 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
     }
 });
 
-// Real-time visualization
 function updateMetricsGraph(data) {
     const canvas = document.getElementById('metricsGraph');
     if (!canvas) return;
@@ -540,9 +526,6 @@ function skipVideo(seconds) {
     });
 }
 
-/**
- * Opens the charts.html page in a new tab after pausing the video and saving analysis data.
- */
 function openChartsTab() {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         // Pause the video
@@ -570,11 +553,9 @@ function openChartsTab() {
     });
 }
 
-
 function openFileAnalyzerTab() {
     chrome.tabs.create({ url: chrome.runtime.getURL('fileanalyzer.html') });
 }
-
 
 function clearAllData() {
     chrome.storage.local.remove(['epilensAnalysisData', 'epilensAnalysisCSV']);
