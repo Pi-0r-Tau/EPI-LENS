@@ -209,20 +209,6 @@ body {
 .results-panel div {
     margin-bottom: 4px;
 }
-.results-panel table th,
-.results-panel table td {
-    width: 50%;
-    box-sizing: border-box;
-}
-.results-panel table td:nth-child(2),
-.results-panel table th:nth-child(2) {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    font-family: 'Segoe UI Mono', 'Consolas', 'Menlo', 'Monaco', monospace;
-    min-width: 120px;
-    max-width: 220px;
-    white-space: nowrap;
-}
 
 #startFileAnalysis {
     background: #2196f3;
