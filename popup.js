@@ -6,16 +6,9 @@
  */
 "use strict";
 
-/**
- * Initialises the popup UI once the DOM is loaded
- * Sets up control references and event listeners for user interactions.
- */
 document.addEventListener('DOMContentLoaded', () => {
     let controls = {};
 
-    /**
-     * Initialises control elements and attaches event listeners.
-     */
     function initializeControls() {
         controls = {
             startBtn: document.getElementById('startAnalysis'),
@@ -56,10 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Updates the display value for threshold sliders.
-     * @param {Event} event - The input event from the threshold slider.
-     */
     function updateThresholdDisplay(event) {
         const valueElement = document.getElementById(`${event.target.id}Value`);
         if (valueElement) {
@@ -69,11 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Returns the correct click handler for a given control key.
-     * @param {string} key - The control key.
-     * @returns {Function|undefined} The handler function or undefined.
-     */
     function getClickHandler(key) {
         const handlers = {
             startBtn: startAnalysis,
@@ -142,7 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.innerHTML = '<span class="pulse"></span> Analyzing...';
         document.body.appendChild(badge);
 
-        // Send message to content script
         chrome.tabs.sendMessage(tabs[0].id, {
             action: 'START_ANALYSIS',
             options: {
@@ -161,7 +144,6 @@ function stopAnalysis() {
             action: 'STOP_ANALYSIS'
         });
 
-        // Remove the analyzing badge
         const badge = document.getElementById('analyzingBadge');
         if (badge) {
             badge.remove();
@@ -193,11 +175,6 @@ function stopAnalysis() {
     initializeControls();
 });
 
-
-/**
- * Holds references to UI controls.
- * @type {Object}
- */
 let controls = {};
 
 function formatTime(seconds) {
@@ -221,10 +198,7 @@ function updateProgress(data) {
         durationEl.textContent = formatTime(data.duration);
     }
 }
-/**
- * Updates the entire popup UI with new analysis data.
- * @param {Object} data - The analysis data
- */
+
 function updateUI(data) {
     if (!data) return;
     updateBadge();
@@ -241,9 +215,6 @@ function updateUI(data) {
     updateMetricsGraph(data);
 }
 
-/**
- * Ensures the analysing badge is visible in the popup
- */
 function updateBadge() {
     let badge = document.getElementById('analyzingBadge');
     if (!badge) {
@@ -255,10 +226,6 @@ function updateBadge() {
     }
 }
 
-/**
- * Updates the flash count display.
- * @param {Object} data - The analysis data
- */
 function updateFlashCount(data) {
     const flashCountElement = document.getElementById('flashCount');
     if (flashCountElement) {
@@ -271,10 +238,6 @@ function updateFlashCount(data) {
     }
 }
 
-/**
- * Updates the risk level display and indicator bar.
- * @param {Object} data - The analysis data.
- */
 function updateRiskLevel(data) {
     const riskElement = document.getElementById('riskLevel');
     const riskBar = document.getElementById('riskIndicatorBar');
@@ -286,10 +249,7 @@ function updateRiskLevel(data) {
     }
 }
 
-/**
- * Updates the advanced analytics panel with metrics.
- * @param {Object} data - The analysis data
- */
+
 function updateAnalyticsPanel(data) {
     const analyticsPanel = document.getElementById('advancedMetrics');
     if (!analyticsPanel) return;
@@ -329,13 +289,34 @@ function updateAnalyticsPanel(data) {
             <span>Frame Entropy:</span>
             <span>${(data.entropy || 0).toFixed(4)}</span>
         </div>
+        <div class="metric-row">
+            <span>Dominant Color (R,G,B):</span>
+            <span>${
+                data.dominantColor
+                    ? `${Number(data.dominantColor.r).toFixed(1)}, ${Number(data.dominantColor.g).toFixed(1)}, ${Number(data.dominantColor.b).toFixed(1)}`
+                    : '-'
+            }</span>
+        </div>
+        <div class="metric-row">
+            <span>Dominant Lab (L,a,b):</span>
+            <span>${
+                data.dominantLab
+                    ? `${Number(data.dominantLab.L).toFixed(2)}, ${Number(data.dominantLab.a).toFixed(2)}, ${Number(data.dominantLab.b).toFixed(2)}`
+                    : '-'
+            }</span>
+        </div>
+        <div class="metric-row">
+            <span>CIE76 Δ:</span>
+            <span>${typeof data.cie76Delta !== "undefined" ? Number(data.cie76Delta).toFixed(4) : '-'}</span>
+        </div>
+        <div class="metric-row">
+            <span>Patterned Stimulus Score:</span>
+            <span>${typeof data.patternedStimulusScore !== "undefined" ? Number(data.patternedStimulusScore).toFixed(4) : '-'}</span>
+        </div>
     `;
 }
 
-/**
- * Updates the PSI (Photosensitive Seizure Index) metrics panel
- * @param {Object} data - The analysis data.
- */
+
 function updatePSIPanel(data) {
     const psiPanel = document.getElementById('psiMetrics');
     if (!psiPanel || !data.psi) return;
@@ -366,10 +347,7 @@ function updatePSIPanel(data) {
     `;
 }
 
-/**
- * Updates the spatial metrics panel.
- * @param {Object} data - The analysis data
- */
+
 function updateSpatialPanel(data) {
     const spatialPanel = document.getElementById('spatialMetrics');
     if (!spatialPanel || !data.spatialMap) return;
@@ -390,10 +368,7 @@ function updateSpatialPanel(data) {
     `;
 }
 
-/**
- * Updates the chromatic metrics panel
- * @param {Object} data - The analysis data.
- */
+
 function updateChromaticPanel(data) {
     const chromaticPanel = document.getElementById('chromaticMetrics');
     if (!chromaticPanel || !data.chromaticFlashes) return;
@@ -414,10 +389,7 @@ function updateChromaticPanel(data) {
     `;
 }
 
-/**
- * Updates the frame metrics panel.
- * @param {Object} data - The analysis data.
- */
+
 function updateFrameMetrics(data) {
     const panel = document.getElementById('frameMetrics');
     if (!panel || !data.frameDifference) return;
@@ -438,10 +410,7 @@ function updateFrameMetrics(data) {
     `;
 }
 
-/**
- * Updates the spectral metrics panel
- * @param {Object} data - The analysis data
- */
+
 function updateSpectralMetrics(data) {
     const panel = document.getElementById('spectralMetrics');
     if (!panel || !data.spectralAnalysis) return;
@@ -454,10 +423,7 @@ function updateSpectralMetrics(data) {
     `;
 }
 
-/**
- * Updates the edge metrics panel.
- * @param {Object} data - The analysis data.
- */
+
 function updateEdgeMetrics(data) {
     const panel = document.getElementById('edgeMetrics');
     if (!panel || !data.edgeDetection) return;
@@ -478,12 +444,6 @@ function updateEdgeMetrics(data) {
     `;
 }
 
-/**
- * Listens for messages from the background/content script and updates the UI.
- * @param {Object} message - The message object
- * @param {Object} _sender - The sender of the message. (Not used: TASK-6872)
- * @param {Function} _sendResponse - The callback to send a response. (Not used: TASK-6872)
- */
 chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
     if (message.type === 'UPDATE_UI' || message.type === 'ANALYSIS_UPDATE') {
         updateUI(message.data);
@@ -564,19 +524,13 @@ function convertRiskToNumber(risk) {
     return risk === 'high' ? 1 : risk === 'medium' ? 0.5 : 0;
 }
 
-/**
- * Toggles video playback state between play and pause.
- */
 function togglePlayback() {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         chrome.tabs.sendMessage(tabs[0].id, {action: 'TOGGLE_PLAYBACK'});
     });
 }
 
-/**
- * Skips the video playback by a certain number of seconds.
- * @param {number} seconds - The number of seconds to skip. Positive to skip forward, negative to skip backward.
- */
+
 function skipVideo(seconds) {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
         chrome.tabs.sendMessage(tabs[0].id, {
@@ -616,16 +570,12 @@ function openChartsTab() {
     });
 }
 
-/**
- * Opens the file analyzer tab for local video analysis.
- */
+
 function openFileAnalyzerTab() {
     chrome.tabs.create({ url: chrome.runtime.getURL('fileanalyzer.html') });
 }
 
-/**
- * Clears all stored analysis data from chrome.storage.local.
- */
+
 function clearAllData() {
     chrome.storage.local.remove(['epilensAnalysisData', 'epilensAnalysisCSV']);
 }
