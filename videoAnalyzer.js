@@ -1,2 +1,2 @@
-import VideoAnalyzer from './VideoAnalyzerCore.js';
+import VideoAnalyzer from './videoAnalyzerCore.js';
 window.VideoAnalyzer = VideoAnalyzer;
