@@ -66,11 +66,15 @@ Risk score is calculated as instances of a flash for threshold criteria within s
 - Metric panel for analysis suite updated to improve formatting with dark mode, less clustered.
 - Offline video analysis suite now has dynamic controls for sizes of video preview and live metric graph
 
+## Recent updates to metrics
+- Patterned stimulus score
+- Dominant color (LAB)
+-  CIE76 ΔE
+-  RGB to LAB
+-  Red Delta
+-  Red Intensity 
+
 ## Updates in progress
-- LAB metrics:
-    - CIE76 ΔE
-    - RGB to LAB conversion
-    - ΔE calculation
 -  Typed array buffering
 -  Multi-timescale flicker detection
 -  Flash pattern detection improvements
