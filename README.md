@@ -60,6 +60,15 @@ Risk score is calculated as instances of a flash for threshold criteria within s
 - Red intensity and red delta metrics for improved detection of color based flashes and rapid red channel changes.
 - Metric panel for analysis suite updated to improve formatting with dark mode, less clustered.
 - Offline video analysis suite now has dynamic controls for sizes of video preview and live metric graph
+- fileanalyzer overhaul:
+    - analyzeVideoAtFixedIntervals
+    - Video that is analyzed with offline will be reproducible with same results for the same Video regardless of when it is analyzed
+- Charts overhaul:
+    - Select metric layout for each metric for each graph
+    - Hover over values improved
+    - Normalize values for easy comparison
+    - Custom local storage color schemes for metrics
+
 
 ## Recent updates to metrics
 - Patterned stimulus score
@@ -69,6 +78,7 @@ Risk score is calculated as instances of a flash for threshold criteria within s
 -  Red Delta
 -  Red Intensity
 -  Scene Change Score
+- Spectral Flatness 
 
 ## Updates in progress
 -  Typed array buffering
@@ -88,27 +98,35 @@ Risk score is calculated as instances of a flash for threshold criteria within s
 |--------|---------------|---------|--------------|-----------|
 | Relative Luminance | Y = 0.2126R + 0.7152G + 0.0722B | Base brightness calculation | 0.0 - 1.0 | Flash detection baseline |
 | Flash Detection | ΔB = \|Bt - Bt-1\| > threshold | Identify sudden brightness changes | Binary (0/1) | Trigger identification |
-| Colour Contrast | RG = \|R-G\|/√2, BY = \|2B-R-G\|/√6 | Measure chromatic changes | 0.0 - 1.0 | Colour-based trigger analysis |
+| Color Contrast | RG = \|R-G\|/√2, BY = \|2B-R-G\|/√6 | Measure chromatic changes | 0.0 - 1.0 | Color-based trigger analysis |
 | Motion Ratio | M = motionPixels/totalPixels | Quantify frame-to-frame motion | 0.0 - 1.0 | Movement pattern analysis |
 | Edge Change Rate | ECR = \|Et - Et-1\|/max(Et,Et-1) | Track spatial pattern changes | 0.0 - 1.0 | Pattern transition detection |
 | Temporal Coherence | R(τ) = E[(Xt-μ)(Xt+τ-μ)]/σ² | Measure pattern regularity | -1.0 - 1.0 | Pattern periodicity analysis |
 | Spectral Analysis | X(k) = Σx(n)e^(-j2πkn/N) | Frequency domain analysis | 0 - 30Hz | Flicker frequency detection |
 | Frame Entropy | -Σp(x)log₂p(x) | Measure frame complexity | 0.0 - 8.0 | Content complexity analysis |
-| Colour Variance | σ² = Σ(x-μ)²/N per channel | Track colour stability | 0.0 - 1.0 | Colour change detection |
+| Color Variance | σ² = Σ(x-μ)²/N per channel | Track colour stability | 0.0 - 1.0 | Color change detection |
 | Spatial Distribution | Center vs Periphery ratio | Analyze flash location | 0.0 - 1.0 | Location-based risk assessment |
 | Frame Difference | D = Σ\|It(x,y) - It-1(x,y)\|/N | Measure frame changes | 0.0 - 1.0 | Motion intensity analysis |
 | Edge Density | ED = edgePixels/totalPixels | Measure edge content | 0.0 - 1.0 | Pattern complexity analysis |
 | Temporal Change Rate | TCR = \|Ct - Ct-1\|/Δt | Track change speed | 0.0 - 1.0 | Temporal pattern analysis |
-| Chromatic Flash | CF = max(RG, BY) > threshold | Detect colour flashes | Binary (0/1) | Colour safety assessment |
+| Chromatic Flash | CF = max(RG, BY) > threshold | Detect colour flashes | Binary (0/1) | Color safety assessment |
 | Flicker Frequency | f = sampleRate * k/N | Measure flash rate | 0 - 60Hz | Frequency-based risk analysis |
 | PSI Score | 0.3F + 0.25I + 0.2C + 0.15D + 0.1B | Overall risk assessment | 0.0 - 1.0 | Content safety evaluation |
 | Periodicity Detection | P(f) = \|F{ACF(t)}\| | Identify patterns | 0.0 - 1.0 | Pattern repetition analysis |
 | Coverage | C = brightPixels/totalPixels | Measure affected area | 0.0 - 1.0 | Spatial impact assessment |
 | Duration | D = flashSequence/totalFrames | Measure persistence | 0.0 - 1.0 | Temporal impact assessment |
-| Red-Green Contrast | RG = \|R-G\|/√2 | Measure RG opposition | 0.0 - 1.0 | Colour contrast safety |
-| Blue-Yellow Contrast | BY = \|2B-R-G\|/√6 | Measure BY opposition | 0.0 - 1.0 | Colour contrast safety |
+| Red-Green Contrast | RG = \|R-G\|/√2 | Measure RG opposition | 0.0 - 1.0 | Color contrast safety |
+| Blue-Yellow Contrast | BY = \|2B-R-G\|/√6 | Measure BY opposition | 0.0 - 1.0 | Color contrast safety |
 | Temporal Edge Change | TEC = \|Et - Et-1\| | Track edge stability | 0.0 - 1.0 | Pattern stability analysis |
 | Motion Density | MD = movingPixels/frameArea | Quantify motion | 0.0 - 1.0 | Motion impact assessment |
+| Spectral Flatness | flatness = geoMean(amplitudes)/arithMean(amplitudes) | Frequency spectrum flatness | 0.0 - 1.0 | Flicker risk |
+| Red Intensity | mean(R) | Average red channel | 0.0 - 1.0 | Red flash detection |
+| Red Delta | R_t - R_{t-1} | Red channel change | 0.0 - 1.0 | Sudden red change |
+| Color Spikes | Change > mean + 2σ | Detect sudden colour spikes | Count | Risk factor |
+| Dominant Color (RGB) | mean(R,G,B) | Main color per frame | 0-255 | Color summary |
+| Dominant Lab | RGB → Lab conversion | Perceptual color | L,a,b | Color difference |
+| CIE76 Delta | sqrt((L1-L2)² + (a1-a2)² + (b1-b2)²) | Color difference between frames | 0.0+ | Color change risk |
+
 
 ## Core Metrics Implementation
 
