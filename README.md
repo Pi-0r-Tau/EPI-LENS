@@ -15,7 +15,7 @@ Think of it like PEAT (Photosensitive Epilepsy Analysis Tool) but open source, v
 
 Graphs above shows a small selection of metrics for ease of understanding
 
-![image](https://github.com/user-attachments/assets/b6424287-acd9-4443-bee3-ba1e789ba9c3)
+![image](https://github.com/user-attachments/assets/31da1e58-d44d-4382-9aaa-3e55d0a5b449)
 
 
 
@@ -68,6 +68,8 @@ Risk score is calculated as instances of a flash for threshold criteria within s
     - Hover over values improved
     - Normalize values for easy comparison
     - Custom local storage color schemes for metrics
+- fileanalyzer / Offline video analysis:
+Adjustable analysis interval to let users choose how many frames are analyzed per second. Allowing users fast less detailed analysis or slower more detailed up to the fps limit of the video.
 
 
 ## Recent updates to metrics
