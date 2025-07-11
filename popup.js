@@ -408,6 +408,16 @@ function updateSpectralMetrics(data) {
             <span>Dominant Frequency:</span>
             <span>${(data.spectralAnalysis.dominantFrequency || 0).toFixed(2)} Hz</span>
         </div>
+        <div class="metric-row">
+            <span>Spectral Flatness:</span>
+            <span id="spectralFlatnessMetrics">${
+                typeof data.spectralFlatness !== "undefined"
+                    ? Number(data.spectralFlatness).toFixed(4)
+                    : (data.spectralAnalysis?.spectralFlatness !== undefined
+                        ? Number(data.spectralAnalysis.spectralFlatness).toFixed(4)
+                        : '-')
+            }</span>
+        </div>
     `;
 }
 
