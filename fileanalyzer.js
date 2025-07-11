@@ -34,7 +34,9 @@ const ALL_METRICS = [
     { key: "dominantLabA", label: "DomLab a", color: "#f06292" },
     { key: "dominantLabB", label: "DomLab b", color: "#ba68c8" },
     { key: "cie76Delta", label: "CIE76 Δ", color: "#ffea00" },
-    { key: "patternedStimulusScore", label: "Patterned Stimulus", color: "#00e5ff" }
+    { key: "patternedStimulusScore", label: "Patterned Stimulus", color: "#00e5ff" },
+    { key: "spectralFlatness", label: "Spectral Flatness", color: "#ffd600" },
+    { key: "sceneChangeScore", label: "Scene Change", color: "#ffb300" },
 ];
 
 let selectedMetrics = ["brightness", "intensity", "riskLevel"];
@@ -103,7 +105,6 @@ window.addEventListener('DOMContentLoaded', () => {
         toggleBtn.textContent = 'Show';
     }
 
-    // Video resizing
     const videoPlayer = document.getElementById('videoPlayer');
     const videoSizeDown = document.getElementById('videoSizeDown');
     const videoSizeUp = document.getElementById('videoSizeUp');
@@ -132,7 +133,6 @@ window.addEventListener('DOMContentLoaded', () => {
         if (videoSizeIdx < videoSizes.length - 1) { videoSizeIdx++; applyVideoSize(); }
     };
 
-    // Graoh resizing
     const liveMetricsGraph = document.getElementById('liveMetricsGraph');
     const graphSizeDown = document.getElementById('graphSizeDown');
     const graphSizeUp = document.getElementById('graphSizeUp');
@@ -202,7 +202,6 @@ function loadVideoFromPlaylist(index) {
     drawLiveMetricsGraph();
     updatePlaylistInfo();
 
-    // Sets videoTitle for metadata
     if (!analyzer) analyzer = new VideoAnalyzer();
     analyzer.videoTitle = file.name;
 }
@@ -233,7 +232,6 @@ function startAnalysis() {
         flashesPerSecond: flashesPerSecond
     });
 
-    // Sets videoTitle for metadata
     if (playlist.length && playlist[playlistIndex]) {
         analyzer.videoTitle = playlist[playlistIndex].name;
     }
@@ -251,8 +249,7 @@ function startAnalysis() {
     drawLiveMetricsGraph();
     setSummaryPanelStatus("Analyzing");
     setSummaryPanelFile();
-    if (video.paused) video.play();
-    analyzeFrameLoop();
+    analyzeVideoAtFixedIntervals(video, analyzer, 1 / 30)
 
 }
 
@@ -288,47 +285,6 @@ video.addEventListener('pause', () => {
     stopAnalysis();
     updateSummaryPanelStatus();
 });
-video.addEventListener('ended', () => {
-    if (analyzer) {
-        exportCSV(true);
-        exportJSON(true);
-    }
-
-    try {
-        if (analyzer && analyzer.timelineData && analyzer.timelineData.length > 0) {
-            const psiScores = analyzer.timelineData
-                .map(entry => Number(entry.psi?.score))
-                .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
-            if (psiScores.length > 0) {
-                const avgPsi = psiScores.reduce((a, b) => a + b, 0) / psiScores.length;
-                const maxPsi = Math.max(...psiScores);
-                document.getElementById('SummaryAvgPSI').textContent = avgPsi.toFixed(4);
-                document.getElementById('SummaryMaxPSI').textContent = maxPsi.toFixed(4);
-            } else {
-                document.getElementById('SummaryAvgPSI').textContent = '-';
-                document.getElementById('SummaryMaxPSI').textContent = '-';
-            }
-
-            const flashes = analyzer.timelineData
-                .filter(entry => entry.isFlash)
-                .map(entry => ({
-                    timestamp: entry.timestamp,
-                    intensity: entry.intensity
-                }));
-            let flashesDiv = document.getElementById('SummaryFlashesList');
-            if (flashesDiv) {
-                flashesDiv.innerHTML = renderFlashTimestamps(flashes);
-            }
-        }
-    } catch (e) {}
-    if (playlistIndex < playlist.length - 1) {
-        playlistIndex++;
-        loadVideoFromPlaylist(playlistIndex);
-        setTimeout(() => {
-            startAnalysis();
-        }, 300);
-    }
-});
 
 function renderFlashTimestamps(flashes) {
     if (!flashes || flashes.length === 0) {
@@ -353,53 +309,7 @@ function renderFlashTimestamps(flashes) {
 }
 
 function updateResults(result) {
-    resultsPanel.innerHTML = `
-    <div style="background:transparent;max-width:720px;margin:auto;">
-        <table style="width:100%;border-radius:10px;overflow:hidden;background:rgba(30,32,36,0.98);color:#fff;font-size:1.08em;box-shadow:0 2px 8px #0002;border:2px solid #fff;">
-            <tbody>
-                <tr><th style="text-align:left;padding:8px 12px;background:rgba(255,255,255,0.08);color:#fff;">Metric</th><th style="text-align:left;padding:8px 12px;background:rgba(255,255,255,0.08);color:#fff;">Value</th></tr>
-                <tr><td style="padding:7px 12px;">Time</td><td style="padding:7px 12px;">${result.timestamp !== undefined ? Number(result.timestamp).toFixed(2) : ''} s</td></tr>
-                <tr><td style="padding:7px 12px;">Brightness</td><td style="padding:7px 12px;">${(result.brightness ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Red Intensity</td><td style="padding:7px 12px;">${(result.redIntensity ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Red Delta</td><td style="padding:7px 12px;">${(result.redDelta ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Flash Count</td><td style="padding:7px 12px;">${result.flashCount ?? 0}</td></tr>
-                <tr><td style="padding:7px 12px;">Risk Level</td><td style="padding:7px 12px;text-transform:capitalize;">${result.riskLevel ?? ''}</td></tr>
-                <tr><td style="padding:7px 12px;">PSI Score</td><td style="padding:7px 12px;">${(result.psi?.score ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Flicker Frequency</td><td style="padding:7px 12px;">${(result.flickerFrequency ?? 0).toFixed(2)} Hz</td></tr>
-                <tr><td style="padding:7px 12px;">Entropy</td><td style="padding:7px 12px;">${(result.entropy ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Temporal Change</td><td style="padding:7px 12px;">${(result.temporalChange ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Frame Diff</td><td style="padding:7px 12px;">${(result.frameDifference?.difference ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Motion Ratio</td><td style="padding:7px 12px;">${(result.frameDifference?.motion ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Dominant Frequency</td><td style="padding:7px 12px;">${(result.spectralAnalysis?.dominantFrequency ?? 0).toFixed(2)} Hz</td></tr>
-                <tr><td style="padding:7px 12px;">Intensity</td><td style="padding:7px 12px;">${(result.intensity ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Center Intensity</td><td style="padding:7px 12px;">${(result.spatialMap?.center ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Peripheral Intensity</td><td style="padding:7px 12px;">${(result.spatialMap?.periphery ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Red-Green Contrast</td><td style="padding:7px 12px;">${(result.chromaticFlashes?.redGreen ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Blue-Yellow Contrast</td><td style="padding:7px 12px;">${(result.chromaticFlashes?.blueYellow ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Temporal Contrast Rate</td><td style="padding:7px 12px;">${(result.temporalContrast?.currentRate ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Edge Density</td><td style="padding:7px 12px;">${(result.edgeDetection?.edgeDensity ?? 0).toFixed(4)}</td></tr>
-                <tr><td style="padding:7px 12px;">Edge Count</td><td style="padding:7px 12px;">${(result.edgeDetection?.edgeCount ?? 0)}</td></tr>
-                <tr><td style="padding:7px 12px;">Edge Change Rate</td><td style="padding:7px 12px;">${(result.edgeDetection?.temporalEdgeChange ?? 0).toFixed(4)}</td></tr>
-                <!-- New: Dominant Color/Lab/CIE76 -->
-                <tr><td style="padding:7px 12px;">Dominant Color (R,G,B)</td><td style="padding:7px 12px;">
-                    ${result.dominantColor ?
-                        `${Number(result.dominantColor.r).toFixed(1)}, ${Number(result.dominantColor.g).toFixed(1)}, ${Number(result.dominantColor.b).toFixed(1)}` : '-'
-                    }</td></tr>
-                <tr><td style="padding:7px 12px;">Dominant Lab (L,a,b)</td><td style="padding:7px 12px;">
-                    ${result.dominantLab ?
-                        `${Number(result.dominantLab.L).toFixed(2)}, ${Number(result.dominantLab.a).toFixed(2)}, ${Number(result.dominantLab.b).toFixed(2)}` : '-'
-                    }</td></tr>
-                <tr><td style="padding:7px 12px;">CIE76 Δ</td><td style="padding:7px 12px;">
-                    ${typeof result.cie76Delta !== "undefined" ? Number(result.cie76Delta).toFixed(4) : '-'}
-                </td></tr>
-                <tr><td style="padding:7px 12px;">Patterned Stimulus Score</td><td style="padding:7px 12px;">
-                    ${typeof result.patternedStimulusScore !== "undefined" ? Number(result.patternedStimulusScore).toFixed(4) : '-'}
-                </td></tr>
-            </tbody>
-        </table>
-    </div>
-    `;
-
+    resultsPanel.innerHTML = renderResultsTable(result);
     updateSummaryPanelFields(result);
     try {
         if (analyzer && analyzer.timelineData) {
@@ -481,7 +391,11 @@ function updateLiveMetricsChart(data) {
         dominantLabA: data.dominantLab?.a ?? 0,
         dominantLabB: data.dominantLab?.b ?? 0,
         cie76Delta: data.cie76Delta ?? 0,
-        patternedStimulusScore: data.patternedStimulusScore ?? 0
+        patternedStimulusScore: data.patternedStimulusScore ?? 0,
+        spectralFlatness: typeof data.spectralFlatness !== "undefined"
+            ? Number(data.spectralFlatness)
+            : (data.spectralAnalysis?.spectralFlatness ?? 0),
+        sceneChangeScore: data.sceneChangeScore ?? 0,
     });
     if (liveMetricsHistory.length > maxPoints) liveMetricsHistory.shift();
     drawLiveMetricsGraph();
@@ -494,9 +408,8 @@ function drawLiveMetricsGraph() {
     if (!ctx) return;
     const width = liveMetricsGraph.width;
     const height = liveMetricsGraph.height;
+    // Draw Axes
     ctx.clearRect(0, 0, width, height);
-
-    // Draw axes
     ctx.strokeStyle = "#444";
     ctx.beginPath();
     ctx.moveTo(30, 10);
@@ -617,15 +530,73 @@ function renderMetricSelector() {
     });
 }
 
-function analyzeFrameLoop() {
-    if (!isAnalyzing || video.paused || video.ended) return;
-    const result = analyzer.analyzeFrame(video, video.currentTime);
-    if (result) {
-        updateResults(result);
-        updateLiveMetricsChart(result);
+async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
+    video.pause();
+    const duration = video.duration;
+    for (let t = 0; t < duration; t += interval) {
+        await seekVideo(video, t);
+        await new Promise(res => setTimeout(res, 20));
+        if (!isAnalyzing) break;
+        const result = analyzer.analyzeFrame(video, t);
+        if (result) {
+            updateResults(result);
+            updateLiveMetricsChart(result);
+        }
     }
-    analysisTimer = setTimeout(analyzeFrameLoop, 33);
+    stopAnalysis();
+
+    exportCSV(true);
+    exportJSON(true);
+
+     try {
+        if (analyzer && analyzer.timelineData && analyzer.timelineData.length > 0) {
+            const psiScores = analyzer.timelineData
+                .map(entry => Number(entry.psi?.score))
+                .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
+            if (psiScores.length > 0) {
+                const avgPsi = psiScores.reduce((a, b) => a + b, 0) / psiScores.length;
+                const maxPsi = Math.max(...psiScores);
+                document.getElementById('SummaryAvgPSI').textContent = avgPsi.toFixed(4);
+                document.getElementById('SummaryMaxPSI').textContent = maxPsi.toFixed(4);
+            } else {
+                document.getElementById('SummaryAvgPSI').textContent = '-';
+                document.getElementById('SummaryMaxPSI').textContent = '-';
+            }
+
+            const flashes = analyzer.timelineData
+                .filter(entry => entry.isFlash)
+                .map(entry => ({
+                    timestamp: entry.timestamp,
+                    intensity: entry.intensity
+                }));
+            let flashesDiv = document.getElementById('SummaryFlashesList');
+            if (flashesDiv) {
+                flashesDiv.innerHTML = renderFlashTimestamps(flashes);
+            }
+        }
+    } catch (e) {}
+    if (playlistIndex < playlist.length - 1) {
+        playlistIndex++;
+        loadVideoFromPlaylist(playlistIndex);
+        setTimeout(() => {
+            startAnalysis();
+        }, 300);
+    }
 }
+
+
+function seekVideo(video, time) {
+    return new Promise(resolve => {
+        function onSeeked() {
+            video.removeEventListener('seeked', onSeeked);
+            resolve();
+
+        }
+        video.addEventListener('seeked', onSeeked);
+        video.currentTime = time;
+    });
+}
+
 
 (function() {
     function updateSummary(result) {
