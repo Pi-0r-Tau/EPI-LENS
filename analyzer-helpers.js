@@ -90,7 +90,7 @@
 
     /**
      * Computes the Sobel edge magnitude map for a grayscale image.
-     * @param {Float32Array} gray 
+     * @param {Float32Array} gray
      * @param {number} width
      * @param {number} height
      * @returns {Float32Array}
@@ -181,7 +181,7 @@
         return score;
     }
 
-   
+
     function calculateDominantColor(imageData) {
         const data = imageData.data;
         let r = 0, g = 0, b = 0;
@@ -198,6 +198,72 @@
         };
     }
 
+    /**
+     * Spectral flatness of an amplitude spectrum.
+     * @param {Array<{amplitude:number}>|number[]} spectrum
+     * @returns {number} [0,1]
+     */
+    function computeSpectralFlatness(spectrum) {
+        let amplitudes = Array.isArray(spectrum) && typeof spectrum[0] === "object"
+            ? spectrum.map(x => x.amplitude)
+            : spectrum;
+        amplitudes = amplitudes.filter(a => a > 0); 
+        if (!amplitudes.length) return 0;
+        const geoMean = Math.exp(amplitudes.reduce((sum, a) => sum + Math.log(a), 0) / amplitudes.length);
+        const arithMean = amplitudes.reduce((sum, a) => sum + a, 0) / amplitudes.length;
+        return arithMean === 0 ? 0 : geoMean / arithMean;
+    }
+
+    /**
+     * Histogram difference between two frames for scene change detection.
+     * @param {Uint8ClampedArray} data1
+     * @param {Uint8ClampedArray} data2
+     * @returns {number} [0,1]
+     */
+    function frameHistogramDiff(data1, data2) {
+        if (!data1 || !data2 || data1.length !== data2.length) return 0;
+        const bins = 32;
+        const hist1 = new Array(bins).fill(0), hist2 = new Array(bins).fill(0);
+        for (let i = 0; i < data1.length; i += 4) {
+            const v1 = Math.floor((data1[i] + data1[i+1] + data1[i+2]) / 3 / 256 * bins);
+            const v2 = Math.floor((data2[i] + data2[i+1] + data2[i+2]) / 3 / 256 * bins);
+            hist1[v1]++;
+            hist2[v2]++;
+        }
+        let diff = 0, total = 0;
+        for (let i = 0; i < bins; ++i) {
+            diff += Math.abs(hist1[i] - hist2[i]);
+            total += hist1[i] + hist2[i];
+        }
+        return total ? diff / total : 0;
+    }
+
+    /**
+     * Recalls top N dominant colors from image data
+     * @param {Uint8ClampedArray} data
+     * @param {number} n
+     * @returns {Array<{r:number,g:number,b:number}>}
+     */
+    function extractDominantColors(data, n = 5) {
+        const colorMap = {};
+        for (let i = 0; i < data.length; i += 4) {
+            const r = Math.round(data[i] / 32) * 32;
+            const g = Math.round(data[i+1] / 32) * 32;
+            const b = Math.round(data[i+2] / 32) * 32;
+            const key = `${r},${g},${b}`;
+            colorMap[key] = (colorMap[key] || 0) + 1;
+        }
+        const sorted = Object.entries(colorMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, n)
+            .map(([key]) => {
+                const [r, g, b] = key.split(',').map(Number);
+                return { r, g, b };
+            });
+        return sorted;
+    }
+
+
     window.AnalyzerHelpers = {
         rgbToLab,
         cie76,
@@ -205,6 +271,9 @@
         performFFT,
         sobelEdgeMap,
         detectPatternedStimulus,
-        calculateDominantColor
+        calculateDominantColor,
+        computeSpectralFlatness,
+        frameHistogramDiff,
+        extractDominantColors
     };
 })();
