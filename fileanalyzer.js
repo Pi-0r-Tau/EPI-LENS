@@ -47,6 +47,33 @@ let playlistIndex = 0;
 let playlistInfo = document.getElementById('playlistInfo');
 let flashIntensityInput = document.getElementById('flashIntensityThreshold');
 let flashesPerSecondInput = document.getElementById('flashesPerSecondThreshold');
+let analysisIntervalInput = document.getElementById('analysisInterval');
+let analysisIntervalValueSpan = document.getElementById('analysisIntervalValue');
+let analysisIntervalFpsInfo = document.getElementById('analysisIntervalFpsInfo');
+
+function updateAnalysisIntervalFpsInfo() {
+    if (!analysisIntervalInput || !analysisIntervalFpsInfo) return;
+    const interval = parseFloat(analysisIntervalInput.value);
+    const fps = interval > 0 ? (1 / interval).toFixed(2) : '-';
+    analysisIntervalFpsInfo.textContent = `Current: ${fps} frames per second (fps)`;
+}
+
+// Load saved analysis interval from localStorage
+if (analysisIntervalInput && analysisIntervalValueSpan) {
+    const savedInterval = localStorage.getItem('epilens_analysisInterval');
+    if (savedInterval !== null) {
+        analysisIntervalInput.value = savedInterval;
+        analysisIntervalValueSpan.textContent = Number(savedInterval).toFixed(3);
+    } else {
+        analysisIntervalValueSpan.textContent = Number(analysisIntervalInput.value).toFixed(3);
+    }
+    analysisIntervalInput.addEventListener('input', () => {
+        analysisIntervalValueSpan.textContent = Number(analysisIntervalInput.value).toFixed(3);
+        localStorage.setItem('epilens_analysisInterval', analysisIntervalInput.value);
+        updateAnalysisIntervalFpsInfo();
+    });
+    updateAnalysisIntervalFpsInfo();
+}
 
 // Threshold value displays
 if (flashIntensityInput) {
@@ -58,6 +85,12 @@ if (flashesPerSecondInput) {
     flashesPerSecondInput.addEventListener('input', () => {
         document.getElementById('flashesPerSecondValue').textContent = Number(flashesPerSecondInput.value).toFixed(1);
     });
+}
+if (analysisIntervalInput && analysisIntervalValueSpan) {
+    analysisIntervalInput.addEventListener('input', () => {
+        analysisIntervalValueSpan.textContent = Number(analysisIntervalInput.value).toFixed(3);
+    });
+    analysisIntervalValueSpan.textContent = Number(analysisIntervalInput.value).toFixed(3);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -204,6 +237,14 @@ function loadVideoFromPlaylist(index) {
 
     if (!analyzer) analyzer = new VideoAnalyzer();
     analyzer.videoTitle = file.name;
+    if (analysisIntervalInput && analysisIntervalValueSpan) {
+        const savedInterval = localStorage.getItem('epilens_analysisInterval');
+        if (savedInterval !== null) {
+            analysisIntervalInput.value = savedInterval;
+            analysisIntervalValueSpan.textContent = Number(savedInterval).toFixed(3);
+            updateAnalysisIntervalFpsInfo();
+        }
+    }
 }
 
 function updatePlaylistInfo() {
@@ -249,7 +290,12 @@ function startAnalysis() {
     drawLiveMetricsGraph();
     setSummaryPanelStatus("Analyzing");
     setSummaryPanelFile();
-    analyzeVideoAtFixedIntervals(video, analyzer, 1 / 30)
+    let interval = 1 / 30;
+    if (analysisIntervalInput) {
+        interval = parseFloat(analysisIntervalInput.value);
+        localStorage.setItem('epilens_analysisInterval', analysisIntervalInput.value);
+    }
+    analyzeVideoAtFixedIntervals(video, analyzer, interval)
 
 }
 

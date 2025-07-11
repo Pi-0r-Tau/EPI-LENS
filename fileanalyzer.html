@@ -29,6 +29,23 @@
                     <input type="range" id="flashIntensityThreshold" min="0.05" max="1" step="0.01" value="0.2" style="width:100%;">
                     <span id="flashIntensityValue" style="color:#90caf9;">0.20</span>
                 </div>
+                <div>
+                    <label for="analysisInterval">Analysis Interval (seconds)</label>
+                    <input type="range" id="analysisInterval" min="0.01" max="0.5" step="0.01" value="0.033" style="width:100%;">
+                    <span id="analysisIntervalValue" style="color:#90caf9;">0.033</span>
+                    <div id="analysisIntervalFpsInfo" style="font-size:0.97em;color:#90caf9;margin-top:2px;"></div>
+                    <div style="font-size:0.97em;color:#ff9800;margin-top:2px;">
+                        <strong>Note:</strong> For standard 30fps videos, the maximum meaningful analysis rate is 30 frames per second (interval = 0.033s).
+                        Setting a lower interval will not analyze more frames than exist in the video.
+                    </div>
+                    <div style="font-size:0.97em;color:#bbb;margin-top:2px;">
+                        <strong>What does this mean?</strong><br>
+                        This sets how often (in seconds) a frame is analyzed.<br>
+                        Lower values (e.g. 0.033) mean more frequent analysis (30 frames per second).<br>
+                        Higher values (e.g. 0.5) mean less frequent analysis (2 frames per second).<br>
+                        Use a lower value for more detailed analysis, or a higher value for faster, less detailed results.
+                    </div>
+                </div>
             </div>
             <div class="panel" id="analysisControlsPanel">
                 <h3>Controls</h3>
@@ -91,4 +108,3 @@
     <script src="fileanalyzer.js"></script>
 </body>
 </html>
-
