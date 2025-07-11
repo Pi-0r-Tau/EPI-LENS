@@ -10,24 +10,24 @@ if (!window.VideoAnalyzer) {
     /**
      * Constructs a new VideoAnalyzer instance.
      * @constructor
-     * @property {Object} metrics 
-     * @property {Object} thresholds 
-     * @property {HTMLCanvasElement} canvas 
-     * @property {CanvasRenderingContext2D} context 
+     * @property {Object} metrics
+     * @property {Object} thresholds
+     * @property {HTMLCanvasElement} canvas
+     * @property {CanvasRenderingContext2D} context
      * @property {number} sampleSize
-     * @property {Array} timelineData 
-     * @property {Array} detailedData 
-     * @property {number} lastAnalysisTime 
-     * @property {number} minAnalysisInterval 
-     * @property {Object} advancedMetrics 
-     * @property {Object} fft 
-     * @property {Object} temporalBuffer 
+     * @property {Array} timelineData
+     * @property {Array} detailedData
+     * @property {number} lastAnalysisTime
+     * @property {number} minAnalysisInterval
+     * @property {Object} advancedMetrics
+     * @property {Object} fft
+     * @property {Object} temporalBuffer
      * @property {number|null} startTime
-     * @property {Array} dataChunks 
-     * @property {Array} currentChunk 
-     * @property {number} chunkSize 
-     * @property {number} totalFrames 
-     * @property {number|null} analysisStartTime 
+     * @property {Array} dataChunks
+     * @property {Array} currentChunk
+     * @property {number} chunkSize
+     * @property {number} totalFrames
+     * @property {number|null} analysisStartTime
      * @property {number} lastExportTime
      */
         constructor() {
@@ -48,7 +48,7 @@ if (!window.VideoAnalyzer) {
             };
             this.canvas = document.createElement('canvas');
             this.context = this.canvas.getContext('2d', { willReadFrequently: true });
-            this.sampleSize = 4; 
+            this.sampleSize = 4;
             this.timelineData = [];
             this.detailedData = [];
             this.lastAnalysisTime = 0;
@@ -70,7 +70,7 @@ if (!window.VideoAnalyzer) {
                     b: []
                 },
                 spikes: [],
-                historyLength: 30, 
+                historyLength: 30,
                 psi: {
                     score: 0,
                     components: {
@@ -143,13 +143,14 @@ if (!window.VideoAnalyzer) {
             this.startTime = null;
             this.dataChunks = [];
             this.currentChunk = [];
-            this.chunkSize = 1000; 
+            this.chunkSize = 1000;
             this.totalFrames = 0;
             this.analysisStartTime = null;
             this.lastExportTime = 0;
             this.lastRedIntensity = 0;
-
             this.patternHistory = [];
+            this.sceneChangeHistory = [];
+            this.patternHashes = [];
         }
 
 
@@ -233,6 +234,14 @@ if (!window.VideoAnalyzer) {
 
             const patternedStimulusScore = this.detectPatternedStimulus(imageData);
 
+            let sceneChangeScore = 0;
+            if (this.lastFrame && imageData) {
+                sceneChangeScore = window.AnalyzerHelpers.frameHistogramDiff(
+                    imageData.data, this.lastFrame.data
+                );
+            }
+            this.sceneChangeHistory.push(sceneChangeScore);
+
             const metrics = {
                 colorVariance: this.calculateColorVariance(imageData),
                 temporalChange: this.calculateTemporalChange(brightness),
@@ -249,7 +258,8 @@ if (!window.VideoAnalyzer) {
                 dominantColor: dominantColor,
                 dominantLab: dominantLab,
                 cie76Delta: cie76Delta,
-                patternedStimulusScore: patternedStimulusScore
+                patternedStimulusScore: patternedStimulusScore,
+                sceneChangeScore: sceneChangeScore
             };
 
 
@@ -354,9 +364,6 @@ if (!window.VideoAnalyzer) {
 
             return brightPixels / pixels;
         }
-
-        // TASK-7672
-        // Colour analysis logic see notes TASK-7672
 
         getDetailedAnalysis() {
             return {
@@ -560,8 +567,8 @@ if (!window.VideoAnalyzer) {
         /**
          * Detects significant colour spikes in the frame changes.
          * Spike: When a change exceeds both the fixed threshold and two standard deviations above the mean.
-         * @param {{ r: number[], g: number[], b: number[] }} changes - Object containing arrays of brightness changes for each color channel
-         * @returns {{channel: 'r' | 'g' | 'b', frameIndex: number, magnitude: number}[]} Array of detected color spike objects.
+         * @param {{ r: number[], g: number[], b: number[] }} changes
+         * @returns {{channel: 'r' | 'g' | 'b', frameIndex: number, magnitude: number}[]}
          */
         detectColorSpikes(changes) {
             const threshold = 0.2;
@@ -819,7 +826,7 @@ if (!window.VideoAnalyzer) {
                     this.temporalBuffer.add(brightness);
 
                     if (this.temporalBuffer.data.length < 32) {
-                    return { dominantFrequency: 0, spectrum: [] };
+                    return { dominantFrequency: 0, spectrum: [], spectralFlatness: 0 };
                     }
 
                 const signal = [...this.temporalBuffer.data.slice(-64)];
@@ -843,14 +850,19 @@ if (!window.VideoAnalyzer) {
                     .slice(1, Math.floor(magnitudes.length / 2))
                     .reduce((max, curr) => curr.amplitude > max.amplitude ? curr : max, { amplitude: 0 });
 
+                const spectralFlatness = window.AnalyzerHelpers.computeSpectralFlatness(
+                    magnitudes.slice(1, Math.floor(magnitudes.length / 2))
+                );
+
                 return {
                     dominantFrequency: dominantBin.frequency,
                     spectrum: magnitudes.slice(0, Math.floor(magnitudes.length / 2)),
-                    windowSize: signal.length
+                    windowSize: signal.length,
+                    spectralFlatness: spectralFlatness
                 };
             } catch (error) {
                 console.error('Spectral analysis error:', error);
-                return { dominantFrequency: 0, spectrum: [], windowSize: 0 };
+                return { dominantFrequency: 0, spectrum: [], windowSize: 0, spectralFlatness: 0 };
             }
         }
 
@@ -955,8 +967,6 @@ if (!window.VideoAnalyzer) {
             };
         }
 
-
-
         /**
          * Gets the luminance value at a given pixel index.
          * @param {Uint8ClampedArray} data - RGBA pixel data array.
@@ -1009,6 +1019,7 @@ if (!window.VideoAnalyzer) {
                     'Frame Difference',
                     'Motion Ratio',
                     'Dominant Frequency',
+                    'Spectral Flatness',
                     'Temporal Coherence',
                     'Edge Density',
                     'Edge Count',
@@ -1022,7 +1033,9 @@ if (!window.VideoAnalyzer) {
                     'Dominant Lab a',
                     'Dominant Lab b',
                     'CIE76 Delta',
-                    'Patterned Stimulus Score'
+                    'Patterned Stimulus Score',
+                    'Scene Change Score'
+
                 ];
 
                 // TASK 2383: Ensure data export is meaningful data from postive timestamped data
@@ -1070,6 +1083,7 @@ if (!window.VideoAnalyzer) {
                         Number(entry.frameDifference?.difference || 0).toFixed(4),
                         Number(entry.frameDifference?.motion || 0).toFixed(4),
                         Number(entry.spectralAnalysis?.dominantFrequency || 0).toFixed(2),
+                        Number(entry.spectralFlatness || 0).toFixed(4),
                         Number(entry.temporalCoherence?.coherenceScore || 0).toFixed(4),
                         Number(entry.edgeDetection?.edgeDensity || 0).toFixed(4),
                         Number(entry.edgeDetection?.edgeCount || 0),
@@ -1083,7 +1097,8 @@ if (!window.VideoAnalyzer) {
                         Number(entry.dominantLab?.a || 0).toFixed(2),
                         Number(entry.dominantLab?.b || 0).toFixed(2),
                         Number(entry.cie76Delta || 0).toFixed(4),
-                        Number(entry.patternedStimulusScore || 0).toFixed(4)
+                        Number(entry.patternedStimulusScore || 0).toFixed(4),
+                        Number(entry.sceneChangeScore || 0).toFixed(4)
                     ];
                 });
 
@@ -1143,7 +1158,7 @@ if (!window.VideoAnalyzer) {
                         .filter(entry => entry.timestamp >= 0)
                         .sort((a, b) => a.timestamp - b.timestamp)
                         .map(entry => ({
-                            timestamp: Number(entry.timestamp || 0).toFixed(6), 
+                            timestamp: Number(entry.timestamp || 0).toFixed(6),
                             brightness: Number(entry.brightness || 0).toFixed(4),
                             isFlash: entry.isFlash,
                             intensity: Number(entry.intensity || 0).toFixed(4),
@@ -1183,7 +1198,8 @@ if (!window.VideoAnalyzer) {
                             },
                             spectralAnalysis: {
                                 dominantFrequency: Number(entry.spectralAnalysis?.dominantFrequency || 0).toFixed(2),
-                                spectrum: entry.spectralAnalysis?.spectrum || []
+                                spectrum: entry.spectralAnalysis?.spectrum || [],
+                                spectralFlatness: Number(entry.spectralFlatness || 0).toFixed(4)
                             },
                             temporalCoherence: {
                                 score: Number(entry.temporalCoherence?.coherenceScore || 0).toFixed(4),
@@ -1211,7 +1227,8 @@ if (!window.VideoAnalyzer) {
                                 }
                                 : { L: 0, a: 0, b: 0 },
                             cie76Delta: Number(entry.cie76Delta || 0).toFixed(4),
-                            patternedStimulusScore: Number(entry.patternedStimulusScore || 0).toFixed(4)
+                            patternedStimulusScore: Number(entry.patternedStimulusScore || 0).toFixed(4),
+                            sceneChangeScore: Number(entry.sceneChangeScore || 0).toFixed(4),
                         })),
                     colorHistory: {
                         r: this.advancedMetrics.colorHistory.r,
@@ -1346,8 +1363,11 @@ if (!window.VideoAnalyzer) {
                 dominantColor: metrics.dominantColor,
                 dominantLab: metrics.dominantLab,
                 cie76Delta: metrics.cie76Delta,
-                patternedStimulusScore: metrics.patternedStimulusScore
+                patternedStimulusScore: metrics.patternedStimulusScore,
+                sceneChangeScore: metrics.sceneChangeScore
             };
+
+            entry.spectralFlatness = metrics.spectralData?.spectralFlatness ?? 0;
 
             // Store data in chunks
             this.currentChunk.push(entry);
