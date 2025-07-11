@@ -10,18 +10,13 @@ Think of it like PEAT (Photosensitive Epilepsy Analysis Tool) but open source, v
 
 ## Now supports YouTube video and offline/local playlist live analysis. 
 
-![image](https://github.com/user-attachments/assets/d28a2e03-6688-4b6c-90e9-3cf494bdebc1) 
 
+![image](https://github.com/user-attachments/assets/6fc05c3b-bb2a-48ff-9e72-e75a6df391f6)
 
+Graphs above shows a small selection of metrics for ease of understanding
 
-![image](https://github.com/user-attachments/assets/6d93632e-60aa-49bc-ab89-41d88a2c8f31)
+![image](https://github.com/user-attachments/assets/b6424287-acd9-4443-bee3-ba1e789ba9c3)
 
-
-
-
-Graphs above shows a small selection of metrics for ease of understanding, the first from a Python notebook and the second from the new intergated chart dashboard.
-
-![image](https://github.com/user-attachments/assets/92d0c321-acd0-495d-a630-319f90cdb302)
 
 
 ### Updated Local/offline video analysis suite.
@@ -72,7 +67,8 @@ Risk score is calculated as instances of a flash for threshold criteria within s
 -  CIE76 ΔE
 -  RGB to LAB
 -  Red Delta
--  Red Intensity 
+-  Red Intensity
+-  Scene Change Score
 
 ## Updates in progress
 -  Typed array buffering
