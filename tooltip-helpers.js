@@ -19,29 +19,31 @@ function setupChartTooltipAndInteraction(canvas, card, chart, getChartDataForDra
     tooltip.style.zIndex = 10;
     card.appendChild(tooltip);
 
-    canvas.onmousemove = (e) => {
+    canvas.onmousemove = function(e) {
         const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-        const { xVals, yVals, left, w, h, minX, maxX, minY, maxY } = getChartDataForDraw(canvas, chart);
-        let closestIdx = -1, minDist = 1e9;
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const data = getChartDataForDraw(canvas, chart);
+        const { xVals, yVals, left, w, h, minX, maxX, minY, maxY } = data;
+
+        // Find closest data point
+        let closestIdx = -1, closestMetric = null, minDist = Infinity;
         for (let i = 0; i < xVals.length; ++i) {
-            const px = left + ((xVals[i] - minX) / (maxX - minX)) * w;
-            const pyArr = yVals.map((arr, j) => chart.visible[j] ? (canvas.height - 30 - ((arr[i] - minY) / (maxY - minY)) * h) : null);
-            pyArr.forEach((py, j) => {
-                if (py !== null) {
-                    const dist = Math.abs(mx - px) + Math.abs(my - py);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        closestIdx = i;
-                    }
+            let px = left + ((xVals[i] - minX) / (maxX - minX)) * w;
+            for (let j = 0; j < yVals.length; ++j) {
+                let py = 20 + h - ((yVals[j][i] - minY) / (maxY - minY)) * h;
+                let dist = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestIdx = i;
+                    closestMetric = j;
                 }
-            });
+            }
         }
-        if (closestIdx >= 0 && minDist < 20) {
+        if (minDist < 12 && closestIdx !== -1 && closestMetric !== null) {
             tooltip.style.display = 'block';
-            tooltip.style.left = (mx + 10) + 'px';
-            tooltip.style.top = (my - 10) + 'px';
+            tooltip.style.left = (x + 10) + 'px';
+            tooltip.style.top = (y - 10) + 'px';
             let html = `<b>${chart.x}:</b> ${xVals[closestIdx]}<br>`;
             chart.y.forEach((yMetric, j) => {
                 if (chart.visible[j]) {

@@ -18,6 +18,7 @@ let chartViewMode = 'multi';
 
 // selection zoom
 let selectionZoom = null; // {startIdx, endIdx} or null
+let normalizeMetrics = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     let header = document.querySelector('header');
@@ -36,6 +37,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         fileInput.id = 'jsonFileInput';
         fileInput.onchange = handleJsonFileSelected;
         document.body.appendChild(fileInput);
+    }
+
+    if (header && !document.getElementById('customizeColorsBtn')) {
+        const customizeBtn = document.createElement('button');
+        customizeBtn.id = 'customizeColorsBtn';
+        customizeBtn.textContent = 'Customize Colors';
+        customizeBtn.style.marginLeft = '8px';
+        customizeBtn.onclick = () => {
+            window.MetricColorHelpers.showMetricColorCustomizer(
+                availableFields,
+                () => renderAllCharts()
+            );
+        };
+        header.querySelector('div').appendChild(customizeBtn);
+    }
+
+    if (header && !document.getElementById('normalizeMetricsBtn')) {
+        const normalizeBtn = document.createElement('button');
+        normalizeBtn.id = 'normalizeMetricsBtn';
+        normalizeBtn.textContent = 'Normalize Metrics';
+        normalizeBtn.style.marginLeft = '8px';
+        normalizeBtn.onclick = () => {
+            normalizeMetrics = !normalizeMetrics;
+            normalizeBtn.textContent = normalizeMetrics ? 'Unnormalize Metrics' : 'Normalize Metrics';
+            renderAllCharts();
+        };
+        header.querySelector('div').appendChild(normalizeBtn);
     }
     await loadData();
     setupAddChartModal();
@@ -132,7 +160,7 @@ const ALL_METRICS = [
     { key: "dominantLabA", label: "DomLab a", color: "#f06292" },
     { key: "dominantLabB", label: "DomLab b", color: "#ba68c8" },
     { key: "cie76Delta", label: "CIE76 Δ", color: "#ffea00" },
-    { key: "patternedStimulusScore", label: "Patterned Stimulus", color: "#00e5ff" }
+    { key: "spectralFlatness", label: "Spectral Flatness", color: "#ffd600" }
 ];
 
 /**
@@ -175,6 +203,10 @@ function flattenMetrics(row) {
     // spectralAnalysis
     if (row.spectralAnalysis) {
         flat['spectralAnalysis.dominantFrequency'] = Number(row.spectralAnalysis?.dominantFrequency ?? 0);
+        flat['spectralAnalysis.spectralFlatness'] = Number(row.spectralAnalysis?.spectralFlatness ?? row.spectralFlatness ?? 0);
+    }
+    if (typeof row.spectralFlatness !== "undefined") {
+        flat['spectralFlatness'] = Number(row.spectralFlatness ?? 0);
     }
 
     // temporalCoherence
@@ -238,6 +270,9 @@ function flattenMetrics(row) {
         flat['patternedStimulusScore'] = Number(row.patternedStimulusScore ?? 0);
     }
 
+    // Scene Change Detection
+    flat['sceneChangeScore'] = Number(row.sceneChangeScore ?? 0);
+
     return flat;
 }
 
@@ -245,29 +280,15 @@ function showError(msg) {
     document.body.innerHTML = `<div style="color:#f44336;padding:32px;text-align:center;">${msg}</div>`;
 }
 
-const METRIC_COLORS = [
-    "#2196f3", "#f44336", "#ff9800", "#4caf50", "#9c27b0", "#00bcd4", "#e91e63", "#8bc34a",
-    "#ffc107", "#3f51b5", "#607d8b", "#ff5722", "#cddc39", "#795548", "#673ab7", "#009688"
-];
 /**
  * Returns a color for a metric name.
  * @param {string} metric
  * @returns {string}
  */
 function getMetricColor(metric) {
-    let idx = Math.abs(hashString(metric)) % METRIC_COLORS.length;
-    return METRIC_COLORS[idx];
+    return window.MetricColorHelpers.getMetricColor(metric);
 }
 
-
-function hashString(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    return hash;
-}
-/**
- * Sets up the modal dialog for adding a new chart.
- */
 function setupAddChartModal() {
     const modal = document.getElementById('modal');
     const addChartBtn = document.getElementById('addChartBtn');
@@ -279,15 +300,26 @@ function setupAddChartModal() {
     const yAxisSearch = document.getElementById('yAxisSearch');
 
     let yAxisChecked = new Set();
+    const metricLabel = window.MetricColorHelpers.metricKeyToLabel;
+
+    const groupMetrics = [
+        'colorVariance', 'psi', 'frameDifference', 'spectralAnalysis',
+        'temporalCoherence', 'edgeDetection', 'dominantColor', 'dominantLab'
+    ];
+
+    function isGroupMetric(field) {
+        return groupMetrics.some(g => field.toLowerCase() === g.toLowerCase());
+    }
 
     function renderXAxisOptions(filter = "") {
         xAxisSelect.innerHTML = "";
         availableFields
+            .filter(f => !isGroupMetric(f))
             .filter(f => f.toLowerCase().includes(filter.toLowerCase()))
             .forEach(f => {
                 const opt = document.createElement('option');
                 opt.value = f;
-                opt.textContent = f;
+                opt.textContent = metricLabel(f);
                 xAxisSelect.appendChild(opt);
             });
         if (xAxisSelect.options.length > 0) xAxisSelect.selectedIndex = 0;
@@ -296,6 +328,7 @@ function setupAddChartModal() {
     function renderYAxisOptions(filter = "") {
         yAxisSelectContainer.innerHTML = "";
         availableFields
+            .filter(f => !isGroupMetric(f))
             .filter(f => f.toLowerCase().includes(filter.toLowerCase()))
             .forEach(f => {
                 const label = document.createElement('label');
@@ -311,7 +344,7 @@ function setupAddChartModal() {
                     label.classList.toggle('selected', checkbox.checked);
                 };
                 label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(f));
+                label.appendChild(document.createTextNode(metricLabel(f)));
                 yAxisSelectContainer.appendChild(label);
             });
     }
@@ -359,7 +392,8 @@ function addChart(xField, yFields) {
         x: xField,
         y: yFields,
         showData: false,
-        visible: yFields.map(() => true)
+        visible: yFields.map(() => true),
+        metricChartTypes: yFields.reduce((acc, y) => { acc[y] = 'line'; return acc; }, {})
     });
     renderAllCharts();
 }
@@ -416,11 +450,46 @@ function renderChartCard(chart, idx) {
     header.className = 'chart-header';
     const title = document.createElement('span');
     title.className = 'chart-title';
-    title.textContent = `${chart.y.join(', ')} vs ${chart.x}`;
+    const metricLabel = window.MetricColorHelpers.metricKeyToLabel;
+    title.textContent = `${chart.y.map(metricLabel).join(', ')} vs ${metricLabel(chart.x)}`;
     header.appendChild(title);
 
     const actions = document.createElement('div');
     actions.className = 'chart-actions';
+
+    const zoomOutBtn = document.createElement('button');
+    zoomOutBtn.textContent = '-';
+    zoomOutBtn.title = 'Zoom Out';
+    zoomOutBtn.onclick = (e) => {
+        e.stopPropagation();
+        zoomMode = 'window';
+        zoomWindowSize = Math.min(zoomWindowSize + 10, Math.max(analysisData.length, 10));
+
+        if (isPlaying) {
+        } else {
+
+            playbackIndex = Math.max(0, Math.min(playbackIndex, analysisData.length - 1));
+        }
+        renderAllCharts();
+    };
+    actions.appendChild(zoomOutBtn);
+
+    const zoomInBtn = document.createElement('button');
+    zoomInBtn.textContent = '+';
+    zoomInBtn.title = 'Zoom In';
+    zoomInBtn.onclick = (e) => {
+        e.stopPropagation();
+        zoomMode = 'window';
+        zoomWindowSize = Math.max(5, zoomWindowSize - 10);
+
+        if (isPlaying) {
+        } else {
+            playbackIndex = Math.max(0, Math.min(playbackIndex, analysisData.length - 1));
+        }
+        renderAllCharts();
+    };
+    actions.appendChild(zoomInBtn);
+
     const upBtn = document.createElement('button');
     upBtn.textContent = '↑';
     upBtn.title = 'Move chart up';
@@ -464,8 +533,6 @@ function renderChartCard(chart, idx) {
     actions.appendChild(removeBtn);
     header.appendChild(actions);
 
-    card.appendChild(header);
-
     const legend = document.createElement('div');
     legend.style.marginBottom = '6px';
     chart.y.forEach((yMetric, yIdx) => {
@@ -473,16 +540,39 @@ function renderChartCard(chart, idx) {
         const legendItem = document.createElement('span');
         legendItem.style.display = 'inline-flex';
         legendItem.style.alignItems = 'center';
-        legendItem.style.marginRight = '12px';
+        legendItem.style.marginRight = '18px';
         legendItem.style.cursor = 'pointer';
+
+        const chartTypeSelect = document.createElement('select');
+        chartTypeSelect.style.marginLeft = '6px';
+        chartTypeSelect.title = 'Change chart type for this metric';
+        [
+            { value: 'line', label: 'Line' },
+            { value: 'scatter', label: 'Scatter' },
+            { value: 'bar', label: 'Bar' }
+        ].forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt.value;
+            o.textContent = opt.label;
+            chartTypeSelect.appendChild(o);
+        });
+        chartTypeSelect.value = chart.metricChartTypes[yMetric] || 'line';
+        chartTypeSelect.onchange = (e) => {
+            chart.metricChartTypes[yMetric] = chartTypeSelect.value;
+            renderAllCharts();
+        };
+
         legendItem.innerHTML = `<span style="display:inline-block;width:12px;height:12px;background:${color};border-radius:2px;margin-right:5px;opacity:${chart.visible[yIdx] ? 1 : 0.3};"></span>
-            <span style="color:${chart.visible[yIdx] ? '#fff' : '#888'};font-size:13px;">${yMetric}</span>`;
-        legendItem.onclick = () => {
+            <span style="color:${chart.visible[yIdx] ? '#fff' : '#888'};font-size:13px;">${window.MetricColorHelpers.metricKeyToLabel(yMetric)}</span>`;
+        legendItem.onclick = (e) => {
+            if (e.target === chartTypeSelect) return;
             chart.visible[yIdx] = !chart.visible[yIdx];
             renderAllCharts();
         };
+        legendItem.appendChild(chartTypeSelect);
         legend.appendChild(legendItem);
     });
+    card.appendChild(header);
     card.appendChild(legend);
 
     const canvas = document.createElement('canvas');
@@ -502,10 +592,14 @@ function renderChartCard(chart, idx) {
 
     if (chart.y.length === 1 && chart.y[0] === 'isFlash') {
         window.ChartHelpers.drawIsFlashScatter(canvas, chart, getMultiYAxisChartData);
-    } else if (chart.x === 'timestamp') {
-        window.ChartHelpers.drawMultiYAxisChart(canvas, chart, getChartDataForDraw, getMetricColor);
     } else {
-        window.ChartHelpers.drawMultiYAxisScatter(canvas, chart, getMultiYAxisChartData, getMetricColor);
+        window.ChartHelpers.drawMultiYAxisMixed(
+            canvas,
+            chart,
+            getMultiYAxisChartData,
+            getMetricColor,
+            chart.metricChartTypes
+        );
     }
 
     let isSelecting = false;
@@ -614,11 +708,28 @@ function getMultiYAxisChartData(chart) {
     }
     data.x = data.x.slice(start, end);
     data.y = data.y.map(arr => arr.slice(start, end));
+
+    if (normalizeMetrics) {
+        data.y = data.y.map((arr, idx) => {
+            const metric = chart.y[idx];
+            if (
+                metric === 'isFlash' ||
+                metric === 'duration' ||
+                metric.endsWith('.duration')
+            ) return arr;
+            // If all values are 0, skip normalization
+            if (arr.every(v => v === 0)) return arr;
+            const min = Math.min(...arr);
+            const max = Math.max(...arr);
+            if (min === max) return arr.map(() => 0.5);
+            return arr.map(v => (v - min) / (max - min));
+        });
+    }
     return data;
 }
 
 function getZoomedIndices(dataLen) {
-    if (zoomMode === 'fit' || !isPlaying) {
+    if (zoomMode === 'fit' || !isPlaying && zoomMode !== 'window') {
         return [0, dataLen];
     }
 
