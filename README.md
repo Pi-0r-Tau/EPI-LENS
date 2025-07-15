@@ -83,9 +83,7 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 - Spectral Flatness 
 
 ## Updates in progress
--  Typed array buffering
--  Multi-timescale flicker detection
--  Flash pattern detection improvements
+- Performance optimization of analysis engine
   
 
 ## Future metrics
