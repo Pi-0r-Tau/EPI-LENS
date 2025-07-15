@@ -154,61 +154,86 @@
         const width = imageData.width;
         const height = imageData.height;
         const data = imageData.data;
+        const pixelCount = width * height;
 
-        const gray = new Float32Array(width * height);
-        for (let i = 0; i < data.length; i += 4) {
-            gray[i / 4] = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+        const gray = new Float32Array(pixelCount);
+        const rWeight = 0.2126, gWeight = 0.7152, bWeight = 0.0722;
+        for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+            gray[j] = data[i] * rWeight + data[i + 1] * gWeight + data[i + 2] * bWeight;
         }
 
-        let blockSize = 8;
-        let blockScores = [];
+        const blockSize = 8;
+        const blocksY = Math.ceil(height / blockSize);
+        const blocksX = Math.ceil(width / blockSize);
+        const blockCount = blocksX * blocksY;
+        const blockScores = new Float32Array(blockCount);
+
+        let totalContrast = 0;
+        let blockIdx = 0;
+
         for (let by = 0; by < height; by += blockSize) {
+            const yEnd = Math.min(by + blockSize, height);
             for (let bx = 0; bx < width; bx += blockSize) {
-                let sum = 0, sum2 = 0, count = 0;
-                for (let y = by; y < Math.min(by + blockSize, height); ++y) {
-                    for (let x = bx; x < Math.min(bx + blockSize, width); ++x) {
-                        let v = gray[y * width + x];
-                        sum += v;
-                        sum2 += v * v;
+                const xEnd = Math.min(bx + blockSize, width);
+                let count = 0;
+                let mean = 0;
+                let M2 = 0;
+                for (let y = by; y < yEnd; y++) {
+                    const rowOffset = y * width;
+                    for (let x = bx; x < xEnd; x++) {
                         count++;
+                        const val = gray[rowOffset + x];
+                        const delta = val - mean;
+                        mean += delta / count;
+                        const delta2 = val - mean;
+                        M2 += delta * delta2;
                     }
                 }
-                if (count > 0) {
-                    let mean = sum / count;
-                    let variance = sum2 / count - mean * mean;
-                    blockScores.push(Math.sqrt(Math.max(variance, 0)));
-                }
+                const variance = count > 1 ? M2 / count : 0;
+                blockScores[blockIdx++] = Math.sqrt(variance) / 128;
+                totalContrast += blockScores[blockIdx - 1];
             }
         }
-        // Normalize
-        let avgBlockContrast = blockScores.length ? blockScores.reduce((a, b) => a + b, 0) / blockScores.length / 128 : 0;
-
+        const avgBlockContrast = blockCount > 0 ? totalContrast / blockCount : 0;
         const edge = sobelEdgeMap(gray, width, height);
+        const edgeRowSum = new Float32Array(height);
+        let totalEdge = 0;
 
-        let edgeRowSum = new Float32Array(height);
-        for (let y = 0; y < height; ++y) {
+        for (let y = 0; y < height; y++) {
             let sum = 0;
-            for (let x = 0; x < width; ++x) {
-                sum += edge[y * width + x];
+            const rowOffset = y * width;
+
+            for (let x = 0; x < width; x++) {
+                sum += edge[rowOffset + x];
             }
+
             edgeRowSum[y] = sum;
+            totalEdge += sum;
         }
-
-        let mean = edgeRowSum.reduce((a, b) => a + b, 0) / height;
+        const mean = totalEdge / height;
         let maxCorr = 0;
-        for (let lag = 2; lag < Math.min(20, height / 2); ++lag) {
-            let corr = 0;
-            for (let i = 0; i < height - lag; ++i) {
-                corr += (edgeRowSum[i] - mean) * (edgeRowSum[i + lag] - mean);
-            }
-            corr /= (height - lag);
-            if (corr > maxCorr) maxCorr = corr;
-        }
-        // Normalize
-        let periodicityScore = Math.min(maxCorr / (edgeRowSum.reduce((a, b) => a + Math.abs(b - mean), 0) / height + 1e-6), 1);
+        const maxLag = Math.min(20, height >> 1);
 
-        let score = 0.5 * avgBlockContrast + 0.5 * periodicityScore;
-        score = Math.max(0, Math.min(score, 1));
+        const diffFromMean = new Float32Array(height);
+        for (let i = 0; i < height; i++) {
+            diffFromMean[i] = edgeRowSum[i] - mean;
+        }
+        for (let lag = 2; lag < maxLag; lag++) {
+            let corr = 0;
+            const limit = height - lag;
+            for (let i = 0; i < limit; i++) {
+                corr += diffFromMean[i] * diffFromMean[i + lag];
+            }
+            corr /= limit;
+            maxCorr = Math.max(maxCorr, corr);
+        }
+        let absSum = 0;
+        for (let i = 0; i < height; i++) {
+            absSum += Math.abs(diffFromMean[i]);
+        }
+        const periodicityScore = absSum > 1e-6 ?
+            Math.min(maxCorr / (absSum / height + 1e-6), 1) : 0;
+        const score = Math.max(0, Math.min(0.5 * avgBlockContrast + 0.5 * periodicityScore, 1));
 
         return score;
     }
