@@ -1,8 +1,11 @@
 (function() {
-
-    function rgbToLab(r, g, b) {
+    
+   function rgbToLab(r, g, b) {
         r /= 255; g /= 255; b /= 255;
-        [r, g, b] = [r, g, b].map(v => v > 0.04045 ? Math.pow((v + 0.055) / 1.055, 2.4) : v / 12.92);
+        // Direct channel assignment for performance
+        r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+        g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+        b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
         const x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
         const y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
         const z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
@@ -17,11 +20,11 @@
 
 
     function cie76(lab1, lab2) {
-        return Math.sqrt(
-            Math.pow(lab1.L - lab2.L, 2) +
-            Math.pow(lab1.a - lab2.a, 2) +
-            Math.pow(lab1.b - lab2.b, 2)
-        );
+        // Direct variable assignment for squaring 
+        const dL = lab1.L - lab2.L;
+        const da = lab1.a - lab2.a;
+        const db = lab1.b - lab2.b;
+        return Math.sqrt(dL * dL + da * da + db * db);
     }
 
 
@@ -33,55 +36,70 @@
         return performFFT(paddedSignal);
     }
 
-
     function performFFT(signal) {
-        const n = signal.length;
-        if (n <= 1 || (n & (n - 1)) !== 0) {
-            return padToPowerOfTwo(signal);
-        }
-        const logN = Math.log2(n);
-        const re = new Float64Array(n);
-        const im = new Float64Array(n);
-        for(let i = 0; i < n; i++) re[i] = signal[i];
-        const cosTable = new Float64Array(n/2);
-        const sinTable = new Float64Array(n/2);
-        for(let i = 0; i < n/2; i++) {
-            const angle = -2 * Math.PI * i / n;
-            cosTable[i] = Math.cos(angle);
-            sinTable[i] = Math.sin(angle);
-        }
-        const bitReverseShuffle = (reArr, imArr) => {
-            for(let i = 0; i < n; i++) {
-                let rev = 0;
-                for(let j = 0; j < logN; j++) {
-                    rev |= ((i >> j) & 1) << (logN - 1 - j);
-                }
-                if(i < rev) {
-                    [reArr[i], reArr[rev]] = [reArr[rev], reArr[i]];
-                    [imArr[i], imArr[rev]] = [imArr[rev], imArr[i]];
-                }
+    const n = signal.length;
+    if (n <= 1 || (n & (n - 1)) !== 0) {
+        return padToPowerOfTwo(signal);
+    }
+    const re = new Float64Array(n);
+    const im = new Float64Array(n);
+    const logN = Math.log2(n);
+    for (let i = 0; i < n; i++) re[i] = signal[i];
+    const cosTable = new Float64Array(n / 2);
+    const sinTable = new Float64Array(n / 2);
+    for (let i = 0; i < n / 2; i++) {
+        const angle = -2 * Math.PI * i / n;
+        cosTable[i] = Math.cos(angle);
+        sinTable[i] = Math.sin(angle);
+    }
+    if (n > 512) {
+        const bitRevTable = new Uint32Array(n);
+        for (let i = 0; i < n; i++) {
+            let rev = 0;
+            for (let j = 0; j < logN; j++) {
+                rev |= ((i >> j) & 1) << (logN - 1 - j);
             }
-        };
-        bitReverseShuffle(re, im);
-        for(let len = 2; len <= n; len *= 2) {
-            const halfLen = len / 2;
-            for(let i = 0; i < n; i += len) {
-                let wRe = 1, wIm = 0;
-                for(let j = 0; j < halfLen; j++) {
-                    const idx1 = i + j;
-                    const idx2 = idx1 + halfLen;
-                    const twiddleIdx = (j * (n/len)) >> 0;
-                    const twRe = cosTable[twiddleIdx];
-                    const twIm = sinTable[twiddleIdx];
-                    const tempRe = wRe * re[idx2] - wIm * im[idx2];
-                    const tempIm = wRe * im[idx2] + wIm * re[idx2];
-                    re[idx2] = re[idx1] - tempRe;
-                    im[idx2] = im[idx1] - tempIm;
-                    re[idx1] += tempRe;
-                    im[idx1] += tempIm;
-                    const tmpRe = wRe * twRe - wIm * twIm;
-                    wIm = wRe * twIm + wIm * twRe;
-                    wRe = tmpRe;
+            bitRevTable[i] = rev;
+            if (i < rev) {
+                const tempRe = re[i];
+                re[i] = re[rev];
+                re[rev] = tempRe;
+
+                const tempIm = im[i];
+                im[i] = im[rev];
+                im[rev] = tempIm;
+            }
+        }
+    } else {
+        for (let i = 0; i < n; i++) {
+            let rev = 0;
+            for (let j = 0; j < logN; j++) {
+                rev |= ((i >> j) & 1) << (logN - 1 - j);
+            }
+            if (i < rev) {
+                const tempRe = re[i];
+                re[i] = re[rev];
+                re[rev] = tempRe;
+
+                const tempIm = im[i];
+                im[i] = im[rev];
+                im[rev] = tempIm;
+            }
+        }
+    }
+    for (let len = 2; len <= n; len *= 2) {
+        const halfLen = len / 2;
+        for (let i = 0; i < n; i += len) {
+            for (let j = 0; j < halfLen; j++) {
+                const idx1 = i + j;
+                const idx2 = idx1 + halfLen;
+                const twidIdx = (j * n / len) & (n - 1);
+                const reTemp = re[idx2] * cosTable[twidIdx] - im[idx2] * sinTable[twidIdx];
+                const imTemp = re[idx2] * sinTable[twidIdx] + im[idx2] * cosTable[twidIdx];
+                re[idx2] = re[idx1] - reTemp;
+                im[idx2] = im[idx1] - imTemp;
+                re[idx1] += reTemp;
+                im[idx1] += imTemp;
                 }
             }
         }
