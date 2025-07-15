@@ -280,10 +280,10 @@
     function frameHistogramDiff(data1, data2) {
         if (!data1 || !data2 || data1.length !== data2.length) return 0;
         const bins = 32;
-        const hist1 = new Array(bins).fill(0), hist2 = new Array(bins).fill(0);
+        const hist1 = new Uint32Array(bins), hist2 = new Uint32Array(bins);
         for (let i = 0; i < data1.length; i += 4) {
-            const v1 = Math.floor((data1[i] + data1[i+1] + data1[i+2]) / 3 / 256 * bins);
-            const v2 = Math.floor((data2[i] + data2[i+1] + data2[i+2]) / 3 / 256 * bins);
+            const v1 = ((data1[i] + data1[i + 1] + data1[i + 2]) / 3 * bins / 256) | 0;
+            const v2 = ((data2[i] + data2[i + 1] + data2[i + 2]) / 3 * bins / 256) | 0;
             hist1[v1]++;
             hist2[v2]++;
         }
