@@ -298,26 +298,27 @@
     /**
      * Recalls top N dominant colors from image data
      * @param {Uint8ClampedArray} data
-     * @param {number} n
+     * @param {number} [n=5]
      * @returns {Array<{r:number,g:number,b:number}>}
      */
     function extractDominantColors(data, n = 5) {
-        const colorMap = {};
+        const colorMap = new Map();
         for (let i = 0; i < data.length; i += 4) {
-            const r = Math.round(data[i] / 32) * 32;
-            const g = Math.round(data[i+1] / 32) * 32;
-            const b = Math.round(data[i+2] / 32) * 32;
-            const key = `${r},${g},${b}`;
-            colorMap[key] = (colorMap[key] || 0) + 1;
+            const r = (data[i] >> 5) << 5;
+            const g = (data[i + 1] >> 5) << 5;
+            const b = (data[i + 2] >> 5) << 5;
+            const key = (r << 16) | (g << 8) | b;
+            colorMap.set(key, (colorMap.get(key) || 0) + 1);
         }
-        const sorted = Object.entries(colorMap)
+        const sorted = Array.from(colorMap.entries())
             .sort((a, b) => b[1] - a[1])
             .slice(0, n)
-            .map(([key]) => {
-                const [r, g, b] = key.split(',').map(Number);
-                return { r, g, b };
-            });
-        return sorted;
+            .map(([key]) => ({
+                r: (key >> 16) & 0xFF,
+                g: (key >> 8) & 0xFF,
+                b: key & 0xFF
+            }));
+            return sorted;
     }
 
 
