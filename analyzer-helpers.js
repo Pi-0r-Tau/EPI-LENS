@@ -108,6 +108,7 @@
 
     /**
      * Computes the Sobel edge magnitude map for a grayscale image.
+     * Precomputes row offsets for each pixel, accessing neighbours using these offsets.
      * @param {Float32Array} gray
      * @param {number} width
      * @param {number} height
@@ -115,15 +116,28 @@
      */
     function sobelEdgeMap(gray, width, height) {
         const edge = new Float32Array(width * height);
+        const rowWidth = width;
+        const prevRow = -rowWidth;
+        const nextRow = rowWidth;
+
         for (let y = 1; y < height - 1; ++y) {
+            const rowOffset = y * rowWidth;
+            const prevRowOffset = rowOffset + prevRow;
+            const nextRowOffset = rowOffset + nextRow;
             for (let x = 1; x < width - 1; ++x) {
-                let gx =
-                    -gray[(y - 1) * width + (x - 1)] - 2 * gray[y * width + (x - 1)] - gray[(y + 1) * width + (x - 1)] +
-                    gray[(y - 1) * width + (x + 1)] + 2 * gray[y * width + (x + 1)] + gray[(y + 1) * width + (x + 1)];
-                let gy =
-                    -gray[(y - 1) * width + (x - 1)] - 2 * gray[(y - 1) * width + x] - gray[(y - 1) * width + (x + 1)] +
-                    gray[(y + 1) * width + (x - 1)] + 2 * gray[(y + 1) * width + x] + gray[(y + 1) * width + (x + 1)];
-                edge[y * width + x] = Math.sqrt(gx * gx + gy * gy);
+                const center = rowOffset + x;
+                const tl = gray[prevRowOffset + x - 1];
+                const tc = gray[prevRowOffset + x];
+                const tr = gray[prevRowOffset + x + 1];
+                const ml = gray[rowOffset + x - 1];
+                const mr = gray[rowOffset + x + 1];
+                const bl = gray[nextRowOffset + x - 1];
+                const bc = gray[nextRowOffset + x];
+                const br = gray[nextRowOffset + x + 1];
+                const gx = -tl - 2*ml - bl + tr + 2*mr + br;
+                const gy = -tl - 2*tc - tr + bl + 2*bc + br;
+
+                edge[center] = Math.hypot(gx, gy);
             }
         }
         return edge;
