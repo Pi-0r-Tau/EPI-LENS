@@ -261,13 +261,25 @@
      * @returns {number} [0,1]
      */
     function computeSpectralFlatness(spectrum) {
-        let amplitudes = Array.isArray(spectrum) && typeof spectrum[0] === "object"
-            ? spectrum.map(x => x.amplitude)
-            : spectrum;
-        amplitudes = amplitudes.filter(a => a > 0); 
-        if (!amplitudes.length) return 0;
-        const geoMean = Math.exp(amplitudes.reduce((sum, a) => sum + Math.log(a), 0) / amplitudes.length);
-        const arithMean = amplitudes.reduce((sum, a) => sum + a, 0) / amplitudes.length;
+        let amplitudes;
+        if (Array.isArray(spectrum) && typeof spectrum[0] === "object") {
+            amplitudes = new Float64Array(spectrum.length);
+            for (let i = 0; i < spectrum.length; ++i) amplitudes[i] = spectrum[i].amplitude;
+        } else {
+            amplitudes = spectrum;
+        }
+        let count = 0, logSum = 0, arithSum = 0;
+        for (let i = 0; i < amplitudes.length; ++i) {
+            const a = amplitudes[i];
+            if (a > 0) {
+                logSum += Math.log(a);
+                arithSum += a;
+                ++count;
+            }
+        }
+        if (!count) return 0;
+        const geoMean = Math.exp(logSum / count);
+        const arithMean = arithSum / count;
         return arithMean === 0 ? 0 : geoMean / arithMean;
     }
 
