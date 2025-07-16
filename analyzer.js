@@ -312,15 +312,13 @@ if (!window.VideoAnalyzer) {
          * @returns {number} [0,1].
          */
         calculateAverageBrightness(data) {
-            let totalBrightness = 0;
-            for (let i = 0; i < data.length; i += 4) {
-                totalBrightness += (
-                    data[i] * 0.2126 +     // Red
-                    data[i + 1] * 0.7152 + // Green
-                    data[i + 2] * 0.0722   // Blue
-                ) / 255;
+            let total = 0;
+            const len = data.length;
+            const inv255 = 1 / 255;
+            for (let i = 0; i < len; i += 4) {
+                total += (data[i] * 0.2126 + data[i + 1] * 0.7152 + data[i + 2] * 0.0722) * inv255;
             }
-            return totalBrightness / (data.length / 4);
+            return total / (len / 4);
         }
 
         /**
@@ -329,12 +327,21 @@ if (!window.VideoAnalyzer) {
          * @returns {number}  [0,1].
          */
         calculateAverageRedIntensity(data) {
-            if (!data || data.length === 0) return 0;
-            let totalRed = 0;
-            for (let i = 0; i < data.length; i += 4) {
-                totalRed += data[i]; // Red channel
+            const len = data?.length || 0;
+            if (len < 4) return 0;
+            let totalRed = 0, i = 0;
+            const max = len - (len % 16);
+            for (; i < max; i += 16) {
+                totalRed += data[i] + data[i+4]  + data[i+8]  + data[i+12];
             }
-            return totalRed / ((data.length / 4) * 255);
+            for (; i < len; i += 4) {
+                totalRed += data[i];
+            }
+            const numPixels = len >>> 2; 
+            if (numPixels === 0) return 0;
+
+            // Normalize
+            return totalRed / (numPixels * 255);
         }
 
         /**
