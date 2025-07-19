@@ -60,17 +60,27 @@ Risk score is calculated as instances of a flash for threshold criteria within s
 - Red intensity and red delta metrics for improved detection of color based flashes and rapid red channel changes.
 - Metric panel for analysis suite updated to improve formatting with dark mode, less clustered.
 - Offline video analysis suite now has dynamic controls for sizes of video preview and live metric graph
+- 
 - fileanalyzer overhaul:
     - analyzeVideoAtFixedIntervals
     - Video that is analyzed with offline will be reproducible with same results for the same Video regardless of when it is analyzed
+      
 - Charts overhaul:
     - Select metric layout for each metric for each graph
     - Hover over values improved
     - Normalize values for easy comparison
     - Custom local storage color schemes for metrics
+      
 - fileanalyzer / Offline video analysis:
 Adjustable analysis interval to let users choose how many frames are analyzed per second. Allowing users fast less detailed analysis or slower more detailed up to the fps limit of the video.
 
+- Reorganized analyzer-helpers.js with cleaner function separation and better memory management
+    - Sobel operator with vectorized processing for faster edge map generation
+    - Frame comparison with block-based processing for improved performance
+    - Memory footprint reduced through typed arrays and buffer reuse
+    - Error recovery and graceful degradation implemented for corrupted frames or werid input
+    - Fast Fourier Transform using optimized Cooley-Tukey algorithm with bit reversal and twiddle factor caching futher improvements
+    - RGB to LAB color space conversion improved for perceptual color difference measurements
 
 ## Recent updates to metrics
 - Patterned stimulus score
@@ -83,8 +93,7 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 - Spectral Flatness 
 
 ## Updates in progress
-- Performance optimization of analysis engine
-  
+- Implementation of Jordan, J. B. & Vanderheiden, G. C. (2024). International Guidelines for Photosensitive Epilepsy: Gap Analysis and Recommendations. ACM Transactions on Accessible Computing, 17(3), 17:1 - 17:35. (https://github.com/jbjord/pseGuidelines)
 
 ## Future metrics
 - Chromatic Flicker Fusion Rate (CFFR)
