@@ -7,31 +7,17 @@ if (!window.VideoAnalyzer) {
      * from the analyzer-helpers.js.
      */
     class VideoAnalyzer {
-    /**
-     * Constructs a new VideoAnalyzer instance.
-     * @constructor
-     * @property {Object} metrics
-     * @property {Object} thresholds
-     * @property {HTMLCanvasElement} canvas
-     * @property {CanvasRenderingContext2D} context
-     * @property {number} sampleSize
-     * @property {Array} timelineData
-     * @property {Array} detailedData
-     * @property {number} lastAnalysisTime
-     * @property {number} minAnalysisInterval
-     * @property {Object} advancedMetrics
-     * @property {Object} fft
-     * @property {Object} temporalBuffer
-     * @property {number|null} startTime
-     * @property {Array} dataChunks
-     * @property {Array} currentChunk
-     * @property {number} chunkSize
-     * @property {number} totalFrames
-     * @property {number|null} analysisStartTime
-     * @property {number} lastExportTime
-     */
-        constructor() {
-
+        constructor( {
+            coherenceWindowSize = 30,
+            edgeHistoryMax = 500,
+            chromaticHistoryLen = 10,
+            spectralBufferLen = 128,
+            spectralFftLen = 64,
+            fps = 60,
+            edgeThreshold = 30,
+            colorHistoryLen = 30,
+            historyLength = 30
+        } = {}) {
             this.metrics = {
                 flashCount: 0,
                 riskLevel: 'low',
@@ -52,7 +38,7 @@ if (!window.VideoAnalyzer) {
             this.timelineData = [];
             this.detailedData = [];
             this.lastAnalysisTime = 0;
-            this.minAnalysisInterval = 1000 / 60;
+            this.minAnalysisInterval = 1000 / fps;
 
             this.updateThresholds({
                 flashesPerSecond: 3,
@@ -67,10 +53,11 @@ if (!window.VideoAnalyzer) {
                 colorHistory: {
                     r: [],
                     g: [],
-                    b: []
+                    b: [],
+                    maxLen: colorHistoryLen
                 },
                 spikes: [],
-                historyLength: 30,
+                historyLength: historyLength,
                 psi: {
                     score: 0,
                     components: {
@@ -88,12 +75,14 @@ if (!window.VideoAnalyzer) {
                 chromaticFlashes: {
                     redGreen: 0,
                     blueYellow: 0,
-                    lastColors: []
+                    lastColors: [],
+                    maxLen: chromaticHistoryLen
                 },
                 temporalContrast: {
                     current: 0,
                     history: [],
-                    maxRate: 0
+                    maxRate: 0,
+                    bufferLen: 15
                 },
                 frameDifference: {
                     current: 0,
@@ -105,22 +94,26 @@ if (!window.VideoAnalyzer) {
                     frequencies: [],
                     dominantFrequency: 0,
                     spectrum: [],
+                    bufferLen: spectralBufferLen,
+                    fftLen: spectralFftLen,
                     fft: null
                 },
                 temporalCoherence: {
                     coherenceScore: 0,
                     history: [],
-                    windowSize: 30
+                    windowSize: coherenceWindowSize,
+                    coherenceHistory: [],
+                    maxLag: 10
                 },
                 edgeDetection: {
                     edges: 0,
                     history: [],
-                    threshold: 30
+                    threshold: edgeThreshold,
+                    maxHistory: edgeHistoryMax
                 }
             };
 
             // FFT implementation
-            // TASK 2786: O(m log m) Cooley-Turkey FTT Improvements
             this.fft = {
                 forward: (signal) => this.performFFT(signal)
             };
@@ -151,8 +144,10 @@ if (!window.VideoAnalyzer) {
             this.patternHistory = [];
             this.sceneChangeHistory = [];
             this.patternHashes = [];
-        }
 
+            this._frameDiffHistory = new Float32Array(8);
+            this._frameDiffIdx = 0;
+        }
 
         updateThresholds(thresholds) {
             this.thresholds = {
@@ -168,55 +163,61 @@ if (!window.VideoAnalyzer) {
             };
         }
 
-
         setAnalysisOptions(options) {
             this.analysisOptions = { ...this.analysisOptions, ...options };
         }
 
 
-        analyzeFrame(video, timestamp) {
-            try {
-                if (this.analysisStartTime === null) {
-                    this.analysisStartTime = timestamp;
-                    this.lastExportTime = timestamp;
-                }
+analyzeFrame(video, timestamp) {
+    const FRAME_INTERVAL_MS = 1000 / 60;
+    const MAX_INACTIVITY_MS = 1000;
 
-                // Calculate relative timestamp from start
-                const relativeTime = timestamp - this.analysisStartTime;
-
-                // Frame rate limiting
-                const currentTime = performance.now();
-                const timeSinceLastFrame = currentTime - this.lastAnalysisTime;
-
-                if (timeSinceLastFrame < 16.67) { // 60 frames per second
-                    return null;
-                }
-
-                if (!video.videoWidth || !video.videoHeight) {
-                    return { error: 'Video not ready' };
-                }
-
-                // Reset metrics if more than 1 second has passed since last analysis
-                if (timestamp - this.metrics.lastTimestamp > 1) {
-                    this.reset();
-                }
-
-                this.metrics.frameCount++;
-                this.metrics.lastTimestamp = timestamp;
-
-                const imageData = this.captureFrame(video);
-                const redIntensity = this.calculateAverageRedIntensity(imageData.data);
-                const redDelta = Math.abs(redIntensity - (this.lastRedIntensity || 0));
-                this.lastRedIntensity = redIntensity;
-                const results = this.processFrame(imageData, timestamp, relativeTime, redIntensity, redDelta);
-
-                this.lastAnalysisTime = timestamp;
-                return results;
-            } catch (error) {
-                console.error('Analysis error:', error);
-                return { error: error.message };
-            }
+    try {
+        if (!video || !video.videoWidth || !video.videoHeight) {
+            return { error: 'Video not ready' };
         }
+
+        // Initialize analysis timing
+        if (this.analysisStartTime === null) {
+            this.analysisStartTime = timestamp;
+            this.lastExportTime = timestamp;
+        }
+
+        const relativeTime = timestamp - this.analysisStartTime;
+
+        // Frame rate limiting using monotonic browser clock
+        const nowMs = performance.now();
+        const timeSinceLastFrame = nowMs - (this.lastAnalysisPerf || 0);
+        if (timeSinceLastFrame < FRAME_INTERVAL_MS) return null;
+        this.lastAnalysisPerf = nowMs;
+
+        if (timestamp - (this.metrics.lastTimestamp || 0) > MAX_INACTIVITY_MS) {
+            this.reset();
+        }
+
+        // Update metrics for new frame
+        this.metrics.frameCount++;
+        this.metrics.lastTimestamp = timestamp;
+
+        // Capture frame and compute color metrics
+        const imageData = this.captureFrame(video);
+        const redIntensity = this.calculateAverageRedIntensity(imageData.data);
+        const prevRedIntensity = (typeof this.lastRedIntensity === 'number' && isFinite(this.lastRedIntensity))
+            ? this.lastRedIntensity : 0;
+        const redDelta = Math.abs(redIntensity - prevRedIntensity);
+        this.lastRedIntensity = redIntensity;
+
+
+        const results = this.processFrame(imageData, timestamp, relativeTime, redIntensity, redDelta);
+
+        return results;
+    } catch (error) {
+
+        console.error('Analysis error:', error);
+        return { error: error.message || 'Unknown analysis error' };
+    }
+}
+
 
         processFrame(imageData, timestamp, relativeTime, redIntensity = 0, redDelta = 0) {
             const brightness = this.calculateAverageBrightness(imageData.data);
@@ -251,7 +252,7 @@ if (!window.VideoAnalyzer) {
                 spatialData: this.analyzeSpatialDistribution(imageData),
                 chromaticData: this.analyzeChromaticFlashes(imageData),
                 temporalContrastData: this.analyzeTemporalContrast(brightness, timestamp),
-                frameDiffData: this.calculateFrameDifference(imageData),
+                frameDiffData: window.AnalyzerHelpers.calculateFrameDifference.call(this, imageData),
                 spectralData: this.performSpectralAnalysis(brightness),
                 coherenceData: this.calculateTemporalCoherence(brightness),
                 edgeData: this.detectEdges(imageData),
@@ -261,7 +262,6 @@ if (!window.VideoAnalyzer) {
                 patternedStimulusScore: patternedStimulusScore,
                 sceneChangeScore: sceneChangeScore
             };
-
 
             if (isFlash && brightnessDiff > this.thresholds.flashThreshold) {
                 this.metrics.flashCount++;
@@ -287,7 +287,6 @@ if (!window.VideoAnalyzer) {
         }
 
         captureFrame(video) {
-
             if (!video.videoWidth || !video.videoHeight) {
                 throw new Error('Invalid video dimensions');
             }
@@ -305,71 +304,92 @@ if (!window.VideoAnalyzer) {
             }
         }
 
-
         /**
-         * Calculates the average brightness of the given pixel data.
-         * @param {Uint8ClampedArray} data 
-         * @returns {number} [0,1].
+         * Calculates the average brightness (luminance) of RGBA pixel data using BT.709 coefficients.
+         * @param {Uint8ClampedArray} data - RGBA pixel array.
+         * @returns {number} Normalized [0,1] average brightness.
          */
         calculateAverageBrightness(data) {
-            let total = 0;
             const len = data.length;
-            const inv255 = 1 / 255;
-            for (let i = 0; i < len; i += 4) {
-                total += (data[i] * 0.2126 + data[i + 1] * 0.7152 + data[i + 2] * 0.0722) * inv255;
+            if (len < 4) return 0;
+
+            // BT.709 coefficients for luminance 
+            const R_COEF = 0.2126, G_COEF = 0.7152, B_COEF = 0.0722;
+
+            let luminanceSum = 0, i = 0;
+            const pixelCount = len >>> 2;
+
+            const max = len - (len % 32);
+            for (; i < max; i += 32) {
+                luminanceSum += (
+                    data[i]     * R_COEF + data[i+1]  * G_COEF + data[i+2]  * B_COEF +
+                    data[i+4]   * R_COEF + data[i+5]  * G_COEF + data[i+6]  * B_COEF +
+                    data[i+8]   * R_COEF + data[i+9]  * G_COEF + data[i+10] * B_COEF +
+                    data[i+12]  * R_COEF + data[i+13] * G_COEF + data[i+14] * B_COEF +
+                    data[i+16]  * R_COEF + data[i+17] * G_COEF + data[i+18] * B_COEF +
+                    data[i+20]  * R_COEF + data[i+21] * G_COEF + data[i+22] * B_COEF +
+                    data[i+24]  * R_COEF + data[i+25] * G_COEF + data[i+26] * B_COEF +
+                    data[i+28]  * R_COEF + data[i+29] * G_COEF + data[i+30] * B_COEF
+                );
             }
-            return total / (len / 4);
+
+            for (; i < len; i += 4) {
+                luminanceSum += data[i] * R_COEF + data[i+1] * G_COEF + data[i+2] * B_COEF;
+            }
+
+            return luminanceSum / (pixelCount * 255);
         }
 
-        /**
-         * Calculates the average red channel intensity from RGBA pixel data.
-         * @param {Uint8ClampedArray} data 
-         * @returns {number}  [0,1].
-         */
         calculateAverageRedIntensity(data) {
             const len = data?.length || 0;
             if (len < 4) return 0;
-            let totalRed = 0, i = 0;
-            const max = len - (len % 16);
-            for (; i < max; i += 16) {
-                totalRed += data[i] + data[i+4]  + data[i+8]  + data[i+12];
+            let redSum = 0, i = 0;
+            const pixelCount = len >>> 2;
+
+
+            const max = len - (len % 32);
+            for (; i < max; i += 32) {
+                redSum += data[i]   + data[i+4]  + data[i+8]  + data[i+12] +
+                        data[i+16] + data[i+20] + data[i+24] + data[i+28];
             }
+            // Handle remaining pixels
             for (; i < len; i += 4) {
-                totalRed += data[i];
+                redSum += data[i];
             }
-            const numPixels = len >>> 2; 
-            if (numPixels === 0) return 0;
+
+            if (pixelCount === 0) return 0;
 
             // Normalize
-            return totalRed / (numPixels * 255);
+            return redSum / (pixelCount * 255);
         }
 
-        /**
-         * Calculates the proportion of bright pixels in a given image frame.
-         * @param {ImageData} imageData 
-         * @returns {number}  [0,1].
-         */
-        calculateCoverage(imageData) {
-            if (!imageData || !imageData.data) return 0;
+        calculateCoverage(imageData, brightnessThreshold = 0.5) {
+            if (!imageData?.data || imageData.data.length < 4) return 0;
 
             const data = imageData.data;
-            const pixels = data.length / 4;
+            const pixelCount = data.length >>> 2;
             let brightPixels = 0;
-            const brightnessThreshold = 0.5;
 
-            for (let i = 0; i < data.length; i += 4) {
-                const brightness = (
-                    data[i] * 0.2126 +     // Red
-                    data[i + 1] * 0.7152 + // Green
-                    data[i + 2] * 0.0722   // Blue
-                ) / 255;
+            // BT.709 perceptual weights for sRGB
+            const R_COEF = 0.2126, G_COEF = 0.7152, B_COEF = 0.0722;
 
-                if (brightness > brightnessThreshold) {
-                    brightPixels++;
-                }
+            let i = 0;
+            const max = data.length - (data.length % 16);
+            for (; i < max; i += 16) {
+                // Pixel 1
+                if (((data[i] * R_COEF + data[i+1] * G_COEF + data[i+2] * B_COEF) / 255) > brightnessThreshold) brightPixels++;
+                // Pixel 2
+                if (((data[i+4] * R_COEF + data[i+5] * G_COEF + data[i+6] * B_COEF) / 255) > brightnessThreshold) brightPixels++;
+                // Pixel 3
+                if (((data[i+8] * R_COEF + data[i+9] * G_COEF + data[i+10] * B_COEF) / 255) > brightnessThreshold) brightPixels++;
+                // Pixel 4
+                if (((data[i+12] * R_COEF + data[i+13] * G_COEF + data[i+14] * B_COEF) / 255) > brightnessThreshold) brightPixels++;
+            }
+            for (; i < data.length; i += 4) {
+                if (((data[i] * R_COEF + data[i+1] * G_COEF + data[i+2] * B_COEF) / 255) > brightnessThreshold) brightPixels++;
             }
 
-            return brightPixels / pixels;
+            return pixelCount ? brightPixels / pixelCount : 0;
         }
 
         getDetailedAnalysis() {
@@ -387,7 +407,6 @@ if (!window.VideoAnalyzer) {
 
         detectFlashSequence(brightness, timestamp) {
             const brightnessDiff = Math.abs(brightness - this.metrics.lastFrameBrightness);
-
             if (brightnessDiff > this.thresholds.brightnessChange) {
                 this.metrics.flashCount++;
                 this.metrics.flashSequences.push({
@@ -395,9 +414,7 @@ if (!window.VideoAnalyzer) {
                     intensity: brightnessDiff
                 });
             }
-
             this.metrics.lastFrameBrightness = brightness;
-
             this.timelineData.push({
                 timestamp,
                 brightness,
@@ -406,19 +423,10 @@ if (!window.VideoAnalyzer) {
             });
         }
 
-         /**
-         * Updates the overall risk level based on flash rate, total flash count, and average intensity.
-         * Risk levels:
-         * - `'high'`: If flash rate > 3, flash count > 30, or intensity > 0.8
-         * - `'medium'`: If flash rate > 2, flash count > 15, or intensity > 0.5
-         * - `'low'`: Else
-         * @returns {{ Level: 'low' | 'medium' | 'high', flashCount: number, flashRate: number, intensity: number}}
-         */
         updateRiskLevel() {
             const flashRate = this.metrics.flashCount / (this.metrics.frameCount / 60);
             const intensity = this.calculateAverageIntensity();
             const fpsThresh = this.thresholds.flashesPerSecond || 3;
-
             if (flashRate > fpsThresh || this.metrics.flashCount > 30 || intensity > 0.8) {
                 this.metrics.riskLevel = 'high';
             } else if (flashRate > (fpsThresh * 0.66) || this.metrics.flashCount > 15 || intensity > 0.5) {
@@ -426,7 +434,6 @@ if (!window.VideoAnalyzer) {
             } else {
                 this.metrics.riskLevel = 'low';
             }
-
             return {
                 level: this.metrics.riskLevel,
                 flashCount: this.metrics.flashCount,
@@ -436,284 +443,429 @@ if (!window.VideoAnalyzer) {
         }
 
         calculateAverageIntensity() {
-            if (!this.metrics.flashSequences.length) return 0;
+            const seq = this.metrics.flashSequences;
+            const count = seq.length;
+            if (count === 0) return 0;
 
-            const totalIntensity = this.metrics.flashSequences.reduce(
-                (sum, seq) => sum + seq.intensity,
-                0
-            );
-            return totalIntensity / this.metrics.flashSequences.length;
+            let sum = 0;
+            let validCount = 0;
+
+            for (let i = 0; i < count; i++) {
+                let intensity = seq[i]?.intensity;
+                if (typeof intensity === 'number' && !isNaN(intensity) && intensity >= 0 && intensity <= 1) {
+                    sum += intensity;
+                    validCount++;
+                }
+            }
+
+            return validCount > 0 ? sum / validCount : 0;
         }
 
         analyzeRiskFactors() {
             const factors = [];
             const flashRate = this.metrics.flashCount / (this.metrics.frameCount / 60);
-
             if (flashRate > 3) factors.push('High Flash Rate');
             if (this.calculateAverageIntensity() > 0.5) factors.push('High Intensity');
             if (this.metrics.flashSequences.length > 5) factors.push('Multiple Sequences');
-
             return factors.length ? factors : ['No significant risk factors'];
         }
 
-        /**
-         * Calculates the color variance for the current video frame and updates the color history
-         * @param {ImageData} imageData 
-         * @returns {{current: { r: number, g: number, b: number}, temporal: { r: number, g: number, b: number}, spikes: Array<{ frame: number, channel: 'r' | 'g' | 'b', magnitude: number }>, averageChange: { r: number, g: number, b: number}
-         * }}
-         */
         calculateColorVariance(imageData) {
-            if (!imageData || !imageData.data) return { r: 0, g: 0, b: 0 };
-
-            try {
-                const pixelCount = imageData.data.length / 4;
-                const means = { r: 0, g: 0, b: 0 };
-                const sumSquaredDiff = { r: 0, g: 0, b: 0 };
-
-                for (let i = 0; i < imageData.data.length; i += 4) {
-                    means.r += imageData.data[i];
-                    means.g += imageData.data[i + 1];
-                    means.b += imageData.data[i + 2];
-                }
-
-                means.r /= pixelCount;
-                means.g /= pixelCount;
-                means.b /= pixelCount;
-
-                for (let i = 0; i < imageData.data.length; i += 4) {
-                    sumSquaredDiff.r += Math.pow(imageData.data[i] - means.r, 2);
-                    sumSquaredDiff.g += Math.pow(imageData.data[i + 1] - means.g, 2);
-                    sumSquaredDiff.b += Math.pow(imageData.data[i + 2] - means.b, 2);
-                }
-
-                const currentVariance = {
-                    r: Math.sqrt(sumSquaredDiff.r / pixelCount) / 255,
-                    g: Math.sqrt(sumSquaredDiff.g / pixelCount) / 255,
-                    b: Math.sqrt(sumSquaredDiff.b / pixelCount) / 255
-                };
-
-                this.advancedMetrics.colorHistory.r.push(means.r);
-                this.advancedMetrics.colorHistory.g.push(means.g);
-                this.advancedMetrics.colorHistory.b.push(means.b);
-
-                if (this.advancedMetrics.colorHistory.r.length > this.advancedMetrics.historyLength) {
-                    this.advancedMetrics.colorHistory.r.shift();
-                    this.advancedMetrics.colorHistory.g.shift();
-                    this.advancedMetrics.colorHistory.b.shift();
-                }
+            if (!imageData?.data || imageData.data.length < 4) return { r: 0, g: 0, b: 0 };
 
 
-                const temporalAnalysis = this.analyzeColorHistory();
-                const result = {
-                    current: currentVariance,
-                    temporal: temporalAnalysis.variance,
-                    spikes: temporalAnalysis.spikes,
-                    averageChange: temporalAnalysis.averageChange
-                };
+            const SAMPLE_SIZE = 1024;
+            const data = imageData.data;
+            const pixelCount = data.length >>> 2;
+            const stride = Math.max(1, Math.floor(pixelCount / SAMPLE_SIZE));
 
-                this.advancedMetrics.colorVariance.push(result);
-                return result;
-            } catch (error) {
-                console.error('Color variance calculation error:', error);
-                return { r: 0, g: 0, b: 0 };
+            let rSum = 0, gSum = 0, bSum = 0;
+            let rSumSq = 0, gSumSq = 0, bSumSq = 0;
+            let sampleCount = 0;
+
+            for (let i = 0; i < data.length; i += stride * 4, sampleCount++) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                // Ignores outliers outside 0-255 (corrupted data)
+                if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) continue;
+                rSum += r; rSumSq += r * r;
+                gSum += g; gSumSq += g * g;
+                bSum += b; bSumSq += b * b;
             }
+
+            if (sampleCount === 0) return { r: 0, g: 0, b: 0 };
+
+            const rMean = rSum / sampleCount, gMean = gSum / sampleCount, bMean = bSum / sampleCount;
+            const rVar = Math.max(0, rSumSq / sampleCount - rMean * rMean);
+            const gVar = Math.max(0, gSumSq / sampleCount - gMean * gMean);
+            const bVar = Math.max(0, bSumSq / sampleCount - bMean * bMean);
+
+            const currentVariance = {
+                r: Math.sqrt(rVar) / 255,
+                g: Math.sqrt(gVar) / 255,
+                b: Math.sqrt(bVar) / 255
+            };
+
+            // Ring buffer for temporal color history
+            const historyLen = this.advancedMetrics.historyLength || 30;
+            if (!this.advancedMetrics.colorHistory._ring) {
+                this.advancedMetrics.colorHistory._ring = {
+                    r: new Float32Array(historyLen),
+                    g: new Float32Array(historyLen),
+                    b: new Float32Array(historyLen),
+                    idx: 0,
+                    count: 0
+                };
+            }
+
+            const ring = this.advancedMetrics.colorHistory._ring;
+            ring.r[ring.idx] = rMean;
+            ring.g[ring.idx] = gMean;
+            ring.b[ring.idx] = bMean;
+            ring.idx = (ring.idx + 1) % historyLen;
+            if (ring.count < historyLen) ring.count++;
+
+            // Store current color history for temporal analysis
+            this.advancedMetrics.colorHistory.r = ring.r.slice(0, ring.count);
+            this.advancedMetrics.colorHistory.g = ring.g.slice(0, ring.count);
+            this.advancedMetrics.colorHistory.b = ring.b.slice(0, ring.count);
+
+            // Temporal analysis and spike detection
+            const temporalAnalysis = this.analyzeColorHistory();
+
+            return {
+                current: currentVariance,
+                temporal: temporalAnalysis.variance,
+                spikes: temporalAnalysis.spikes,
+                averageChange: temporalAnalysis.averageChange
+            };
         }
 
-        /**
-         * Analyses the temporal colour history for:
-         * - Temporal variance for each RGB channel.
-         * - Detected spikes in color changes.
-         * - Average frame-to-frame color changes.
-         * @returns {{variance: { r: number, g: number, b: number }, spikes: Array<{frame: number, channel: 'r' | 'g' | 'b', magnitude: number}>, averageChange: { r: number, g: number, b: number }
-         * }} 
-         */
         analyzeColorHistory() {
             const history = this.advancedMetrics.colorHistory;
-            if (history.r.length < 2) {
-                return { variance: { r: 0, g: 0, b: 0 }, spikes: [], averageChange: { r: 0, g: 0, b: 0 } };
+            const n = Math.min(history.r.length, history.g.length, history.b.length);
+
+            if (n < 2) {
+                return {
+                    variance: { r: 0, g: 0, b: 0 },
+                    spikes: [],
+                    averageChange: { r: 0, g: 0, b: 0 }
+                };
             }
 
-            const temporalVariance = {
-                r: this.calculateTemporalVariance(history.r),
-                g: this.calculateTemporalVariance(history.g),
-                b: this.calculateTemporalVariance(history.b)
-            };
+            const variance = { r: 0, g: 0, b: 0 };
+            ['r','g','b'].forEach(ch => {
+                variance[ch] = this.calculateTemporalVariance(history[ch].slice(0, n));
+            });
 
-            const changes = {
-                r: [],
-                g: [],
-                b: []
-            };
-
-            for (let i = 1; i < history.r.length; i++) {
-                changes.r.push(Math.abs(history.r[i] - history.r[i - 1]));
-                changes.g.push(Math.abs(history.g[i] - history.g[i - 1]));
-                changes.b.push(Math.abs(history.b[i] - history.b[i - 1]));
+            const changes = { r: [], g: [], b: [] };
+            for (let i = 1; i < n; i++) {
+                ['r','g','b'].forEach(ch => {
+                    const prev = history[ch][i-1];
+                    const curr = history[ch][i];
+                    if (typeof curr === 'number' && typeof prev === 'number' && !isNaN(curr) && !isNaN(prev)) {
+                        changes[ch].push(Math.abs(curr - prev));
+                    }
+                });
             }
 
             const spikes = this.detectColorSpikes(changes);
-            const averageChange = {
-                r: changes.r.reduce((a, b) => a + b, 0) / changes.r.length,
-                g: changes.g.reduce((a, b) => a + b, 0) / changes.g.length,
-                b: changes.b.reduce((a, b) => a + b, 0) / changes.b.length
-            };
+
+            const averageChange = { r: 0, g: 0, b: 0 };
+            ['r','g','b'].forEach(ch => {
+                const arr = changes[ch];
+                if (arr.length > 0) {
+                    let sum = 0, validCount = 0;
+                    for (let i = 0; i < arr.length; i++) {
+                        if (typeof arr[i] === 'number' && !isNaN(arr[i])) {
+                            sum += arr[i];
+                            validCount++;
+                        }
+                    }
+                    averageChange[ch] = validCount ? sum / validCount : 0;
+                }
+            });
+
+            // if (spikes.length > 0) console.warn('Color spikes detected:', spikes);
 
             return {
-                variance: temporalVariance,
+                variance,
                 spikes,
                 averageChange
             };
         }
 
         calculateTemporalVariance(values) {
-            const mean = values.reduce((a, b) => a + b, 0) / values.length;
-            const squaredDiffs = values.map(v => Math.pow(v - mean, 2));
-            return Math.sqrt(squaredDiffs.reduce((a, b) => a + b, 0) / values.length) / 255;
+            if (!Array.isArray(values) || values.length < 2) return 0;
+
+            let sum = 0, count = 0;
+            for (let i = 0; i < values.length; i++) {
+                const v = values[i];
+                if (typeof v === 'number' && !isNaN(v)) {
+                    sum += v;
+                    count++;
+                }
+            }
+            if (count < 2) return 0;
+            const mean = sum / count;
+
+            let sqDiffSum = 0;
+            for (let i = 0; i < values.length; i++) {
+                const v = values[i];
+                if (typeof v === 'number' && !isNaN(v)) {
+                    sqDiffSum += (v - mean) * (v - mean);
+                }
+            }
+            const variance = sqDiffSum / count;
+
+            return Math.sqrt(variance) / 255;
         }
 
-        /**
-         * Detects significant colour spikes in the frame changes.
-         * Spike: When a change exceeds both the fixed threshold and two standard deviations above the mean.
-         * @param {{ r: number[], g: number[], b: number[] }} changes
-         * @returns {{channel: 'r' | 'g' | 'b', frameIndex: number, magnitude: number}[]}
-         */
-        detectColorSpikes(changes) {
-            const threshold = 0.2;
+        detectColorSpikes(changes, fixedThreshold = 0.2, stdDevMultiplier = 2) {
             const spikes = [];
-
             ['r', 'g', 'b'].forEach(channel => {
-                const meanChange = changes[channel].reduce((a, b) => a + b, 0) / changes[channel].length;
-                const stdDev = Math.sqrt(
-                    changes[channel].reduce((a, b) => a + Math.pow(b - meanChange, 2), 0) / changes[channel].length
-                );
+                const arr = Array.isArray(changes[channel]) ? changes[channel] : [];
+                if (arr.length < 2) return;
 
-                const spikeThreshold = meanChange + (stdDev * 2);
-
-                changes[channel].forEach((change, i) => {
-                    if (change > spikeThreshold && change > threshold) {
-                        spikes.push({
-                            channel,
-                            frameIndex: i,
-                            magnitude: change
-                        });
+                let sum = 0, count = 0;
+                for (let i = 0; i < arr.length; i++) {
+                    const v = arr[i];
+                    if (typeof v === 'number' && !isNaN(v)) {
+                        sum += v; count++;
                     }
-                });
+                }
+                if (count < 2) return;
+                const mean = sum / count;
+
+                let sqDiffSum = 0;
+                for (let i = 0; i < arr.length; i++) {
+                    const v = arr[i];
+                    if (typeof v === 'number' && !isNaN(v)) {
+                        sqDiffSum += (v - mean) * (v - mean);
+                    }
+                }
+                const stdDev = Math.sqrt(sqDiffSum / count);
+                const spikeThreshold = mean + stdDevMultiplier * stdDev;
+
+                for (let i = 0; i < arr.length; i++) {
+                    const change = arr[i];
+                    if (
+                        typeof change === 'number' && !isNaN(change) &&
+                        change > spikeThreshold && change > fixedThreshold
+                    ) {
+                        spikes.push({ channel, frameIndex: i, magnitude: change });
+                    }
+                }
             });
+
+            // if (spikes.length) console.warn('Color spikes detected:', spikes);
 
             return spikes;
         }
 
-        calculateTemporalChange(currentBrightness) {
-            const changes = this.advancedMetrics.temporalChanges;
-            const change = changes.length > 0 ?
-                Math.abs(currentBrightness - changes[changes.length - 1].brightness) : 0;
+        calculateTemporalChange(currentBrightness, maxHistory = 1000) {
+            if (typeof currentBrightness !== 'number' || isNaN(currentBrightness) || currentBrightness < 0 || currentBrightness > 1)
+                currentBrightness = 0;
 
-            changes.push({ timestamp: Date.now(), brightness: currentBrightness, change });
+            const changes = this.advancedMetrics.temporalChanges;
+            let change = 0;
+
+            if (changes.length > 0) {
+                const last = changes[changes.length - 1];
+                if (typeof last.brightness === 'number' && !isNaN(last.brightness)) {
+                    change = Math.abs(currentBrightness - last.brightness);
+                }
+            }
+
+            changes.push({
+                timestamp: Date.now(),
+                brightness: currentBrightness,
+                change
+            });
+
+            if (changes.length > maxHistory) changes.shift();
+
+            // if (change > 0.5) console.warn('Sudden brightness spike detected:', change);
+
             return change;
         }
 
         estimateFlickerFrequency() {
             const changes = this.advancedMetrics.temporalChanges;
-            if (changes.length < 2) return 0;
+            const n = changes.length;
+            if (n < 2) return 0;
 
-            const timeDiffs = [];
-            for (let i = 1; i < changes.length; i++) {
-                if (changes[i].change > this.thresholds.brightnessChange) {
-                    timeDiffs.push(changes[i].timestamp - changes[i-1].timestamp);
+            let sumDiff = 0, count = 0;
+            let prevTimestamp = null;
+
+            for (let i = 0; i < n; i++) {
+                const entry = changes[i];
+                if (
+                    entry && typeof entry.brightness === 'number' && typeof entry.change === 'number' &&
+                    typeof entry.timestamp === 'number' && !isNaN(entry.timestamp) &&
+                    entry.change > this.thresholds.brightnessChange
+                ) {
+                    if (prevTimestamp !== null) {
+                        const diff = entry.timestamp - prevTimestamp;
+                        if (diff > 0 && diff < 10000) {
+                            sumDiff += diff;
+                            count++;
+                        }
+                    }
+                    prevTimestamp = entry.timestamp;
                 }
             }
 
-            if (timeDiffs.length === 0) return 0;
-            const avgTimeDiff = timeDiffs.reduce((a, b) => a + b) / timeDiffs.length;
-            return 1000 / avgTimeDiff;
+            if (count === 0 || sumDiff === 0) return 0;
+            const avgTimeDiff = sumDiff / count;
+
+            const frequency = avgTimeDiff > 0 ? Math.min(1000 / avgTimeDiff, 100) : 0;
+
+            // if (frequency > 3) console.warn('Flicker detected:', frequency, 'Hz');
+
+            return frequency;
         }
 
-        /**
-         * Calculates the entropy of the frame based on brightness histogram.
-         * @param {ImageData} imageData 
-         * @returns {number} 
-         */
-        calculateFrameEntropy(imageData) {
-            const histogram = new Array(256).fill(0);
-            for (let i = 0; i < imageData.data.length; i += 4) {
-                const brightness = Math.floor(
-                    (imageData.data[i] * 0.2126 +
-                    imageData.data[i + 1] * 0.7152 +
-                    imageData.data[i + 2] * 0.0722)
-                );
+        calculateFrameEntropy(imageData, maxHistory = 1000) {
+            if (!imageData?.data || !imageData.width || !imageData.height) return 0;
+
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const pixels = width * height;
+            if (pixels === 0) return 0;
+
+            const histogram = new Uint32Array(256); // 8-bit brightness bins
+            const rWeight = 0.2126, gWeight = 0.7152, bWeight = 0.0722;
+
+            let i = 0, len = data.length;
+            for (; i <= len - 32; i += 32) {
+                for (let k = 0; k < 32; k += 4) {
+                    let r = data[i + k], g = data[i + k + 1], b = data[i + k + 2];
+                    r = (typeof r === 'number' && !isNaN(r)) ? r : 0;
+                    g = (typeof g === 'number' && !isNaN(g)) ? g : 0;
+                    b = (typeof b === 'number' && !isNaN(b)) ? b : 0;
+                    let brightness = Math.round(r * rWeight + g * gWeight + b * bWeight);
+                    brightness = Math.max(0, Math.min(255, brightness));
+                    histogram[brightness]++;
+                }
+            }
+
+            for (; i < len; i += 4) {
+                let r = data[i], g = data[i + 1], b = data[i + 2];
+                r = (typeof r === 'number' && !isNaN(r)) ? r : 0;
+                g = (typeof g === 'number' && !isNaN(g)) ? g : 0;
+                b = (typeof b === 'number' && !isNaN(b)) ? b : 0;
+                let brightness = Math.round(r * rWeight + g * gWeight + b * bWeight);
+                brightness = Math.max(0, Math.min(255, brightness));
                 histogram[brightness]++;
             }
 
+
             let entropy = 0;
-            const pixels = imageData.width * imageData.height;
-            for (let i = 0; i < 256; i++) {
-                if (histogram[i] > 0) {
-                    const probability = histogram[i] / pixels;
-                    entropy -= probability * Math.log2(probability);
+            for (let j = 0; j < 256; j++) {
+                const h = histogram[j];
+                if (h) {
+                    const p = h / pixels;
+                    entropy -= p * Math.log2(p);
                 }
             }
 
-            this.advancedMetrics.frameEntropy.push(entropy);
+            // Manage capped entropy history
+            const history = this.advancedMetrics.frameEntropy;
+            history.push(entropy);
+            if (history.length > maxHistory) history.shift();
+
+            // if (entropy < 3 || entropy > 7) console.warn('Entropy outlier:', entropy);
+
             return entropy;
         }
 
-        /**
-         * Calculates the Photosensitive Seizure Index (PSI), a composite score estimating the risk of photosensitive seizures.
-         * @param {number} brightness 
-         * @param {number} brightnessDiff 
-         * @returns {{score: number, frequency: number, intensity: number, coverage: number, duration: number, brightness: number}}
-         */
-        calculatePSI(brightness, brightnessDiff) {
-            const frequency = this.metrics.flashCount / (this.metrics.frameCount / 60);
-            const coverage = this.calculateCoverage(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height));
-            const duration = this.metrics.flashSequences.length > 0 ?
-                this.metrics.flashSequences[this.metrics.flashSequences.length - 1].frameDuration : 0;
+        calculatePSI(brightness, brightnessDiff, weights = { frequency: 0.3, intensity: 0.25, coverage: 0.2, duration: 0.15, brightness: 0.1 }) {
+
+            brightness = (typeof brightness === 'number' && brightness >= 0 && brightness <= 1) ? brightness : 0;
+            brightnessDiff = (typeof brightnessDiff === 'number' && brightnessDiff >= 0 && brightnessDiff <= 1) ? brightnessDiff : 0;
+
+
+            const frameCount = this.metrics.frameCount || 1;
+            const flashCount = this.metrics.flashCount || 0;
+            const frequency = frameCount > 0 ? flashCount / (frameCount / 60) : 0;
+
+            const normFrequency = Math.min(frequency / 3, 1);
+
+            let coverage = 0;
+            try {
+                coverage = this.calculateCoverage(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height));
+                coverage = (typeof coverage === 'number' && coverage >= 0 && coverage <= 1) ? coverage : 0;
+            } catch (e) {
+                coverage = 0;
+            }
+
+            let duration = 0;
+            if (Array.isArray(this.metrics.flashSequences) && this.metrics.flashSequences.length > 0) {
+                const lastSeq = this.metrics.flashSequences[this.metrics.flashSequences.length - 1];
+                duration = (lastSeq && typeof lastSeq.frameDuration === 'number' && lastSeq.frameDuration >= 0) ? lastSeq.frameDuration : 0;
+            }
+
+            const normDuration = Math.min(duration / 50, 1);
+            const normIntensity = Math.min(brightnessDiff / 0.2, 1);
 
             const psi = {
-                frequency: Math.min(frequency / 3, 1),
-                intensity: Math.min(brightnessDiff / 0.2, 1),
+                frequency: normFrequency,
+                intensity: normIntensity,
                 coverage: coverage,
-                duration: Math.min(duration / 50, 1),
-                brightness: Math.min(brightness, 1)
+                duration: normDuration,
+                brightness: brightness
             };
 
             const score = (
-                psi.frequency * 0.3 +
-                psi.intensity * 0.25 +
-                psi.coverage * 0.2 +
-                psi.duration * 0.15 +
-                psi.brightness * 0.1
+                psi.frequency * (weights.frequency || 0.3) +
+                psi.intensity * (weights.intensity || 0.25) +
+                psi.coverage * (weights.coverage || 0.2) +
+                psi.duration * (weights.duration || 0.15) +
+                psi.brightness * (weights.brightness || 0.1)
             );
 
+
+            if (!Array.isArray(this.advancedMetrics.psiHistory)) this.advancedMetrics.psiHistory = [];
             this.advancedMetrics.psi = { score, components: psi };
+            this.advancedMetrics.psiHistory.push({ timestamp: Date.now(), score, components: psi });
+            if (this.advancedMetrics.psiHistory.length > 1000) this.advancedMetrics.psiHistory.shift();
+
+            // if (score > 0.8) console.warn('High PSI risk score:', score, psi);
+
             return { score, components: psi };
         }
 
-        /**
-         * Computes average brightness in the center region, periphery, and each of the quadrants.
-         * @param {ImageData} imageData 
-         * @returns {{center: number, periphery: number, quadrants: number[]}} 
-         */
+
         analyzeSpatialDistribution(imageData) {
-            const width = this.canvas.width;
-            const height = this.canvas.height;
-            const centerRadius = Math.min(width, height) * 0.2;
+            if (!imageData?.data || !imageData.width || !imageData.height) {
+                return { center: 0, periphery: 0, quadrants: [0, 0, 0, 0] };
+            }
+
+            const width = imageData.width;
+            const height = imageData.height;
+            const centerRadius = Math.min(width, height) * 0.2; // 20% radius: default for central risk
             const data = imageData.data;
-
-            let centerSum = 0;
-            let peripherySum = 0;
+            let centerSum = 0, peripherySum = 0;
             const quadrants = [0, 0, 0, 0];
-            let centerPixels = 0;
-            let peripheryPixels = 0;
+            let centerPixels = 0, peripheryPixels = 0;
+            const halfW = width / 2, halfH = height / 2;
+            const quadrantCounts = [0, 0, 0, 0];
 
+            // Main loop
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
                     const i = (y * width + x) * 4;
-                    const brightness = (data[i] * 0.2126 + data[i + 1] * 0.7152 + data[i + 2] * 0.0722) / 255;
+                    let r = data[i], g = data[i + 1], b = data[i + 2];
+                    r = (typeof r === 'number' && !isNaN(r)) ? r : 0;
+                    g = (typeof g === 'number' && !isNaN(g)) ? g : 0;
+                    b = (typeof b === 'number' && !isNaN(b)) ? b : 0;
+                    const brightness = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255;
 
-                    const distanceFromCenter = Math.sqrt(
-                        Math.pow(x - width/2, 2) + Math.pow(y - height/2, 2)
-                    );
+                    const dx = x - halfW, dy = y - halfH;
+                    const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
 
                     if (distanceFromCenter < centerRadius) {
                         centerSum += brightness;
@@ -723,275 +875,396 @@ if (!window.VideoAnalyzer) {
                         peripheryPixels++;
                     }
 
-                    const quadrantIndex = (x < width/2 ? 0 : 1) + (y < height/2 ? 0 : 2);
+                    // Quadrant index: 0=top-left, 1=top-right, 2=bottom-left, 3=bottom-right
+                    const quadrantIndex = (x < halfW ? 0 : 1) + (y < halfH ? 0 : 2);
                     quadrants[quadrantIndex] += brightness;
+                    quadrantCounts[quadrantIndex]++;
                 }
             }
+
+            const normalizedQuadrants = quadrants.map((sum, idx) => quadrantCounts[idx] > 0 ? sum / quadrantCounts[idx] : 0);
+
+            //normalizedQuadrants.forEach((q, idx) => {
+            //   if (q > 0.8) console.warn(`Quadrant ${idx} unusually bright:`, q);
+           // });
 
             return {
                 center: centerPixels > 0 ? centerSum / centerPixels : 0,
                 periphery: peripheryPixels > 0 ? peripherySum / peripheryPixels : 0,
-                quadrants: quadrants.map(sum => sum / (width * height / 4))
+                quadrants: normalizedQuadrants
             };
         }
 
-        /**
-         * Chromatic flashes in video frame by measuring red-green and blue-yellow color contrasts.
-         * @param {ImageData} imageData
-         * @returns {{redGreen: number, blueYellow: number}} 
-         */
-        analyzeChromaticFlashes(imageData) {
+        analyzeChromaticFlashes(imageData, historyLen = 10) {
+            if (!imageData?.data || !imageData.width || !imageData.height) {
+                return { redGreen: 0, blueYellow: 0 };
+            }
             const data = imageData.data;
-            const pixels = data.length / 4;
-            let redGreen = 0;
-            let blueYellow = 0;
+            const len = data.length;
+            const pixels = len >>> 2;
+            let redGreenSum = 0, blueYellowSum = 0;
 
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i] / 255;
-                const g = data[i + 1] / 255;
-                const b = data[i + 2] / 255;
-                redGreen += Math.abs(r - g);
-                blueYellow += Math.abs(b - ((r + g) / 2));
+            let i = 0;
+            for (; i <= len - 16; i += 16) {
+                for (let k = 0; k < 16; k += 4) {
+                    let r = data[i + k], g = data[i + k + 1], b = data[i + k + 2];
+                    r = (typeof r === 'number' && !isNaN(r)) ? r : 0;
+                    g = (typeof g === 'number' && !isNaN(g)) ? g : 0;
+                    b = (typeof b === 'number' && !isNaN(b)) ? b : 0;
+                    redGreenSum += Math.abs(r - g);
+                    blueYellowSum += Math.abs(b - Math.round((r + g) / 2));
+                }
+            }
+            for (; i < len; i += 4) {
+                let r = data[i], g = data[i + 1], b = data[i + 2];
+                r = (typeof r === 'number' && !isNaN(r)) ? r : 0;
+                g = (typeof g === 'number' && !isNaN(g)) ? g : 0;
+                b = (typeof b === 'number' && !isNaN(b)) ? b : 0;
+                redGreenSum += Math.abs(r - g);
+                blueYellowSum += Math.abs(b - Math.round((r + g) / 2));
             }
 
+            const norm = pixels > 0 ? 1 / (pixels * 255) : 0;
             const result = {
-                redGreen: redGreen / pixels,
-                blueYellow: blueYellow / pixels
+                redGreen: redGreenSum * norm,
+                blueYellow: blueYellowSum * norm
             };
 
-            this.advancedMetrics.chromaticFlashes.lastColors.push(result);
-            if (this.advancedMetrics.chromaticFlashes.lastColors.length > 10) {
-                this.advancedMetrics.chromaticFlashes.lastColors.shift();
-            }
+            // Maintain capped history for temporal analysis
+            const lastColors = this.advancedMetrics.chromaticFlashes.lastColors || [];
+            lastColors.push(result);
+            if (lastColors.length > historyLen) lastColors.shift();
+            this.advancedMetrics.chromaticFlashes.lastColors = lastColors;
+
+        // if (result.redGreen > 0.8 || result.blueYellow > 0.8) console.warn('High chromatic flash detected:', result);
 
             return result;
         }
 
-        analyzeTemporalContrast(brightness, timestamp) {
-            const history = this.advancedMetrics.temporalContrast.history;
-            history.push({ brightness, timestamp });
+        analyzeTemporalContrast(brightness, timestamp, bufferLen = 15) {
+            brightness = (typeof brightness === 'number' && brightness >= 0 && brightness <= 1 && !isNaN(brightness)) ? brightness : 0;
+            timestamp = (typeof timestamp === 'number' && !isNaN(timestamp)) ? timestamp : Date.now();
 
-            if (history.length > 10) history.shift();
+            const tc = this.advancedMetrics.temporalContrast;
+            if (!tc._ring || tc._ring.brightness.length !== bufferLen) {
+                tc._ring = {
+                    brightness: new Float32Array(bufferLen),
+                    timestamp: new Float64Array(bufferLen),
+                    idx: 0,
+                    count: 0
+                };
+                tc.maxRate = 0; // Initialize maxRate
+            }
+            const ring = tc._ring;
+
+            // Store values in ring buffer
+            ring.brightness[ring.idx] = brightness;
+            ring.timestamp[ring.idx] = timestamp;
+            ring.idx = (ring.idx + 1) % bufferLen;
+            if (ring.count < bufferLen) ring.count++;
 
             let maxRate = 0;
-            for (let i = 1; i < history.length; i++) {
-                const timeDiff = history[i].timestamp - history[i-1].timestamp;
+            for (let i = 1; i < ring.count; i++) {
+                const prevIdx = (ring.idx + i - ring.count) % bufferLen;
+                const currIdx = (ring.idx + i - ring.count + 1) % bufferLen;
+                const timeDiff = ring.timestamp[currIdx] - ring.timestamp[prevIdx];
                 if (timeDiff > 0.001) {
-                    const rate = Math.abs(history[i].brightness - history[i-1].brightness) / timeDiff;
+                    const rate = Math.abs(ring.brightness[currIdx] - ring.brightness[prevIdx]) / timeDiff;
                     maxRate = Math.max(maxRate, Math.min(rate, 1000));
                 }
             }
 
-            this.advancedMetrics.temporalContrast = {
-                current: maxRate,
-                history: history,
-                maxRate: Math.min(Math.max(maxRate, this.advancedMetrics.temporalContrast.maxRate), 1000)
-            };
+            tc.current = maxRate;
+            tc.maxRate = Math.max(maxRate, typeof tc.maxRate === 'number' ? tc.maxRate : 0);
+
+            tc.history = [];
+            for (let i = 0; i < ring.count; i++) {
+                const idx = (ring.idx + i - ring.count) % bufferLen;
+                tc.history.push({ brightness: ring.brightness[idx], timestamp: ring.timestamp[idx] });
+            }
+
+            // if (maxRate > 0.5) console.warn('High temporal contrast detected:', maxRate);
 
             return {
                 currentRate: maxRate,
-                maxRate: this.advancedMetrics.temporalContrast.maxRate
+                maxRate: tc.maxRate
             };
         }
 
-        calculateFrameDifference(currentFrame) {
-            if (!this.lastFrame) {
-                this.lastFrame = currentFrame;
-                return { difference: 0, motion: 0 };
-            }
+        performSpectralAnalysis(brightness, bufferLen = 128, fftLen = 64, fps = 60) {
 
-            let totalDiff = 0;
-            let motionPixels = 0;
-            const data1 = currentFrame.data;
-            const data2 = this.lastFrame.data;
+            try {
+        brightness = (typeof brightness === 'number' && brightness >= 0 && brightness <= 1 && !isNaN(brightness)) ? brightness : 0;
 
-            for (let i = 0; i < data1.length; i += 4) {
-                const diff = Math.abs(data1[i] - data2[i]) +
-                           Math.abs(data1[i+1] - data2[i+1]) +
-                           Math.abs(data1[i+2] - data2[i+2]);
 
-                totalDiff += diff;
-                if (diff > this.advancedMetrics.frameDifference.threshold * 765) {
-                    motionPixels++;
-                }
-            }
-
-            const normalizedDiff = totalDiff / (data1.length * 765);
-            const motionRatio = motionPixels / (data1.length / 4);
-
-            this.lastFrame = currentFrame;
-            return {
-                difference: normalizedDiff,
-                motion: motionRatio
+        if (!this.temporalBuffer._ring || this.temporalBuffer._ring.buffer.length !== bufferLen) {
+            this.temporalBuffer._ring = {
+                buffer: new Float32Array(bufferLen),
+                idx: 0,
+                count: 0
             };
         }
+        const ring = this.temporalBuffer._ring;
 
-            performSpectralAnalysis(brightness) {
+        // Store brightness sample
+        ring.buffer[ring.idx] = brightness;
+        ring.idx = (ring.idx + 1) % bufferLen;
+        if (ring.count < bufferLen) ring.count++;
 
-                try {
-
-                    this.temporalBuffer.add(brightness);
-
-                    if (this.temporalBuffer.data.length < 32) {
-                    return { dominantFrequency: 0, spectrum: [], spectralFlatness: 0 };
-                    }
-
-                const signal = [...this.temporalBuffer.data.slice(-64)];
-                const windowed = signal.map((x, i) =>
-                    x * (0.5 * (1 - Math.cos((2 * Math.PI * i) / (signal.length - 1)))));
-
-                // TASK 2381 Convert typed arrays to complex number objects
-                const { re, im } = this.fft.forward(windowed);
-
-                const spectrum = Array.from({ length: re.length }, (_, i) => ({
-                    re: re[i],
-                    im: im[i]
-                }));
-
-                const magnitudes = spectrum.map((bin, i) => ({
-                    frequency: (i * 60) / signal.length,
-                    amplitude: 2 * Math.sqrt(bin.re * bin.re + bin.im * bin.im) / signal.length
-                }));
-
-                const dominantBin = magnitudes
-                    .slice(1, Math.floor(magnitudes.length / 2))
-                    .reduce((max, curr) => curr.amplitude > max.amplitude ? curr : max, { amplitude: 0 });
-
-                const spectralFlatness = window.AnalyzerHelpers.computeSpectralFlatness(
-                    magnitudes.slice(1, Math.floor(magnitudes.length / 2))
-                );
-
-                return {
-                    dominantFrequency: dominantBin.frequency,
-                    spectrum: magnitudes.slice(0, Math.floor(magnitudes.length / 2)),
-                    windowSize: signal.length,
-                    spectralFlatness: spectralFlatness
-                };
-            } catch (error) {
-                console.error('Spectral analysis error:', error);
-                return { dominantFrequency: 0, spectrum: [], windowSize: 0, spectralFlatness: 0 };
-            }
+        if (ring.count < Math.max(32, fftLen)) {
+            return { dominantFrequency: 0, spectrum: [], spectralFlatness: 0, windowSize: ring.count };
         }
 
-        detectPeriodicity(signal) {
-            if (signal.length < 4) return { isPeriodic: false, period: 0 };
+        const N = Math.min(fftLen, ring.count);
+        const signal = new Float32Array(N);
+        for (let i = 0; i < N; i++) {
+            signal[i] = ring.buffer[(ring.idx + i - N + bufferLen) % bufferLen];
+        }
+
+        for (let i = 0; i < N; i++) {
+            signal[i] *= 0.5 * (1 - Math.cos((2 * Math.PI * i) / (N - 1)));
+        }
+
+        const { re, im } = window.AnalyzerHelpers.padToPowerOfTwo(signal);
+        const spectrum = [];
+        for (let i = 0; i < N; i++) {
+            spectrum.push({
+                frequency: (i * fps) / N,
+                amplitude: 2 * Math.hypot(re[i], im[i]) / N
+            });
+        }
+
+        // Find dominant frequency (risk: 3–30Hz band)
+        let maxAmp = 0, domIdx = 1;
+        const half = Math.floor(spectrum.length / 2); // Nyquist
+        for (let i = 1; i < half; i++) {
+            if (spectrum[i].amplitude > maxAmp) {
+                maxAmp = spectrum[i].amplitude;
+                domIdx = i;
+            }
+        }
+        const dominantFrequency = spectrum[domIdx]?.frequency || 0;
+
+        let spectralFlatness = 0;
+        if (window.AnalyzerHelpers?.computeSpectralFlatness && typeof window.AnalyzerHelpers.computeSpectralFlatness === 'function') {
+            spectralFlatness = window.AnalyzerHelpers.computeSpectralFlatness(spectrum.slice(1, half));
+        }
+
+        return {
+            dominantFrequency,
+            spectrum: spectrum.slice(0, half),
+            windowSize: N,
+            spectralFlatness
+        };
+    } catch (error) {
+        console.error('Spectral analysis error:', error);
+        return { dominantFrequency: 0, spectrum: [], windowSize: 0, spectralFlatness: 0 };
+    }
+}
+
+        detectPeriodicity(signal, minLag = 2, threshold = 0.5) {
+            if (!Array.isArray(signal) || signal.length < minLag + 2) {
+                return { isPeriodic: false, period: 0, confidence: 0, autocorr: [] };
+            }
+            const len = signal.length;
+            const clean = signal.map(v => (typeof v === 'number' && isFinite(v)) ? v : 0);
+            const mean = clean.reduce((a, b) => a + b, 0) / len;
 
             const autocorr = [];
-            const mean = signal.reduce((a, b) => a + b) / signal.length;
-            const normalizedSignal = signal.map(x => x - mean);
-
-            for (let lag = 0; lag < Math.floor(signal.length / 2); lag++) {
-                let sum = 0;
-                for (let i = 0; i < signal.length - lag; i++) {
-                    sum += normalizedSignal[i] * normalizedSignal[i + lag];
+            for (let lag = minLag; lag < Math.floor(len / 2); lag++) {
+                let corr = 0, normA = 0, normB = 0;
+                for (let i = 0; i < len - lag; i++) {
+                    const a = clean[i] - mean;
+                    const b = clean[i + lag] - mean;
+                    corr += a * b;
+                    normA += a * a;
+                    normB += b * b;
                 }
-                autocorr[lag] = sum / (signal.length - lag);
+                const norm = Math.sqrt(normA * normB);
+                autocorr[lag] = norm > 0 ? corr / norm : 0;
             }
 
-
-            const peaks = [];
-            for (let i = 1; i < autocorr.length - 1; i++) {
-                if (autocorr[i] > autocorr[i - 1] && autocorr[i] > autocorr[i + 1]) {
-                    peaks.push({
-                        lag: i,
-                        value: autocorr[i]
-                    });
+            // Find max peak (excluding lag=0)
+            let maxVal = -Infinity, maxLag = minLag;
+            for (let lag = minLag + 1; lag < autocorr.length - 1; lag++) {
+                if (autocorr[lag] > autocorr[lag - 1] && autocorr[lag] > autocorr[lag + 1]) {
+                    if (autocorr[lag] > maxVal) {
+                        maxVal = autocorr[lag];
+                        maxLag = lag;
+                    }
                 }
             }
 
-            peaks.sort((a, b) => b.value - a.value);
-
-            const threshold = 0.5;
-            if (peaks.length > 0 && peaks[0].value > threshold) {
-                return {
-                    isPeriodic: true,
-                    period: peaks[0].lag,
-                    confidence: peaks[0].value
-                };
-            }
+            const isPeriodic = maxVal > threshold;
+            
+            // if (isPeriodic) console.warn('Periodicity detected:', { period: maxLag, confidence: maxVal });
 
             return {
-                isPeriodic: false,
-                period: 0,
-                confidence: 0
+                isPeriodic,
+                period: isPeriodic ? maxLag : 0,
+                confidence: isPeriodic ? maxVal : 0,
+                autocorr
             };
         }
 
-        calculateTemporalCoherence(brightness) {
-            const history = this.advancedMetrics.temporalCoherence.history;
-            history.push(brightness);
-            if (history.length > this.advancedMetrics.temporalCoherence.windowSize) {
-                history.shift();
+        calculateTemporalCoherence(brightness, windowSize = 30, maxLag = 10) {
+            brightness = (typeof brightness === 'number' && brightness >= 0 && brightness <= 1 && !isNaN(brightness)) ? brightness : 0;
+
+            // Init buffer and metrics
+            const tc = this.advancedMetrics.temporalCoherence;
+            if (!tc._ring || tc._ring.buffer.length !== windowSize) {
+                tc._ring = {
+                    buffer: new Float32Array(windowSize),
+                    idx: 0,
+                    count: 0
+                };
+                tc.coherenceHistory = [];
+            }
+            const ring = tc._ring;
+
+            // Store brightness in ring buffer
+            ring.buffer[ring.idx] = brightness;
+            ring.idx = (ring.idx + 1) % windowSize;
+            if (ring.count < windowSize) ring.count++;
+
+            // Early exit for short buffers
+            const len = ring.count;
+            if (len < 2) return { coherenceScore: 0, periodicity: { isPeriodic: false, period: 0, confidence: 0 }, lags: [] };
+
+            const validBuffer = [];
+            for (let i = 0; i < len; i++) {
+                const v = ring.buffer[i];
+                validBuffer.push((typeof v === 'number' && isFinite(v)) ? v : 0);
             }
 
-            if (history.length < 2) return { coherenceScore: 0 };
+            const mean = validBuffer.reduce((a, b) => a + b, 0) / len;
+            const variance = validBuffer.reduce((a, b) => a + (b - mean) * (b - mean), 0) / len || 1e-8;
 
             let coherence = 0;
-            const mean = history.reduce((a, b) => a + b) / history.length;
-            const variance = history.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / history.length;
-
-            for (let lag = 1; lag < Math.min(10, history.length); lag++) {
-                let correlation = 0;
-                for (let i = 0; i < history.length - lag; i++) {
-                    correlation += (history[i] - mean) * (history[i + lag] - mean);
+            const lags = [];
+            const usedMaxLag = Math.min(maxLag, len - 1);
+            for (let lag = 1; lag <= usedMaxLag; lag++) {
+                let corr = 0;
+                let n = len - lag;
+                for (let i = 0; i < n; i++) {
+                    corr += (validBuffer[i] - mean) * (validBuffer[i + lag] - mean);
                 }
-                correlation /= (history.length - lag) * variance;
-                coherence += Math.abs(correlation);
+                corr = corr / (n * variance);
+                coherence += Math.abs(corr);
+                lags.push({ lag, correlation: corr });
+            }
+            const coherenceScore = usedMaxLag > 0 ? coherence / usedMaxLag : 0;
+
+            let periodicity = { isPeriodic: false, period: 0, confidence: 0 };
+            if (typeof this.detectPeriodicity === 'function') {
+                periodicity = this.detectPeriodicity(validBuffer);
             }
 
+            tc.coherenceHistory = tc.coherenceHistory || [];
+            tc.coherenceHistory.push({ timestamp: Date.now(), coherenceScore, periodicity, buffer: [...validBuffer] });
+            if (tc.coherenceHistory.length > 1000) tc.coherenceHistory.shift();
+
+
+           // if (coherenceScore > 0.7) console.warn('High temporal coherence detected:', coherenceScore);
+
             return {
-                coherenceScore: coherence / 9,
-                periodicity: this.detectPeriodicity(history)
+                coherenceScore,
+                periodicity,
+                lags
             };
         }
 
-        detectEdges(imageData) {
+        detectEdges(imageData, sobelThreshold = 50, maxHistory = 500) {
+
+            if (!imageData?.data || !imageData.width || !imageData.height) {
+                return { edgeDensity: 0, edgeCount: 0, temporalEdgeChange: 0, edgeMap: null };
+            }
+
             const width = imageData.width;
             const height = imageData.height;
             const data = imageData.data;
-            let edgeCount = 0;
-            const sobelThreshold = this.advancedMetrics.edgeDetection.threshold;
             const gray = new Float32Array(width * height);
-            for (let i = 0; i < data.length; i += 4) {
-                gray[i / 4] = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+
+            for (let i = 0, j = 0; i < data.length; i += 4, ++j) {
+                const r = (typeof data[i] === 'number' && !isNaN(data[i])) ? data[i] : 0;
+                const g = (typeof data[i + 1] === 'number' && !isNaN(data[i + 1])) ? data[i + 1] : 0;
+                const b = (typeof data[i + 2] === 'number' && !isNaN(data[i + 2])) ? data[i + 2] : 0;
+                gray[j] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
             }
 
-            const edge = window.AnalyzerHelpers.sobelEdgeMap(gray, width, height);
+            let edgeCount = 0;
+            const edgeMap = new Uint8Array(width * height); // Binary edge mask
 
-            for (let i = 0; i < edge.length; ++i) {
-                if (edge[i] > sobelThreshold) {
-                    edgeCount++;
+            // Sobel edge detection
+            for (let y = 1; y < height - 1; ++y) {
+                let yw = y * width, ym1w = (y - 1) * width, yp1w = (y + 1) * width;
+                for (let x = 1; x < width - 1; ++x) {
+                    let gx =
+                        -gray[ym1w + (x - 1)] - 2 * gray[yw + (x - 1)] - gray[yp1w + (x - 1)] +
+                        gray[ym1w + (x + 1)] + 2 * gray[yw + (x + 1)] + gray[yp1w + (x + 1)];
+                    let gy =
+                        -gray[ym1w + (x - 1)] - 2 * gray[ym1w + x] - gray[ym1w + (x + 1)] +
+                        gray[yp1w + (x - 1)] + 2 * gray[yp1w + x] + gray[yp1w + (x + 1)];
+                    let mag = Math.hypot(gx, gy);
+
+                    if (mag > sobelThreshold) {
+                        edgeCount++;
+                        edgeMap[yw + x] = 255; // Mark edge pixel
+                    }
                 }
             }
 
-            const edgeDensity = edgeCount / ((width - 2) * (height - 2));
-            this.advancedMetrics.edgeDetection.history.push(edgeDensity);
+            const validPixels = (width - 2) * (height - 2);
+            const edgeDensity = validPixels > 0 ? edgeCount / validPixels : 0;
+
+
+            const hist = this.advancedMetrics.edgeDetection.history;
+            hist.push(edgeDensity);
+            if (hist.length > maxHistory) hist.shift();
+
+            // if (edgeDensity > 0.3) console.warn('High edge density detected:', edgeDensity);
+
 
             return {
                 edgeDensity,
                 edgeCount,
-                temporalEdgeChange: this.calculateEdgeChange()
+                temporalEdgeChange: (typeof this.calculateEdgeChange === 'function') ? this.calculateEdgeChange() : 0,
+                edgeMap
             };
         }
 
-        /**
-         * Gets the luminance value at a given pixel index.
-         * @param {Uint8ClampedArray} data - RGBA pixel data array.
-         * @param {number} idx 
-         * @returns {number}
-         */
-        getLuminance(data, idx) {
-            if (idx < 0 || idx >= data.length) return 0;
-            return data[idx] * 0.2126 + data[idx + 1] * 0.7152 + data[idx + 2] * 0.0722;
+
+        getLuminance(data, idx, weights = [0.2126, 0.7152, 0.0722]) {
+            if (!Array.isArray(data) && !(data instanceof Uint8ClampedArray)) return 0;
+            const len = data.length;
+            if (typeof idx !== 'number' || idx < 0 || idx > len - 3) return 0;
+
+            const r = (typeof data[idx] === 'number' && isFinite(data[idx])) ? data[idx] : 0;
+            const g = (typeof data[idx + 1] === 'number' && isFinite(data[idx + 1])) ? data[idx + 1] : 0;
+            const b = (typeof data[idx + 2] === 'number' && isFinite(data[idx + 2])) ? data[idx + 2] : 0;
+
+            // BT.709 weights for perceptual luminance; can override for calibration
+            return r * weights[0] + g * weights[1] + b * weights[2];
         }
 
+        calculateEdgeChange(window = 2) {
+            const hist = this.advancedMetrics?.edgeDetection?.history;
+            if (!Array.isArray(hist) || hist.length < window) return 0;
 
-        calculateEdgeChange() {
-            const history = this.advancedMetrics.edgeDetection.history;
-            if (history.length < 2) return 0;
-            return Math.abs(history[history.length - 1] - history[history.length - 2]);
+            let change = 0;
+            for (let i = 1; i < window; i++) {
+                const a = (typeof hist[hist.length - i] === 'number' && isFinite(hist[hist.length - i])) ? hist[hist.length - i] : 0;
+                const b = (typeof hist[hist.length - i - 1] === 'number' && isFinite(hist[hist.length - i - 1])) ? hist[hist.length - i - 1] : 0;
+                change += Math.abs(a - b);
+            }
+
+            const edgeChange = window > 1 ? change / (window - 1) : change;
+
+            // if (edgeChange > 0.2) console.warn('High edge change detected:', edgeChange);
+
+
+            return edgeChange;
         }
-
 
         generateCSV() {
             try {
@@ -1042,16 +1315,11 @@ if (!window.VideoAnalyzer) {
                     'CIE76 Delta',
                     'Patterned Stimulus Score',
                     'Scene Change Score'
-
                 ];
-
-                // TASK 2383: Ensure data export is meaningful data from postive timestamped data
                 const allData = [...this.dataChunks.flat(), ...this.currentChunk]
                     .filter(entry => entry.timestamp >= 0)
                     .sort((a, b) => a.timestamp - b.timestamp);
-
                 console.log(`Exporting data: ${allData.length} frames, from ${this.analysisStartTime} to ${this.lastExportTime}`);
-
                 const rows = allData.map(entry => {
                     const colorVar = entry.colorVariance || {
                         current: { r: 0, g: 0, b: 0 },
@@ -1060,7 +1328,7 @@ if (!window.VideoAnalyzer) {
                         spikes: []
                     };
                     return [
-                        Number(entry.timestamp || 0).toFixed(6), // Increased precision to 6 decimal places as TEST returned rows with same timestamp
+                        Number(entry.timestamp || 0).toFixed(6),
                         Number(entry.brightness || 0).toFixed(4),
                         entry.isFlash ? '1' : '0',
                         Number(entry.intensity || 0).toFixed(4),
@@ -1108,7 +1376,6 @@ if (!window.VideoAnalyzer) {
                         Number(entry.sceneChangeScore || 0).toFixed(4)
                     ];
                 });
-
                 return [headers, ...rows]
                     .map(row => row.join(','))
                     .join('\n');
@@ -1136,7 +1403,6 @@ if (!window.VideoAnalyzer) {
         generateRecommendations() {
             const recommendations = [];
             const flashRate = this.metrics.flashCount / (this.metrics.frameCount / 60);
-
             if (flashRate > 3) {
                 recommendations.push('Warning: High flash rate detected');
             }
@@ -1146,7 +1412,6 @@ if (!window.VideoAnalyzer) {
             if (this.metrics.flashSequences.length > 5) {
                 recommendations.push('Multiple flash sequences detected');
             }
-
             return recommendations.length ? recommendations : ['No significant issues detected'];
         }
 
@@ -1160,7 +1425,6 @@ if (!window.VideoAnalyzer) {
                         totalFlashesDetected: this.metrics.flashCount,
                         riskLevel: this.metrics.riskLevel
                     },
-                    // TASK 2384: Ensure data export is meaningful data from postive timestamped data
                     analysis: [...this.dataChunks.flat(), ...this.currentChunk]
                         .filter(entry => entry.timestamp >= 0)
                         .sort((a, b) => a.timestamp - b.timestamp)
@@ -1243,7 +1507,6 @@ if (!window.VideoAnalyzer) {
                         b: this.advancedMetrics.colorHistory.b
                     }
                 };
-
                 return JSON.stringify(data, null, 2);
             } catch (error) {
                 console.error('JSON generation error:', error);
@@ -1251,11 +1514,13 @@ if (!window.VideoAnalyzer) {
             }
         }
 
-        /**
-         * Resets the analyzer state, clearing all metrics and buffers.
-         */
         reset() {
             this.startTime = null;
+            this.lastAnalysisTime = 0;
+            this.analysisStartTime = null;
+            this.lastExportTime = 0;
+            this.totalFrames = 0;
+            this._frameDiffIdx = 0;
             this.metrics = {
                 flashCount: 0,
                 riskLevel: 'low',
@@ -1265,8 +1530,19 @@ if (!window.VideoAnalyzer) {
                 flashSequences: [],
                 lastTimestamp: 0
             };
+            // Reset main data arrays
             this.timelineData = [];
-            this.lastAnalysisTime = 0;
+            this.dataChunks = [];
+            this.currentChunk = [];
+            this._frameDiffHistory = new Float32Array(8);
+
+            const coherenceWindowSize = this.advancedMetrics.temporalCoherence?.windowSize || 30;
+            const edgeHistoryMax = this.advancedMetrics?.edgeDetection?.maxHistory || 500;
+            const chromaticHistoryLen = this.advancedMetrics?.chromaticFlashes?.maxLen || 10;
+            const colorHistoryLen = this.advancedMetrics?.colorHistory?.maxLen || 30;
+            const spectralBufferLen = this.advancedMetrics?.spectralAnalysis?.bufferLen || 128;
+            const spectralFftLen = this.advancedMetrics?.spectralAnalysis?.fftLen || 64;
+
             this.advancedMetrics = {
                 colorVariance: [],
                 temporalChanges: [],
@@ -1275,10 +1551,11 @@ if (!window.VideoAnalyzer) {
                 colorHistory: {
                     r: [],
                     g: [],
-                    b: []
+                    b: [],
+                    maxLen: colorHistoryLen
                 },
                 spikes: [],
-                historyLength: 30,
+                historyLength: colorHistoryLen,
                 psi: {
                     score: 0,
                     components: {
@@ -1296,12 +1573,14 @@ if (!window.VideoAnalyzer) {
                 chromaticFlashes: {
                     redGreen: 0,
                     blueYellow: 0,
-                    lastColors: []
+                    lastColors: [],
+                    maxLen: chromaticHistoryLen
                 },
                 temporalContrast: {
                     current: 0,
                     history: [],
-                    maxRate: 0
+                    maxRate: 0,
+                    bufferLen: 15
                 },
                 frameDifference: {
                     current: 0,
@@ -1313,25 +1592,27 @@ if (!window.VideoAnalyzer) {
                     frequencies: [],
                     dominantFrequency: 0,
                     spectrum: [],
+                    bufferLen: spectralBufferLen,
+                    fftLen: spectralFftLen,
                     fft: null
                 },
                 temporalCoherence: {
                     coherenceScore: 0,
                     history: [],
-                    windowSize: 30
+                    windowSize: coherenceWindowSize,
+                    coherenceHistory: [],
+                    maxLag: 10
                 },
                 edgeDetection: {
                     edges: 0,
                     history: [],
-                    threshold: 30
+                    threshold: 30,
+                    maxHistory: edgeHistoryMax
                 }
             };
+
+
             this.temporalBuffer.clear();
-            this.dataChunks = [];
-            this.currentChunk = [];
-            this.totalFrames = 0;
-            this.analysisStartTime = null;
-            this.lastExportTime = 0;
         }
 
         calculateDominantColor(imageData) {
@@ -1373,24 +1654,18 @@ if (!window.VideoAnalyzer) {
                 patternedStimulusScore: metrics.patternedStimulusScore,
                 sceneChangeScore: metrics.sceneChangeScore
             };
-
             entry.spectralFlatness = metrics.spectralData?.spectralFlatness ?? 0;
-
-            // Store data in chunks
             this.currentChunk.push(entry);
             this.totalFrames++;
-
             if (this.currentChunk.length >= this.chunkSize) {
                 this.dataChunks.push(this.currentChunk);
                 this.currentChunk = [];
             }
-
             return entry;
         }
 
         updateStorage(timelineEntry) {
             this.timelineData.push(timelineEntry);
-
         }
 
         createResults(timelineEntry) {
@@ -1404,15 +1679,9 @@ if (!window.VideoAnalyzer) {
             };
         }
 
-        /**
-         * Performs a FFT on the input signal using the helper.
-         * @param {number[]} signal
-         * @returns {{re: Float64Array, im: Float64Array}}
-         */
         performFFT(signal) {
             return window.AnalyzerHelpers.performFFT(signal);
         }
-
     }
 
     window.VideoAnalyzer = VideoAnalyzer;

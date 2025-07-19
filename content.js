@@ -173,7 +173,7 @@
     videoElement.parentElement.appendChild(overlay);
 
     if (analyzer) {
-        analyzer.reset(); 
+        analyzer.reset();
     }
 
     const initialTime = videoElement.currentTime;
@@ -220,7 +220,7 @@
     /**
      * Handles extension context errors and attempts reconnection if possible
      * @param {Error} error
-     * @returns {boolean} 
+     * @returns {boolean}
      */
     function handleExtensionError(error) {
         if (error.message.includes('Extension context invalidated')) {
@@ -328,10 +328,6 @@
             chrome.runtime.sendMessage({
                 type: 'ANALYSIS_UPDATE',
                 data: messageData
-            }, function(response) {
-                if (chrome.runtime.lastError) {
-                    handleMessageError(chrome.runtime.lastError);
-                }
             });
 
             updateOverlay(results.isFlash);
