@@ -1,6 +1,6 @@
 /**
  * @file charts.js
- * @description Chart drawing has uses the charts-helpers.js
+ * @description Chart drawing uses the charts-helpers.js
  * @module charts
  */
 
@@ -165,7 +165,7 @@ const ALL_METRICS = [
 
 /**
  * Flattens nested metrics for charting and table display.
- * @param {Object} row 
+ * @param {Object} row
  * @returns {Object} Flattened row.
  */
 function flattenMetrics(row) {
