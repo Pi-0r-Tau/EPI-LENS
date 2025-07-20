@@ -60,7 +60,7 @@ Risk score is calculated as instances of a flash for threshold criteria within s
 - Red intensity and red delta metrics for improved detection of color based flashes and rapid red channel changes.
 - Metric panel for analysis suite updated to improve formatting with dark mode, less clustered.
 - Offline video analysis suite now has dynamic controls for sizes of video preview and live metric graph
-- 
+  
 - fileanalyzer overhaul:
     - analyzeVideoAtFixedIntervals
     - Video that is analyzed with offline will be reproducible with same results for the same Video regardless of when it is analyzed
