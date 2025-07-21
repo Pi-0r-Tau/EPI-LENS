@@ -168,55 +168,52 @@ if (!window.VideoAnalyzer) {
         }
 
 
-analyzeFrame(video, timestamp) {
-    const FRAME_INTERVAL_MS = 1000 / 60;
-    const MAX_INACTIVITY_MS = 1000;
+        analyzeFrame(video, timestamp) {
+            const FRAME_INTERVAL_MS = 1000 / 60;
+            const MAX_INACTIVITY_MS = 1000;
 
-    try {
-        if (!video || !video.videoWidth || !video.videoHeight) {
-            return { error: 'Video not ready' };
+            try {
+                if (!video || !video.videoWidth || !video.videoHeight) {
+                    return { error: 'Video not ready' };
+                }
+
+                // Initialize analysis timing
+                if (this.analysisStartTime === null) {
+                    this.analysisStartTime = timestamp;
+                    this.lastExportTime = timestamp;
+                }
+
+                const relativeTime = timestamp - this.analysisStartTime;
+
+                // Frame rate limiting using monotonic browser clock
+                const nowMs = performance.now();
+                const timeSinceLastFrame = nowMs - (this.lastAnalysisPerf || 0);
+                if (timeSinceLastFrame < FRAME_INTERVAL_MS) return null;
+                this.lastAnalysisPerf = nowMs;
+
+                if (timestamp - (this.metrics.lastTimestamp || 0) > MAX_INACTIVITY_MS) {
+                    this.reset();
+                }
+
+                // Update metrics for new frame
+                this.metrics.frameCount++;
+                this.metrics.lastTimestamp = timestamp;
+
+                // Capture frame and compute color metrics
+                const imageData = this.captureFrame(video);
+                const redIntensity = this.calculateAverageRedIntensity(imageData.data);
+                const prevRedIntensity = (typeof this.lastRedIntensity === 'number' && isFinite(this.lastRedIntensity)) ? this.lastRedIntensity : 0;
+                const redDelta = Math.abs(redIntensity - prevRedIntensity);
+                this.lastRedIntensity = redIntensity;
+                const results = this.processFrame(imageData, timestamp, relativeTime, redIntensity, redDelta);
+
+                return results;
+            } catch (error) {
+
+                console.error('Analysis error:', error);
+                return { error: error.message || 'Unknown analysis error' };
+            }
         }
-
-        // Initialize analysis timing
-        if (this.analysisStartTime === null) {
-            this.analysisStartTime = timestamp;
-            this.lastExportTime = timestamp;
-        }
-
-        const relativeTime = timestamp - this.analysisStartTime;
-
-        // Frame rate limiting using monotonic browser clock
-        const nowMs = performance.now();
-        const timeSinceLastFrame = nowMs - (this.lastAnalysisPerf || 0);
-        if (timeSinceLastFrame < FRAME_INTERVAL_MS) return null;
-        this.lastAnalysisPerf = nowMs;
-
-        if (timestamp - (this.metrics.lastTimestamp || 0) > MAX_INACTIVITY_MS) {
-            this.reset();
-        }
-
-        // Update metrics for new frame
-        this.metrics.frameCount++;
-        this.metrics.lastTimestamp = timestamp;
-
-        // Capture frame and compute color metrics
-        const imageData = this.captureFrame(video);
-        const redIntensity = this.calculateAverageRedIntensity(imageData.data);
-        const prevRedIntensity = (typeof this.lastRedIntensity === 'number' && isFinite(this.lastRedIntensity))
-            ? this.lastRedIntensity : 0;
-        const redDelta = Math.abs(redIntensity - prevRedIntensity);
-        this.lastRedIntensity = redIntensity;
-
-
-        const results = this.processFrame(imageData, timestamp, relativeTime, redIntensity, redDelta);
-
-        return results;
-    } catch (error) {
-
-        console.error('Analysis error:', error);
-        return { error: error.message || 'Unknown analysis error' };
-    }
-}
 
 
         processFrame(imageData, timestamp, relativeTime, redIntensity = 0, redDelta = 0) {
