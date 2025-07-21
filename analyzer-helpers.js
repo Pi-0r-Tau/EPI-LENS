@@ -4,8 +4,7 @@
         log2, PI, cos, sin, ceil, min, max, abs
      } = Math;
 
-    const EPSILON = 1e-10;
-
+    const MAX_SIGNAL_LENGTH = 1048576; // 2^20, max length for FFT
     const RGB_TO_XYZ = new Float64Array([
         0.4124, 0.3576, 0.1805, // X Cofficients
         0.2126, 0.7152, 0.0722, // Y Cofficients
@@ -20,9 +19,10 @@
     ) throw new Error('RGB values out of range [0,255]');
 
     // Precompute constants
+    const EPSILON = 1e-10;
     const ONE_OVER_255 = 1 / 255;
     const REF_X = 0.95047, REF_Y = 1.0, REF_Z = 1.08883;
-    const EPS = EPSILON || 1e-10; //
+    const EPS = EPSILON || 1e-10; 
 
     // Normalize and gamma correct in-place
     const srgb = [r * ONE_OVER_255, g * ONE_OVER_255, b * ONE_OVER_255];
