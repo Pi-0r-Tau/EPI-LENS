@@ -593,7 +593,7 @@ if (!window.VideoAnalyzer) {
                     averageChange[ch] = validCount ? sum / validCount : 0;
                 }
             });
-
+            // console.log('Color history lengths:', history.r.length, history.g.length, history.b.length);
             // if (spikes.length > 0) console.warn('Color spikes detected:', spikes);
 
             return {
