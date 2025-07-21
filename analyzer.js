@@ -626,7 +626,13 @@ if (!window.VideoAnalyzer) {
             }
             const variance = sqDiffSum / count;
 
-            return Math.sqrt(variance) / 255;
+            // The division by 255 caused values that were 0 basically only allowing [0,255]
+            // Only normalize if the input values are in the 0-255 range so allows [0,1] or [0,255]
+            const maxValue = Math.max(...values.filter(v => typeof v === 'number' && !isNaN(v)));
+            const normalizationFactor = maxValue > 1 ? 255 : 1;
+
+            return Math.sqrt(variance) / normalizationFactor;
+
         }
 
         detectColorSpikes(changes, fixedThreshold = 0.2, stdDevMultiplier = 2) {
