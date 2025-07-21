@@ -222,3 +222,32 @@ header h2 {
     background: #181818;
     border-radius: 4px;
 }
+#exportOptionsModal .modal-content {
+    width: 320px;
+}
+
+#exportSelectedFormatsBtn {
+    background: #4caf50 !important;
+}
+
+#exportSelectedFormatsBtn:hover {
+    background: #388e3c !important;
+}
+
+
+#exportOptionsModal input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #2196f3;
+}
+
+#exportOptionsModal label {
+    cursor: pointer;
+    user-select: none;
+}
+
+#exportOptionsModal label:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    padding: 2px;
+}

@@ -44,6 +44,33 @@
             </form>
         </div>
     </div>
+    <div id="exportOptionsModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Export Options</h3>
+            <div style="margin: 16px 0;">
+                <p>Select export formats:</p>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin: 12px 0;">
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" id="exportCSVOption" checked>
+                        <span style="margin-left: 8px;">CSV (.csv)</span>
+                    </label>
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" id="exportJSONOption" checked>
+                        <span style="margin-left: 8px;">JSON (.json)</span>
+                    </label>
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" id="exportNDJSONOption" checked>
+                        <span style="margin-left: 8px;">NDJSON (.ndjson)</span>
+                    </label>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+                <button id="exportSelectedFormatsBtn">Export</button>
+                <button id="cancelExportBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="charts-helpers.js"></script>
     <script src="tooltip-helpers.js"></script>
     <script src="metric-color-helpers.js"></script>

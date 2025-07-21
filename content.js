@@ -123,6 +123,9 @@
                     if (analyzer) {
                         if (message.format === 'json') {
                             sendResponse({ json: analyzer.generateJSON() });
+                        } else if (message.format === 'ndjson') {
+                            // Calls the NDJSON generator method
+                            sendResponse({ ndjson: analyzer.generateNDJSON() });
                         } else {
                             sendResponse({ csv: analyzer.generateCSV() });
                         }

@@ -23,12 +23,21 @@ let normalizeMetrics = false;
 document.addEventListener('DOMContentLoaded', async () => {
     let header = document.querySelector('header');
     if (header && !document.getElementById('loadJsonBtn')) {
+        //JSON load button
         const loadBtn = document.createElement('button');
         loadBtn.id = 'loadJsonBtn';
         loadBtn.textContent = 'Load JSON';
         loadBtn.style.marginLeft = '8px';
         loadBtn.onclick = openJsonFileDialog;
         header.querySelector('div').appendChild(loadBtn);
+
+        // NDJSON load button
+        const loadNdJsonBtn = document.createElement('button');
+        loadNdJsonBtn.id = 'loadNdJsonBtn';
+        loadNdJsonBtn.textContent = 'Load NDJSON';
+        loadNdJsonBtn.style.marginLeft = '8px';
+        loadNdJsonBtn.onclick = openNdJsonFileDialog;
+        header.querySelector('div').appendChild(loadNdJsonBtn);
 
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
@@ -37,6 +46,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         fileInput.id = 'jsonFileInput';
         fileInput.onchange = handleJsonFileSelected;
         document.body.appendChild(fileInput);
+
+        const ndJsonFileInput = document.createElement('input');
+        ndJsonFileInput.type = 'file';
+        ndJsonFileInput.accept = '.ndjson,application/x-ndjson';
+        ndJsonFileInput.style.display = 'none';
+        ndJsonFileInput.id = 'ndJsonFileInput';
+        ndJsonFileInput.onchange = handleNdJsonFileSelected;
+        document.body.appendChild(ndJsonFileInput);
     }
 
     if (header && !document.getElementById('customizeColorsBtn')) {
@@ -160,7 +177,8 @@ const ALL_METRICS = [
     { key: "dominantLabA", label: "DomLab a", color: "#f06292" },
     { key: "dominantLabB", label: "DomLab b", color: "#ba68c8" },
     { key: "cie76Delta", label: "CIE76 Δ", color: "#ffea00" },
-    { key: "spectralFlatness", label: "Spectral Flatness", color: "#ffd600" }
+    { key: "spectralFlatness", label: "Spectral Flatness", color: "#ffd600" },
+    { key: "colorAverageChangeMagnitude", label: "Color Change Magnitude", color: "#4caf50" }
 ];
 
 /**
@@ -182,6 +200,7 @@ function flattenMetrics(row) {
         flat['colorVariance.averageChange.r'] = Number(row.colorVariance?.averageChange?.r ?? 0);
         flat['colorVariance.averageChange.g'] = Number(row.colorVariance?.averageChange?.g ?? 0);
         flat['colorVariance.averageChange.b'] = Number(row.colorVariance?.averageChange?.b ?? 0);
+        flat['colorVariance.averageChange.magnitude'] = Number(row.colorVariance?.averageChange?.magnitude ?? 0);
         flat['colorVariance.spikes'] = Array.isArray(row.colorVariance?.spikes) ? row.colorVariance.spikes.length : 0;
     }
 
@@ -760,6 +779,49 @@ function getChartDataForDraw(canvas, chart) {
 
 function exportChartData(selectedCharts) {
     if (!selectedCharts) selectedCharts = charts;
+    showExportOptionsDialog(selectedCharts);
+}
+
+function showExportOptionsDialog(selectedCharts) {
+    const exportModal = document.getElementById('exportOptionsModal');
+    const savedPrefs = JSON.parse(localStorage.getItem('epilens_export_preferences') || '{"csv":true,"json":true,"ndjson":true}');
+
+    document.getElementById('exportCSVOption').checked = savedPrefs.csv;
+    document.getElementById('exportJSONOption').checked = savedPrefs.json;
+    document.getElementById('exportNDJSONOption').checked = savedPrefs.ndjson;
+
+    if (!exportModal.hasInitialized) {
+        document.getElementById('exportSelectedFormatsBtn').addEventListener('click', () => {
+            const exportCSV = document.getElementById('exportCSVOption').checked;
+            const exportJSON = document.getElementById('exportJSONOption').checked;
+            const exportNDJSON = document.getElementById('exportNDJSONOption').checked;
+
+            if (!exportCSV && !exportJSON && !exportNDJSON) {
+                alert('Please select at least one export format');
+                return;
+            }
+
+            localStorage.setItem('epilens_export_preferences', JSON.stringify({
+                csv: exportCSV,
+                json: exportJSON,
+                ndjson: exportNDJSON
+            }));
+
+            exportModal.classList.add('hidden');
+            performExport(selectedCharts, { exportCSV, exportJSON, exportNDJSON });
+        });
+
+        document.getElementById('cancelExportBtn').addEventListener('click', () => {
+            exportModal.classList.add('hidden');
+        });
+
+        exportModal.hasInitialized = true;
+    }
+
+    exportModal.classList.remove('hidden');
+}
+
+function performExport(selectedCharts, options = {}) {
     let allMetrics = new Set();
     selectedCharts.forEach(chart => {
         allMetrics.add(chart.x);
@@ -767,43 +829,66 @@ function exportChartData(selectedCharts) {
     });
     allMetrics = Array.from(allMetrics);
 
-    // CSV
-    let csv = allMetrics.join(',') + '\n';
-    for (let i = 0; i < analysisData.length; ++i) {
-        csv += allMetrics.map(m => analysisData[i][m] ?? '').join(',') + '\n';
+    let csvData = '';
+    let jsonData = [];
+    let ndjsonData = '';
+
+    if (options.exportCSV) {
+        csvData = allMetrics.join(',') + '\n';
+        for (let i = 0; i < analysisData.length; ++i) {
+            csvData += allMetrics.map(m => analysisData[i][m] ?? '').join(',') + '\n';
+        }
     }
 
-    // JSON
-    let json = analysisData.map(row => {
-        const obj = {};
-        allMetrics.forEach(m => obj[m] = row[m]);
-        return obj;
-    });
+    if (options.exportJSON || options.exportNDJSON) {
+        jsonData = analysisData.map(row => {
+            const obj = {};
+            allMetrics.forEach(m => obj[m] = row[m]);
+            return obj;
+        });
 
+        if (options.exportNDJSON) {
+            ndjsonData = jsonData.map(obj => JSON.stringify(obj)).join('\n');
+        }
+    }
 
-    const blobCsv = new Blob([csv], { type: 'text/csv' });
-    const blobJson = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
-    const aCsv = document.createElement('a');
-    aCsv.href = URL.createObjectURL(blobCsv);
-    aCsv.download = 'epilens-charts-export.csv';
-    aCsv.style.display = 'none';
-    document.body.appendChild(aCsv);
-    aCsv.click();
+    let exportDelay = 0;
+
+    if (options.exportCSV) {
+        setTimeout(() => {
+            const blobCsv = new Blob([csvData], { type: 'text/csv' });
+            downloadFile(blobCsv, 'epilens-charts-export.csv');
+        }, exportDelay);
+        exportDelay += 150;
+    }
+
+    if (options.exportJSON) {
+        setTimeout(() => {
+            const blobJson = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+            downloadFile(blobJson, 'epilens-charts-export.json');
+        }, exportDelay);
+        exportDelay += 150;
+    }
+
+    if (options.exportNDJSON) {
+        setTimeout(() => {
+            const blobNdjson = new Blob([ndjsonData], { type: 'application/x-ndjson' });
+            downloadFile(blobNdjson, 'epilens-charts-export.ndjson');
+        }, exportDelay);
+    }
+}
+
+function downloadFile(blob, filename) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
     setTimeout(() => {
-        URL.revokeObjectURL(aCsv.href);
-        aCsv.remove();
-    }, 100);
-
-    const aJson = document.createElement('a');
-    aJson.href = URL.createObjectURL(blobJson);
-    aJson.download = 'epilens-charts-export.json';
-    aJson.style.display = 'none';
-    document.body.appendChild(aJson);
-    aJson.click();
-    setTimeout(() => {
-        URL.revokeObjectURL(aJson.href);
-        aJson.remove();
-    }, 100);
+        URL.revokeObjectURL(a.href);
+        a.remove();
+    }, 300);
 }
 
 
@@ -925,17 +1010,67 @@ function handleJsonFileSelected(e) {
     reader.onload = function(evt) {
         try {
             const json = JSON.parse(evt.target.result);
-            if (json.analysis && Array.isArray(json.analysis)) {
-                analysisData = json.analysis.map(row => flattenMetrics(row));
+            let data;
+
+            // Handle JSON being JSON
+            if (Array.isArray(json)) {
+                // Direct array of data
+                data = json;
+            } else if (json.analysis && Array.isArray(json.analysis)) {
+                // MyEPI-LENS standard format
+                data = json.analysis;
+            } else if (json.data && Array.isArray(json.data)) {
+                // OR format with data property
+                data = json.data;
+            } else {
+                // When all else fails try to use the JSON object directly
+                data = [json];
+            }
+
+            if (data.length > 0) {
+                analysisData = data.map(row => flattenMetrics(row));
                 availableFields = Object.keys(analysisData[0] || {});
                 charts = [];
                 playbackIndex = 0;
                 renderAllCharts();
             } else {
-                showError('Invalid analysis JSON format.');
+                showError('No data found in JSON file.');
             }
         } catch (err) {
-            showError('Failed to parse JSON file.');
+            showError('Failed to parse JSON file: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function openNdJsonFileDialog() {
+    const fileInput = document.getElementById('ndJsonFileInput');
+    if (fileInput) fileInput.click();
+}
+
+function handleNdJsonFileSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        try {
+            const content = evt.target.result;
+            // Basically unwrap NDJSON into an array of objects
+            const jsonLines = content.split(/\r?\n/).filter(line => line.trim());
+            const parsedData = jsonLines.map(line => JSON.parse(line));
+
+            if (parsedData.length > 0) {
+                // Convert NDJSON to the same format as JSON
+                analysisData = parsedData.map(row => flattenMetrics(row));
+                availableFields = Object.keys(analysisData[0] || {});
+                charts = [];
+                playbackIndex = 0;
+                renderAllCharts();
+            } else {
+                showError('No data found in NDJSON file.');
+            }
+        } catch (err) {
+            showError('Failed to parse NDJSON file: ' + err.message);
         }
     };
     reader.readAsText(file);
