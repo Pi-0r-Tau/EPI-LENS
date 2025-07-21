@@ -8,44 +8,46 @@ document.addEventListener('DOMContentLoaded', () => {
     let controls = {};
 
     function initializeControls() {
-        controls = {
-            startBtn: document.getElementById('startAnalysis'),
-            stopBtn: document.getElementById('stopAnalysis'),
-            exportBtn: document.getElementById('exportCSV'),
-            exportJsonBtn: document.getElementById('exportJSON'),
-            flashThreshold: document.getElementById('flashThreshold'),
-            intensityThreshold: document.getElementById('intensityThreshold'),
-            flashThresholdValue: document.getElementById('flashThresholdValue'),
-            intensityThresholdValue: document.getElementById('intensityThresholdValue'),
-            openChartsTab: document.getElementById('openChartsTab'),
-            clearAllDataBtn: document.getElementById('clearAllDataBtn'),
-            openFileAnalyzerTab: document.getElementById('openFileAnalyzerTab')
-        };
+    controls = {
+        startBtn: document.getElementById('startAnalysis'),
+        stopBtn: document.getElementById('stopAnalysis'),
+        exportBtn: document.getElementById('exportCSV'),
+        exportJsonBtn: document.getElementById('exportJSON'),
+        exportNdJsonBtn: document.getElementById('exportNDJSON'),
+        flashThreshold: document.getElementById('flashThreshold'),
+        intensityThreshold: document.getElementById('intensityThreshold'),
+        flashThresholdValue: document.getElementById('flashThresholdValue'),
+        intensityThresholdValue: document.getElementById('intensityThresholdValue'),
+        openChartsTab: document.getElementById('openChartsTab'),
+        clearAllDataBtn: document.getElementById('clearAllDataBtn'),
+        openFileAnalyzerTab: document.getElementById('openFileAnalyzerTab')
+    };
 
-        Object.entries(controls).forEach(([key, element]) => {
-            if (element) {
-                if (key === 'flashThreshold' || key === 'intensityThreshold') {
-                    element.addEventListener('input', updateThresholdDisplay);
-                } else if (element) {
-                    element.addEventListener('click', getClickHandler(key));
-                }
+    Object.entries(controls).forEach(([key, element]) => {
+        if (element) {
+            if (key === 'flashThreshold' || key === 'intensityThreshold') {
+                element.addEventListener('input', updateThresholdDisplay);
+            } else if (element) {
+                element.addEventListener('click', getClickHandler(key));
             }
-        });
+        }
+    });
 
-        if (controls.startBtn) controls.startBtn.addEventListener('click', startAnalysis);
-        if (controls.stopBtn) controls.stopBtn.addEventListener('click', stopAnalysis);
-        if (controls.exportBtn) controls.exportBtn.addEventListener('click', exportResults);
-        if (controls.exportJsonBtn) controls.exportJsonBtn.addEventListener('click', exportJSON);
-        if (controls.openChartsTab) {
-            controls.openChartsTab.addEventListener('click', openChartsTab);
-        }
-        if (controls.clearAllDataBtn) {
-            controls.clearAllDataBtn.addEventListener('click', clearAllData);
-        }
-        if (controls.openFileAnalyzerTab) {
-            controls.openFileAnalyzerTab.addEventListener('click', openFileAnalyzerTab);
-        }
+    if (controls.startBtn) controls.startBtn.addEventListener('click', startAnalysis);
+    if (controls.stopBtn) controls.stopBtn.addEventListener('click', stopAnalysis);
+    if (controls.exportBtn) controls.exportBtn.addEventListener('click', exportResults);
+    if (controls.exportJsonBtn) controls.exportJsonBtn.addEventListener('click', exportJSON);
+    if (controls.exportNdJsonBtn) controls.exportNdJsonBtn.addEventListener('click', exportNDJSON);
+    if (controls.openChartsTab) {
+        controls.openChartsTab.addEventListener('click', openChartsTab);
     }
+    if (controls.clearAllDataBtn) {
+        controls.clearAllDataBtn.addEventListener('click', clearAllData);
+    }
+    if (controls.openFileAnalyzerTab) {
+        controls.openFileAnalyzerTab.addEventListener('click', openFileAnalyzerTab);
+    }
+}
 
     function updateThresholdDisplay(event) {
         const valueElement = document.getElementById(`${event.target.id}Value`);
@@ -104,6 +106,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    function exportNDJSON() {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, {action: 'EXPORT_DATA', format: 'ndjson'}, function(response) {
+            if (response && response.ndjson) {
+                const blob = new Blob([response.ndjson], { type: 'application/x-ndjson' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `flash-analysis-${new Date().toISOString()}.ndjson`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            }
+        });
+    });
+}
 
     /**
      * Starts the analysis by sending a message to the content script with current threshold options
