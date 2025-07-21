@@ -469,7 +469,6 @@ if (!window.VideoAnalyzer) {
         calculateColorVariance(imageData) {
             if (!imageData?.data || imageData.data.length < 4) return { r: 0, g: 0, b: 0 };
 
-
             const SAMPLE_SIZE = 1024;
             const data = imageData.data;
             const pixelCount = data.length >>> 2;
@@ -507,9 +506,9 @@ if (!window.VideoAnalyzer) {
             const historyLen = this.advancedMetrics.historyLength || 30;
             if (!this.advancedMetrics.colorHistory._ring) {
                 this.advancedMetrics.colorHistory._ring = {
-                    r: new Float32Array(historyLen),
-                    g: new Float32Array(historyLen),
-                    b: new Float32Array(historyLen),
+                    r: new Float32Array(historyLen).fill(0),
+                    g: new Float32Array(historyLen).fill(0),
+                    b: new Float32Array(historyLen).fill(0),
                     idx: 0,
                     count: 0
                 };
@@ -522,12 +521,24 @@ if (!window.VideoAnalyzer) {
             ring.idx = (ring.idx + 1) % historyLen;
             if (ring.count < historyLen) ring.count++;
 
-            // Store current color history for temporal analysis
-            this.advancedMetrics.colorHistory.r = ring.r.slice(0, ring.count);
-            this.advancedMetrics.colorHistory.g = ring.g.slice(0, ring.count);
-            this.advancedMetrics.colorHistory.b = ring.b.slice(0, ring.count);
+            // Create proper arrays from ring buffer for temporal analysis, fixes issue with correct historical data for variance calculation
+            const rHistory = new Float32Array(ring.count);
+            const gHistory = new Float32Array(ring.count);
+            const bHistory = new Float32Array(ring.count);
 
-            // Temporal analysis and spike detection
+            for (let i = 0; i < ring.count; i++) {
+                // Calculate correct index in the ring buffer
+                const idx = (ring.idx - 1 - i + historyLen) % historyLen;
+                rHistory[i] = ring.r[idx];
+                gHistory[i] = ring.g[idx];
+                bHistory[i] = ring.b[idx];
+            }
+
+            // Store current color history for temporal analysis
+            this.advancedMetrics.colorHistory.r = Array.from(rHistory);
+            this.advancedMetrics.colorHistory.g = Array.from(gHistory);
+            this.advancedMetrics.colorHistory.b = Array.from(bHistory);
+
             const temporalAnalysis = this.analyzeColorHistory();
 
             return {
