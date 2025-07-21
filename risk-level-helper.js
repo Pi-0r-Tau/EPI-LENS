@@ -45,9 +45,7 @@
         const chromaHistory = advancedMetrics.chromaticFlashes?.lastColors || [];
         const latestChroma = chromaHistory.length ? chromaHistory[chromaHistory.length - 1] : { redGreen: 0, blueYellow: 0 };
         const redIntensity = typeof lastRedIntensity === 'number' ? lastRedIntensity : 0;
-        const redDelta = typeof lastRedIntensity === 'number' && typeof prevRedIntensity === 'number'
-            ? Math.abs(lastRedIntensity - prevRedIntensity)
-            : 0;
+        const redDelta = typeof lastRedIntensity === 'number' && typeof prevRedIntensity === 'number'? Math.abs(lastRedIntensity - prevRedIntensity) : 0;
         const patternedStimulusScore = patternHistory.length ? patternHistory[patternHistory.length - 1] : 0;
         const flickerHz = advancedMetrics.spectralAnalysis?.dominantFrequency || 0;
         const psiScore = advancedMetrics.psi?.score || 0;
