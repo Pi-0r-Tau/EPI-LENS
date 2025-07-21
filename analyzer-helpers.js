@@ -363,6 +363,7 @@ function extractDominantColors(data, n = 5) {
     // Map key: 0xRRGGBB integer, value: count
     const colorMap = new Map();
     for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] === 0) continue; // reduce computation for transparent pixels; ignore them don't want them skewing resultss
         const r = (data[i] >> 5) << 5;       // 0-255 reduced to 0,32,64,...224
         const g = (data[i + 1] >> 5) << 5;
         const b = (data[i + 2] >> 5) << 5;
