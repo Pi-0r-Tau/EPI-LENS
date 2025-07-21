@@ -1278,7 +1278,9 @@ if (!window.VideoAnalyzer) {
 
             return edgeChange;
         }
-
+        // Color Change Mag added:
+        // Improves the number of exported metrics from 47 to 48
+        // It is the overall amount of color change between frames, calculated as the Euclidean distance of the avg change rates for R, G, B channels
         generateCSV() {
             try {
                 const headers = [
@@ -1327,7 +1329,9 @@ if (!window.VideoAnalyzer) {
                     'Dominant Lab b',
                     'CIE76 Delta',
                     'Patterned Stimulus Score',
-                    'Scene Change Score'
+                    'Scene Change Score',
+                    'Color Change Magnitude'
+
                 ];
                 const allData = [...this.dataChunks.flat(), ...this.currentChunk]
                     .filter(entry => entry.timestamp >= 0)
@@ -1340,6 +1344,13 @@ if (!window.VideoAnalyzer) {
                         averageChange: { r: 0, g: 0, b: 0 },
                         spikes: []
                     };
+
+                    // Calculate temporal color change magnitude (Euclidean distance)
+                    const rChange = Number(colorVar.averageChange?.r || 0);
+                    const gChange = Number(colorVar.averageChange?.g || 0);
+                    const bChange = Number(colorVar.averageChange?.b || 0);
+                    const colorChangeMagnitude = Math.sqrt(rChange * rChange + gChange * gChange + bChange * bChange);
+
                     return [
                         Number(entry.timestamp || 0).toFixed(6),
                         Number(entry.brightness || 0).toFixed(4),
@@ -1386,7 +1397,8 @@ if (!window.VideoAnalyzer) {
                         Number(entry.dominantLab?.b || 0).toFixed(2),
                         Number(entry.cie76Delta || 0).toFixed(4),
                         Number(entry.patternedStimulusScore || 0).toFixed(4),
-                        Number(entry.sceneChangeScore || 0).toFixed(4)
+                        Number(entry.sceneChangeScore || 0).toFixed(4),
+                        Number(colorChangeMagnitude).toFixed(4)
                     ];
                 });
                 return [headers, ...rows]
