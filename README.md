@@ -4,7 +4,7 @@
 
 EPI-LENS is a browser extension designed to analyse video content for potentially harmful photosensitive triggers in real-time. Designed for use in empirical research, accessibility auditing and machine learning dataset generation. 
 
-Extracts temporal, spatial and spectral metrics from video content and exports data as CSV and JSON.
+Extracts temporal, spatial and spectral metrics from video content and exports data as CSV, JSON and NDJSON.
 
 Think of it like PEAT (Photosensitive Epilepsy Analysis Tool) but open source, vanilla JS and a browser extension.
 
@@ -81,6 +81,8 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
     - Error recovery and graceful degradation implemented for corrupted frames or werid input
     - Fast Fourier Transform using optimized Cooley-Tukey algorithm with bit reversal and twiddle factor caching futher improvements
     - RGB to LAB color space conversion improved for perceptual color difference measurements
+ 
+- NDJSON import and export supported
 
 ## Recent updates to metrics
 - Patterned stimulus score
@@ -90,7 +92,8 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 -  Red Delta
 -  Red Intensity
 -  Scene Change Score
-- Spectral Flatness 
+- Spectral Flatness
+- Color Change Magnitude
 
 ## Updates in progress
 - Implementation of Jordan, J. B. & Vanderheiden, G. C. (2024). International Guidelines for Photosensitive Epilepsy: Gap Analysis and Recommendations. ACM Transactions on Accessible Computing, 17(3), 17:1 - 17:35. (https://github.com/jbjord/pseGuidelines)
