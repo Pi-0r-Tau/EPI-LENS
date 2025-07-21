@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "EPI-LENS",
-  "version": "4",
+  "version": "5",
   "description": "Real-time quantitative analysis of video content for photosensitive trigger detection.",
   "permissions": [
     "activeTab",
@@ -27,7 +27,7 @@
   },
   "content_scripts": [{
     "matches": ["*://*.youtube.com/*"],
-    "js": [ "analyzer-helpers.js", "analyzer.js", "content.js"],
+    "js": [ "risk-level-helper.js", "analyzer-helpers.js", "analyzer.js", "content.js"],
     "run_at": "document_start"
   }],
   "icons": {

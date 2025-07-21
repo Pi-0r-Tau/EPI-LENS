@@ -421,22 +421,21 @@ if (!window.VideoAnalyzer) {
         }
 
         updateRiskLevel() {
-            const flashRate = this.metrics.flashCount / (this.metrics.frameCount / 60);
-            const intensity = this.calculateAverageIntensity();
-            const fpsThresh = this.thresholds.flashesPerSecond || 3;
-            if (flashRate > fpsThresh || this.metrics.flashCount > 30 || intensity > 0.8) {
-                this.metrics.riskLevel = 'high';
-            } else if (flashRate > (fpsThresh * 0.66) || this.metrics.flashCount > 15 || intensity > 0.5) {
-                this.metrics.riskLevel = 'medium';
-            } else {
-                this.metrics.riskLevel = 'low';
-            }
-            return {
-                level: this.metrics.riskLevel,
-                flashCount: this.metrics.flashCount,
-                flashRate: flashRate,
-                intensity: intensity
-            };
+            const riskAssessment = window.RiskLevelHelper.calculateRiskLevel({
+                metrics: this.metrics,
+                calculateAverageIntensity: () => this.calculateAverageIntensity(),
+                calculateCoverage: (imageData) => this.calculateCoverage(imageData),
+                canvas: this.canvas,
+                context: this.context,
+                advancedMetrics: this.advancedMetrics,
+                lastRedIntensity: this.lastRedIntensity,
+                prevRedIntensity: this.prevRedIntensity,
+                patternHistory: this.patternHistory
+            });
+
+            this.metrics.riskLevel = riskAssessment.level;
+
+            return riskAssessment;
         }
 
         calculateAverageIntensity() {
