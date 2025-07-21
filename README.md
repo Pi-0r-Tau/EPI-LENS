@@ -29,7 +29,7 @@ Risk score is calculated as instances of a flash for threshold criteria within s
   - Flash detection algorithms
   - Content safety classification
   - Automated video content moderation
-- Structured data export in CSV/JSON formats for direct ML pipeline integration
+- Structured data export in CSV/JSON/NDJSON formats for direct ML pipeline integration
 - Frame-by-frame analysis with detailed metrics for model training
 - Temporal analysis data for sequence-based learning models
 
