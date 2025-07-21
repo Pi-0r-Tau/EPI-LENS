@@ -418,9 +418,9 @@ function calculateFrameDifference(currentFrame) {
         for (let pixelOffset = 0; pixelOffset < blockSize; pixelOffset += 16) {
             for (let k = 0; k < 16; k += 4) {
                 const idx = blockOffset + pixelOffset + k;
-                const rDiff = Math.abs(data1[idx] - data2[idx]);
-                const gDiff = Math.abs(data1[idx + 1] - data2[idx + 1]);
-                const bDiff = Math.abs(data1[idx + 2] - data2[idx + 2]);
+                const rDiff = abs(data1[idx] - data2[idx]);
+                const gDiff = abs(data1[idx + 1] - data2[idx + 1]);
+                const bDiff = abs(data1[idx + 2] - data2[idx + 2]);
                 const diff = rDiff + gDiff + bDiff;
                 localDiff += diff;
                 localMotion += diff > threshold ? 1 : 0;
@@ -431,9 +431,9 @@ function calculateFrameDifference(currentFrame) {
     }
 
     for (let blockOffset = (len - len % blockSize); blockOffset < len; blockOffset += 4) {
-        const rDiff = Math.abs(data1[blockOffset] - data2[blockOffset]);
-        const gDiff = Math.abs(data1[blockOffset + 1] - data2[blockOffset + 1]);
-        const bDiff = Math.abs(data1[blockOffset + 2] - data2[blockOffset + 2]);
+        const rDiff = abs(data1[blockOffset] - data2[blockOffset]);
+        const gDiff = abs(data1[blockOffset + 1] - data2[blockOffset + 1]);
+        const bDiff = abs(data1[blockOffset + 2] - data2[blockOffset + 2]);
         const diff = rDiff + gDiff + bDiff;
         totalDiff += diff;
         motionPixels += diff > threshold ? 1 : 0;
