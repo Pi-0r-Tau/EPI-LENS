@@ -76,7 +76,7 @@
 
     function performFFT(signal) {
     const signalLength = signal.length;
-    if (signalLength <= 1 || (signalLength & (signalLength - 1)) !== 0 || signalLength > 1048576) {
+    if (signalLength <= 1 || (signalLength & (signalLength - 1)) !== 0 || signalLength > MAX_SIGNAL_LENGTH) {
         return padToPowerOfTwo(signal);
     }
 
