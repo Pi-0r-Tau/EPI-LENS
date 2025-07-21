@@ -260,16 +260,23 @@ function calculateDominantColor(imageData) {
     if (n === 0) return { r: 0, g: 0, b: 0 };
 
     let r = 0, g = 0, b = 0;
+    let count = 0; // Define count to track non-transparent pixels
+
     for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] === 0) continue; // Skip transparent pixels
         r += data[i];     // Red
         g += data[i + 1]; // Green
         b += data[i + 2]; // Blue
+        count++;
     }
-    const invN = 1 / n; // Precompute inverse for performance
+
+    if (count === 0) return { r: 0, g: 0, b: 0 };
+
+    const invCount = 1 / count;
     return {
-        r: r * invN,
-        g: g * invN,
-        b: b * invN
+        r: r * invCount,
+        g: g * invCount,
+        b: b * invCount
     };
 }
 
