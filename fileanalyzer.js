@@ -199,8 +199,7 @@ window.addEventListener('DOMContentLoaded', () => {
 fileInput.addEventListener('change', handleFileSelect);
 document.getElementById('startFileAnalysis').addEventListener('click', startAnalysis);
 document.getElementById('stopFileAnalysis').addEventListener('click', stopAnalysis);
-document.getElementById('exportFileCSV').addEventListener('click', exportCSV);
-document.getElementById('exportFileJSON').addEventListener('click', exportJSON);
+document.getElementById('exportSelectedFormats').addEventListener('click', exportSelectedFormats);
 
 function openChartsView() {
     if (!analyzer) return;
@@ -438,9 +437,7 @@ function updateLiveMetricsChart(data) {
         dominantLabB: data.dominantLab?.b ?? 0,
         cie76Delta: data.cie76Delta ?? 0,
         patternedStimulusScore: data.patternedStimulusScore ?? 0,
-        spectralFlatness: typeof data.spectralFlatness !== "undefined"
-            ? Number(data.spectralFlatness)
-            : (data.spectralAnalysis?.spectralFlatness ?? 0),
+        spectralFlatness: typeof data.spectralFlatness !== "undefined" ? Number(data.spectralFlatness) : (data.spectralAnalysis?.spectralFlatness ?? 0),
         sceneChangeScore: data.sceneChangeScore ?? 0,
     });
     if (liveMetricsHistory.length > maxPoints) liveMetricsHistory.shift();
@@ -491,50 +488,58 @@ function updateLiveMetricsLegend() {
     ).join('');
 }
 
-/**
- * Exports the current video analysis data as a CSV file.
- * @param {boolean} [auto=false] 
- * @returns {void}
- */
-function exportCSV(auto = false) {
+function exportSelectedFormats() {
     if (!analyzer) return;
-    const csv = analyzer.generateCSV();
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    let filename = `epilens-file-analysis-${Date.now()}.csv`;
+
+    // Get selected export formats
+    const exportCSV = document.getElementById('exportCSVOption').checked;
+    const exportJSON = document.getElementById('exportJSONOption').checked;
+    const exportNDJSON = document.getElementById('exportNDJSONOption').checked;
+
+    // Get base filename
+    let baseFilename = `epilens-file-analysis-${Date.now()}`;
     if (playlist.length && playlist[playlistIndex]) {
-        filename = `epilens-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}.csv`;
+        baseFilename = `epilens-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}`;
     }
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    if (!auto) a.click();
-    else setTimeout(() => a.click(), 100);
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 200);
+
+    let exportDelay = 0;
+
+    if (exportCSV) {
+        setTimeout(() => {
+            const csv = analyzer.generateCSV();
+            downloadFile(csv, `${baseFilename}.csv`, 'text/csv');
+        }, exportDelay);
+        exportDelay += 150;
+    }
+
+    if (exportJSON) {
+        setTimeout(() => {
+            const json = analyzer.generateJSON();
+            downloadFile(json, `${baseFilename}.json`, 'application/json');
+        }, exportDelay);
+        exportDelay += 150;
+    }
+
+    if (exportNDJSON) {
+        setTimeout(() => {
+            const ndjson = analyzer.generateNDJSON();
+            downloadFile(ndjson, `${baseFilename}.ndjson`, 'application/x-ndjson');
+        }, exportDelay);
+    }
 }
 
-/**
- * Exports the current video analysis data as a JSON file.
- * @param {boolean} [auto=false] 
- * @returns {void}
- */
-function exportJSON(auto = false) {
-    if (!analyzer) return;
-    const json = analyzer.generateJSON();
-    const blob = new Blob([json], { type: 'application/json' });
+function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    let filename = `epilens-file-analysis-${Date.now()}.json`;
-    if (playlist.length && playlist[playlistIndex]) {
-        filename = `epilens-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}.json`;
-    }
+    a.href = URL.createObjectURL(blob);    
     a.download = filename;
     a.style.display = 'none';
     document.body.appendChild(a);
-    if (!auto) a.click();
-    else setTimeout(() => a.click(), 200);
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+    a.click();
+    setTimeout(() => {
+        URL.revokeObjectURL(a.href);
+        a.remove();
+    }, 300);
 }
 
 // Sanitizes file names for export
@@ -591,8 +596,41 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
     }
     stopAnalysis();
 
-    exportCSV(true);
-    exportJSON(true);
+    // Automatically export in all selected formats, be it one, two or three
+    // Nice to know thingy: By just selecting NDJSON the analysis speed is lightyears faster
+    const exportCSV = document.getElementById('exportCSVOption').checked;
+    const exportJSON = document.getElementById('exportJSONOption').checked;
+    const exportNDJSON = document.getElementById('exportNDJSONOption').checked;
+
+    let baseFilename = `epilens-file-analysis-${Date.now()}`;
+    if (playlist.length && playlist[playlistIndex]) {
+        baseFilename = `epilens-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}`;
+    }
+
+    let exportDelay = 100;
+
+    if (exportCSV) {
+        setTimeout(() => {
+            const csv = analyzer.generateCSV();
+            downloadFile(csv, `${baseFilename}.csv`, 'text/csv');
+        }, exportDelay);
+        exportDelay += 150;
+    }
+
+    if (exportJSON) {
+        setTimeout(() => {
+            const json = analyzer.generateJSON();
+            downloadFile(json, `${baseFilename}.json`, 'application/json');
+        }, exportDelay);
+        exportDelay += 150;
+    }
+
+    if (exportNDJSON) {
+        setTimeout(() => {
+            const ndjson = analyzer.generateNDJSON();
+            downloadFile(ndjson, `${baseFilename}.ndjson`, 'application/x-ndjson');
+        }, exportDelay);
+    }
 
      try {
         if (analyzer && analyzer.timelineData && analyzer.timelineData.length > 0) {

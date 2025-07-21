@@ -52,8 +52,15 @@
                 <div id="analysisControls" class="controls-panel" style="display:none;">
                     <button id="startFileAnalysis">Start Analysis</button>
                     <button id="stopFileAnalysis">Stop Analysis</button>
-                    <button id="exportFileCSV">Export CSV</button>
-                    <button id="exportFileJSON">Export JSON</button>
+                    <div class="export-options">
+                        <h4>Export Formats</h4>
+                        <div class="export-checkboxes">
+                            <label><input type="checkbox" id="exportCSVOption" checked> CSV</label>
+                            <label><input type="checkbox" id="exportJSONOption" checked> JSON</label>
+                            <label><input type="checkbox" id="exportNDJSONOption" checked> NDJSON</label>
+                        </div>
+                        <button id="exportSelectedFormats">Export Selected</button>
+                    </div>
                 </div>
             </div>
             <div class="panel summary-panel" id="SummaryPanel">
