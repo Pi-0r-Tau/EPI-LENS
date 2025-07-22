@@ -924,8 +924,8 @@ if (!window.VideoAnalyzer) {
                     r = (typeof r === 'number' && !isNaN(r)) ? r : 0;
                     g = (typeof g === 'number' && !isNaN(g)) ? g : 0;
                     b = (typeof b === 'number' && !isNaN(b)) ? b : 0;
-                    redGreenSum += Math.abs(r - g);
-                    blueYellowSum += Math.abs(b - Math.round((r + g) / 2));
+                    redGreenSum += Math.abs(r - g) / Math.sqrt(2);
+                    blueYellowSum += Math.abs(b - ((r + g) / 2)) / Math.sqrt(6);
                 }
             }
             for (; i < len; i += 4) {
@@ -933,8 +933,8 @@ if (!window.VideoAnalyzer) {
                 r = (typeof r === 'number' && !isNaN(r)) ? r : 0;
                 g = (typeof g === 'number' && !isNaN(g)) ? g : 0;
                 b = (typeof b === 'number' && !isNaN(b)) ? b : 0;
-                redGreenSum += Math.abs(r - g);
-                blueYellowSum += Math.abs(b - Math.round((r + g) / 2));
+                redGreenSum += Math.abs(r - g) / Math.sqrt(2);
+                blueYellowSum += Math.abs(b - ((r + g) / 2)) / Math.sqrt(6);
             }
 
             const norm = pixels > 0 ? 1 / (pixels * 255) : 0;
@@ -1109,7 +1109,7 @@ if (!window.VideoAnalyzer) {
             }
 
             const isPeriodic = maxVal > threshold;
-            
+
             // if (isPeriodic) console.warn('Periodicity detected:', { period: maxLag, confidence: maxVal });
 
             return {
@@ -1598,8 +1598,7 @@ if (!window.VideoAnalyzer) {
                                 g: Number(colorVar.averageChange?.g || 0).toFixed(4),
                                 b: Number(colorVar.averageChange?.b || 0).toFixed(4),
                                 magnitude: Number(colorChangeMagnitude).toFixed(4)
-                            },
-
+                            }
                         },
                         temporalChange: Number(entry.temporalChange || 0).toFixed(4),
                         flickerFrequency: Number(entry.flickerFrequency || 0).toFixed(2),
@@ -1619,10 +1618,12 @@ if (!window.VideoAnalyzer) {
                         },
                         spectralAnalysis: {
                             dominantFrequency: Number(entry.spectralAnalysis?.dominantFrequency || 0).toFixed(2),
-                            spectralFlatness: Number(entry.spectralFlatness || 0).toFixed(4)
+                            spectralFlatness: Number(entry.spectralFlatness || 0).toFixed(4),
+                            spectrum: entry.spectralAnalysis?.spectrum || [] 
                         },
                         temporalCoherence: {
-                            score: Number(entry.temporalCoherence?.coherenceScore || 0).toFixed(4)
+                            score: Number(entry.temporalCoherence?.coherenceScore || 0).toFixed(4),
+                            periodicity: entry.temporalCoherence?.periodicity || null 
                         },
                         edgeDetection: {
                             density: Number(entry.edgeDetection?.edgeDensity || 0).toFixed(4),
@@ -1636,17 +1637,28 @@ if (!window.VideoAnalyzer) {
                             g: Number(entry.dominantColor.g || 0).toFixed(1),
                             b: Number(entry.dominantColor.b || 0).toFixed(1)
                         } : null,
+                        dominantLab: entry.dominantLab ? { 
+                            l: Number(entry.dominantLab.l || 0).toFixed(2),
+                            a: Number(entry.dominantLab.a || 0).toFixed(2),
+                            b: Number(entry.dominantLab.b || 0).toFixed(2)
+                        } : null,
                         cie76Delta: Number(entry.cie76Delta || 0).toFixed(4),
-                                patternedStimulusScore: Number(entry.patternedStimulusScore || 0).toFixed(4),
-                                sceneChangeScore: Number(entry.sceneChangeScore || 0).toFixed(4),
-                            }
-                    
+                        patternedStimulusScore: Number(entry.patternedStimulusScore || 0).toFixed(4),
+                        sceneChangeScore: Number(entry.sceneChangeScore || 0).toFixed(4),
+                        spatialMap: entry.spatialMap ? {
+                            center: Number(entry.spatialMap.center || 0).toFixed(4),
+                            periphery: Number(entry.spatialMap.periphery || 0).toFixed(4),
+                            quadrants: entry.spatialMap.quadrants || []
+                        } : null,
+                        chromaticFlashes: entry.chromaticFlashes ? { 
+                            redGreen: Number(entry.chromaticFlashes.redGreen || 0).toFixed(4),
+                            blueYellow: Number(entry.chromaticFlashes.blueYellow || 0).toFixed(4)
+                        } : null
+                    };
 
-                    // Return JSON string
                     return JSON.stringify(frameData);
                 });
 
-                // Join with newlines to create NDJSON format
                 return lines.join('\n');
             } catch (error) {
                 console.error('NDJSON generation error:', error);
