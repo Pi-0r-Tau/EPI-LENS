@@ -83,6 +83,7 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
     - RGB to LAB color space conversion improved for perceptual color difference measurements
  
 - NDJSON import and export supported
+  - This helps with quota bytes exceeded when analysing multiple files in the fileanalyzer. As it exports each complete analysis after each video, if you have this issue you can load data into the charts view with NDJSON or JSON
 
 ## Recent updates to metrics
 - Patterned stimulus score
