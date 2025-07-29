@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "EPI-LENS",
-  "version": "5",
+  "version": "6",
   "description": "Real-time quantitative analysis of video content for photosensitive trigger detection.",
   "permissions": [
     "activeTab",
@@ -27,7 +27,36 @@
   },
   "content_scripts": [{
     "matches": ["*://*.youtube.com/*"],
-    "js": [ "risk-level-helper.js", "analyzer-helpers.js", "analyzer.js", "content.js"],
+    "js": [
+    "risk-level-helper.js",
+    "analyzer-helpers.js",
+    "helpers/Avg/avgBrightness.js",
+    "helpers/Avg/avgRedIntensity.js",
+    "helpers/Color/coverage.js",
+    "helpers/Avg/avgIntensity.js",
+    "helpers/Color/colorVar.js",
+    "helpers/Color/colorHist.js",
+    "helpers/Temporal/tempVar.js",
+    "helpers/Color/colorSpikes.js",
+    "helpers/Temporal/tempChange.js",
+    "helpers/Temporal/estFlickerFreq.js",
+    "helpers/Temporal/frameEntropy.js",
+    "helpers/Spatial/spatialDistrib.js",
+    "helpers/Color/chromaticFlashes.js",
+    "helpers/Temporal/tempContrast.js",
+    "helpers/Spectral/spectralAnalysis.js",
+    "helpers/Temporal/periodicity.js",
+    "helpers/Temporal/tempCoherence.js",
+    "helpers/Spatial/spatialEdges.js",
+    "helpers/Color/luminance.js",
+    "helpers/Spatial/spatialEdgeChange.js",
+    "helpers/Export/CSV.js",
+    "helpers/Export/reports.js",
+    "helpers/Export/JSON.js",
+    "helpers/Export/NDJSON.js",
+    "analyzer.js",
+    "content.js"
+    ],
     "run_at": "document_start"
   }],
   "icons": {
