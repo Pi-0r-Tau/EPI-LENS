@@ -98,7 +98,8 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 
 ## Updates in progress
 - Implementation of Jordan, J. B. & Vanderheiden, G. C. (2024). International Guidelines for Photosensitive Epilepsy: Gap Analysis and Recommendations. ACM Transactions on Accessible Computing, 17(3), 17:1 - 17:35. (https://github.com/jbjord/pseGuidelines)
-- Library based FFT, but with the current implementation as a fallback. (Don't want to use libraries but for FFT speed is needed not just accuracy)
+- Removing of legacy analyzer-helpers.js and splitting in sub helper files: aiming for a highly modular codebase so each file can be tuned and improved simply.
+- Library based FFT, dsp.js, tried and tested as custom FFT is lacking. 
 
 ## Future metrics
 - Chromatic Flicker Fusion Rate (CFFR)
