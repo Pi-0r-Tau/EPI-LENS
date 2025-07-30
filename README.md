@@ -469,7 +469,6 @@ graph TB
         
     end
 
-    %% --- CHANGES/ADDITIONS ---
     subgraph Interactive_Charts [Interactive Charts & Data Explorer]
         CHARTS["Charts UI (charts.html/js)"]
         ZOOM["Zoom & Selection"]
