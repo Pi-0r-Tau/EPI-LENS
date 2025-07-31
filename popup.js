@@ -8,46 +8,46 @@ document.addEventListener('DOMContentLoaded', () => {
     let controls = {};
 
     function initializeControls() {
-    controls = {
-        startBtn: document.getElementById('startAnalysis'),
-        stopBtn: document.getElementById('stopAnalysis'),
-        exportBtn: document.getElementById('exportCSV'),
-        exportJsonBtn: document.getElementById('exportJSON'),
-        exportNdJsonBtn: document.getElementById('exportNDJSON'),
-        flashThreshold: document.getElementById('flashThreshold'),
-        intensityThreshold: document.getElementById('intensityThreshold'),
-        flashThresholdValue: document.getElementById('flashThresholdValue'),
-        intensityThresholdValue: document.getElementById('intensityThresholdValue'),
-        openChartsTab: document.getElementById('openChartsTab'),
-        clearAllDataBtn: document.getElementById('clearAllDataBtn'),
-        openFileAnalyzerTab: document.getElementById('openFileAnalyzerTab')
-    };
+        controls = {
+            startBtn: document.getElementById('startAnalysis'),
+            stopBtn: document.getElementById('stopAnalysis'),
+            exportBtn: document.getElementById('exportCSV'),
+            exportJsonBtn: document.getElementById('exportJSON'),
+            exportNdJsonBtn: document.getElementById('exportNDJSON'),
+            flashThreshold: document.getElementById('flashThreshold'),
+            intensityThreshold: document.getElementById('intensityThreshold'),
+            flashThresholdValue: document.getElementById('flashThresholdValue'),
+            intensityThresholdValue: document.getElementById('intensityThresholdValue'),
+            openChartsTab: document.getElementById('openChartsTab'),
+            clearAllDataBtn: document.getElementById('clearAllDataBtn'),
+            openFileAnalyzerTab: document.getElementById('openFileAnalyzerTab')
+        };
 
-    Object.entries(controls).forEach(([key, element]) => {
-        if (element) {
-            if (key === 'flashThreshold' || key === 'intensityThreshold') {
-                element.addEventListener('input', updateThresholdDisplay);
-            } else if (element) {
-                element.addEventListener('click', getClickHandler(key));
+        Object.entries(controls).forEach(([key, element]) => {
+            if (element) {
+                if (key === 'flashThreshold' || key === 'intensityThreshold') {
+                    element.addEventListener('input', updateThresholdDisplay);
+                } else if (element) {
+                    element.addEventListener('click', getClickHandler(key));
+                }
             }
-        }
-    });
+        });
 
-    if (controls.startBtn) controls.startBtn.addEventListener('click', startAnalysis);
-    if (controls.stopBtn) controls.stopBtn.addEventListener('click', stopAnalysis);
-    if (controls.exportBtn) controls.exportBtn.addEventListener('click', exportResults);
-    if (controls.exportJsonBtn) controls.exportJsonBtn.addEventListener('click', exportJSON);
-    if (controls.exportNdJsonBtn) controls.exportNdJsonBtn.addEventListener('click', exportNDJSON);
-    if (controls.openChartsTab) {
-        controls.openChartsTab.addEventListener('click', openChartsTab);
+        if (controls.startBtn) controls.startBtn.addEventListener('click', startAnalysis);
+        if (controls.stopBtn) controls.stopBtn.addEventListener('click', stopAnalysis);
+        if (controls.exportBtn) controls.exportBtn.addEventListener('click', exportResults);
+        if (controls.exportJsonBtn) controls.exportJsonBtn.addEventListener('click', exportJSON);
+        if (controls.exportNdJsonBtn) controls.exportNdJsonBtn.addEventListener('click', exportNDJSON);
+        if (controls.openChartsTab) {
+            controls.openChartsTab.addEventListener('click', openChartsTab);
+        }
+        if (controls.clearAllDataBtn) {
+            controls.clearAllDataBtn.addEventListener('click', clearAllData);
+        }
+        if (controls.openFileAnalyzerTab) {
+            controls.openFileAnalyzerTab.addEventListener('click', openFileAnalyzerTab);
+        }
     }
-    if (controls.clearAllDataBtn) {
-        controls.clearAllDataBtn.addEventListener('click', clearAllData);
-    }
-    if (controls.openFileAnalyzerTab) {
-        controls.openFileAnalyzerTab.addEventListener('click', openFileAnalyzerTab);
-    }
-}
 
     function updateThresholdDisplay(event) {
         const valueElement = document.getElementById(`${event.target.id}Value`);
@@ -68,10 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function exportResults() {
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, {action: 'EXPORT_DATA'}, function(response) {
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA' }, function (response) {
                 if (response && response.csv) {
-                    chrome.storage.local.set({ epilensAnalysisCSV: response.csv }, function() {
+                    chrome.storage.local.set({ epilensAnalysisCSV: response.csv }, function () {
                         const blob = new Blob([response.csv], { type: 'text/csv' });
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
@@ -89,8 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function exportJSON() {
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, {action: 'EXPORT_DATA', format: 'json'}, function(response) {
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA', format: 'json' }, function (response) {
                 if (response && response.json) {
                     const blob = new Blob([response.json], { type: 'application/json' });
                     const url = window.URL.createObjectURL(blob);
@@ -108,83 +108,83 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function exportNDJSON() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {action: 'EXPORT_DATA', format: 'ndjson'}, function(response) {
-            if (response && response.ndjson) {
-                const blob = new Blob([response.ndjson], { type: 'application/x-ndjson' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = `flash-analysis-${new Date().toISOString()}.ndjson`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                a.remove();
-            }
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA', format: 'ndjson' }, function (response) {
+                if (response && response.ndjson) {
+                    const blob = new Blob([response.ndjson], { type: 'application/x-ndjson' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `flash-analysis-${new Date().toISOString()}.ndjson`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                }
+            });
         });
-    });
-}
+    }
 
     /**
      * Starts the analysis by sending a message to the content script with current threshold options
      * TASK 836: Start and stop video via UI buttons
      */
     function startAnalysis() {
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        // Show analyzing badge
-        const badge = document.createElement('div');
-        badge.className = 'analyzing-badge';
-        badge.id = 'analyzingBadge';
-        badge.innerHTML = '<span class="pulse"></span> Analyzing...';
-        document.body.appendChild(badge);
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            // Show analyzing badge
+            const badge = document.createElement('div');
+            badge.className = 'analyzing-badge';
+            badge.id = 'analyzingBadge';
+            badge.innerHTML = '<span class="pulse"></span> Analyzing...';
+            document.body.appendChild(badge);
 
-        // Send message to content script
-        chrome.tabs.sendMessage(tabs[0].id, {
-            action: 'START_ANALYSIS',
-            options: {
-                thresholds: {
-                    flashesPerSecond: parseFloat(controls.flashThreshold.value),
-                    intensity: parseFloat(controls.intensityThreshold.value)
+            // Send message to content script
+            chrome.tabs.sendMessage(tabs[0].id, {
+                action: 'START_ANALYSIS',
+                options: {
+                    thresholds: {
+                        flashesPerSecond: parseFloat(controls.flashThreshold.value),
+                        intensity: parseFloat(controls.intensityThreshold.value)
+                    }
                 }
+            });
+        });
+    }
+
+    function stopAnalysis() {
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+                action: 'STOP_ANALYSIS'
+            });
+
+            // Remove the analyzing badge
+            const badge = document.getElementById('analyzingBadge');
+            if (badge) {
+                badge.remove();
             }
-        });
-    });
-}
 
-function stopAnalysis() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-            action: 'STOP_ANALYSIS'
-        });
-
-        // Remove the analyzing badge
-        const badge = document.getElementById('analyzingBadge');
-        if (badge) {
-            badge.remove();
-        }
-
-        // Save latest analysis data and open charts tab TASK 2852: Redundant and repeated later on. Refer to story.
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA', format: 'json' }, function(responseJson) {
-            chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA' }, function(responseCsv) {
-                const tasks = [];
-                if (responseJson && responseJson.json) {
-                    tasks.push(new Promise(resolve => {
-                        chrome.storage.local.set({ epilensAnalysisData: responseJson.json }, resolve);
-                    }));
-                }
-                if (responseCsv && responseCsv.csv) {
-                    tasks.push(new Promise(resolve => {
-                        chrome.storage.local.set({ epilensAnalysisCSV: responseCsv.csv }, resolve);
-                    }));
-                }
-                Promise.all(tasks).then(() => {
-                    chrome.tabs.create({ url: chrome.runtime.getURL('charts.html') });
+            // Save latest analysis data and open charts tab TASK 2852: Redundant and repeated later on. Refer to story.
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA', format: 'json' }, function (responseJson) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA' }, function (responseCsv) {
+                    const tasks = [];
+                    if (responseJson && responseJson.json) {
+                        tasks.push(new Promise(resolve => {
+                            chrome.storage.local.set({ epilensAnalysisData: responseJson.json }, resolve);
+                        }));
+                    }
+                    if (responseCsv && responseCsv.csv) {
+                        tasks.push(new Promise(resolve => {
+                            chrome.storage.local.set({ epilensAnalysisCSV: responseCsv.csv }, resolve);
+                        }));
+                    }
+                    Promise.all(tasks).then(() => {
+                        chrome.tabs.create({ url: chrome.runtime.getURL('Charting/charts.html') });
+                    });
                 });
             });
         });
-    });
-}
+    }
 
     // Initialize controls after DOM is loaded
     initializeControls();
@@ -305,22 +305,20 @@ function updateAnalyticsPanel(data) {
         </div>
         <div class="metric-row">
             <span>Dominant Color (R,G,B):</span>
-            <span>${
-                data.dominantColor
-                    ? `${Number(data.dominantColor.r).toFixed(1)}, ${Number(data.dominantColor.g).toFixed(1)}, ${Number(data.dominantColor.b).toFixed(1)}`
-                    : '-'
-            }</span>
+            <span>${data.dominantColor
+            ? `${Number(data.dominantColor.r).toFixed(1)}, ${Number(data.dominantColor.g).toFixed(1)}, ${Number(data.dominantColor.b).toFixed(1)}`
+            : '-'
+        }</span>
         </div>
         <div class="metric-row">
             <span>Dominant Lab (L,a,b):</span>
-            <span>${
-                data.dominantLab
-                    ? `${Number(data.dominantLab.L).toFixed(2)}, ${Number(data.dominantLab.a).toFixed(2)}, ${Number(data.dominantLab.b).toFixed(2)}`
-                    : '-'
-            }</span>
+            <span>${data.dominantLab
+            ? `${Number(data.dominantLab.L).toFixed(2)}, ${Number(data.dominantLab.a).toFixed(2)}, ${Number(data.dominantLab.b).toFixed(2)}`
+            : '-'
+        }</span>
         </div>
         <div class="metric-row">
-            <span>CIE76 Δ:</span>
+            <span>CIE76 Delta:</span>
             <span>${typeof data.cie76Delta !== "undefined" ? Number(data.cie76Delta).toFixed(4) : '-'}</span>
         </div>
         <div class="metric-row">
@@ -431,13 +429,12 @@ function updateSpectralMetrics(data) {
         </div>
         <div class="metric-row">
             <span>Spectral Flatness:</span>
-            <span id="spectralFlatnessMetrics">${
-                typeof data.spectralFlatness !== "undefined"
-                    ? Number(data.spectralFlatness).toFixed(4)
-                    : (data.spectralAnalysis?.spectralFlatness !== undefined
-                        ? Number(data.spectralAnalysis.spectralFlatness).toFixed(4)
-                        : '-')
-            }</span>
+            <span id="spectralFlatnessMetrics">${typeof data.spectralFlatness !== "undefined"
+            ? Number(data.spectralFlatness).toFixed(4)
+            : (data.spectralAnalysis?.spectralFlatness !== undefined
+                ? Number(data.spectralAnalysis.spectralFlatness).toFixed(4)
+                : '-')
+        }</span>
         </div>
     `;
 }
@@ -542,14 +539,14 @@ function convertRiskToNumber(risk) {
 }
 
 function togglePlayback() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {action: 'TOGGLE_PLAYBACK'});
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'TOGGLE_PLAYBACK' });
     });
 }
 
 
 function skipVideo(seconds) {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         chrome.tabs.sendMessage(tabs[0].id, {
             action: 'SKIP_VIDEO',
             seconds: seconds
@@ -558,12 +555,12 @@ function skipVideo(seconds) {
 }
 
 function openChartsTab() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         // Pause the video
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'PAUSE_VIDEO' }, function() {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'PAUSE_VIDEO' }, function () {
             // Request the latest analysis data as JSON and CSV
-            chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA', format: 'json' }, function(responseJson) {
-                chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA' }, function(responseCsv) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA', format: 'json' }, function (responseJson) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'EXPORT_DATA' }, function (responseCsv) {
                     const tasks = [];
                     if (responseJson && responseJson.json) {
                         tasks.push(new Promise(resolve => {
@@ -576,7 +573,7 @@ function openChartsTab() {
                         }));
                     }
                     Promise.all(tasks).then(() => {
-                        chrome.tabs.create({ url: chrome.runtime.getURL('charts.html') });
+                        chrome.tabs.create({ url: chrome.runtime.getURL('Charting/charts.html') });
                     });
                 });
             });

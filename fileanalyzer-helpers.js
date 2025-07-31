@@ -34,7 +34,7 @@ function renderResultsTable(result) {
                     ${result.dominantLab ?
                         `${Number(result.dominantLab.L).toFixed(2)}, ${Number(result.dominantLab.a).toFixed(2)}, ${Number(result.dominantLab.b).toFixed(2)}` : '-'
                     }</td></tr>
-                <tr><td style="padding:7px 12px;">CIE76 Δ</td><td style="padding:7px 12px;">
+                <tr><td style="padding:7px 12px;">CIE76 Delta</td><td style="padding:7px 12px;">
                     ${typeof result.cie76Delta !== "undefined" ? Number(result.cie76Delta).toFixed(4) : '-'}
                 </td></tr>
                 <tr><td style="padding:7px 12px;">Patterned Stimulus Score</td><td style="padding:7px 12px;">

@@ -2,9 +2,22 @@
 
 if (!window.VideoAnalyzer) {
     /**
-     * @class VideoAnalyzer
-     * @classdesc Video analysis utility for detecting visual risks such as flash, flickering and chromatic anomalies. It computes metrics including brightness, colour variance, entropy and temporal coherence to assess visual risk levels. Uses helper functions
-     * from the /helpers and the legacy analyzer-helpers.js.
+     * @description EPI LENS orchestrator analysis engine:
+     * Metrics are accessed via window.AnalyzerHelpers. to ensure modularity, quick debugging and maintainability.
+     * Analyses YouTube and user videos (locally) in real time, so all data is not trusted. Think dropped frames, corrupted frames etc.
+     * YouTube videos are analyzed as fast as the engine can, so for this quick and dirty analysis it is a screening analysis
+     * User videos are analyzed (locally) with fileanalyzer.js provding rigid analysis intervals, tunable from 2 fps to 100 fps.
+     * Both YouTube and user videos can be visualised via the charting tools, and exported to CSV, JSON, or NDJSON, or imported as JSON or NDJSON.
+     * @requires helpers/Avg/*
+     * @requires helpers/Color/*
+     * @requires helpers/Spectral/*
+     * @requires helpers/Temporal/*
+     * @requires helpers/Spatial/*
+     * @requires helpers/Export/*
+     * @requires helpers/Risk/*
+     * @requires helpers/Motion/*
+     *
+     *
      */
     class VideoAnalyzer {
         constructor({
@@ -32,8 +45,8 @@ if (!window.VideoAnalyzer) {
                 flashThreshold: 0.1,
                 minSequenceLength: 3
             };
-            this.canvas = document.createElement('canvas');
-            this.context = this.canvas.getContext('2d', { willReadFrequently: true });
+            this.canvas = document.createElement("canvas");
+            this.context = this.canvas.getContext("2d", { willReadFrequently: true });
             this.sampleSize = 4;
             this.timelineData = [];
             this.detailedData = [];
@@ -65,7 +78,7 @@ if (!window.VideoAnalyzer) {
                         intensity: 0,
                         coverage: 0,
                         duration: 0
-                    }
+                    },
                 },
                 spatialMap: {
                     center: 0,
@@ -110,12 +123,12 @@ if (!window.VideoAnalyzer) {
                     history: [],
                     threshold: edgeThreshold,
                     maxHistory: edgeHistoryMax
-                }
+                },
             };
 
             // FFT implementation
             this.fft = {
-                forward: (signal) => this.performFFT(signal)
+                forward: (signal) => this.performFFT(signal),
             };
 
             // Circular buffer for temporal data
@@ -130,7 +143,7 @@ if (!window.VideoAnalyzer) {
                 },
                 clear() {
                     this.data = [];
-                }
+                },
             };
 
             this.startTime = null;
@@ -157,16 +170,11 @@ if (!window.VideoAnalyzer) {
                 minSequenceLength: 3,
                 psi: {
                     critical: 0.8,
-                    warning: 0.5
+                    warning: 0.5,
                 },
-                chromaticContrast: 0.4
+                chromaticContrast: 0.4,
             };
         }
-
-        setAnalysisOptions(options) {
-            this.analysisOptions = { ...this.analysisOptions, ...options };
-        }
-
 
         analyzeFrame(video, timestamp) {
             const FRAME_INTERVAL_MS = 1000 / 60;
@@ -174,7 +182,7 @@ if (!window.VideoAnalyzer) {
 
             try {
                 if (!video || !video.videoWidth || !video.videoHeight) {
-                    return { error: 'Video not ready' };
+                    return { error: "Video not ready" };
                 }
 
                 // Initialize analysis timing
@@ -201,34 +209,61 @@ if (!window.VideoAnalyzer) {
 
                 // Capture frame and compute color metrics
                 const imageData = this.captureFrame(video);
-                console.log('imageData', imageData);
+                // DEBUG
+                // console.log('imageData', imageData);
                 const redIntensity = this.calculateAverageRedIntensity(imageData.data);
-                console.log('redIntensity', redIntensity);
-                const prevRedIntensity = (typeof this.lastRedIntensity === 'number' && isFinite(this.lastRedIntensity)) ? this.lastRedIntensity : 0;
+                // DEBUG
+                // console.log('redIntensity', redIntensity);
+                const prevRedIntensity =
+                    typeof this.lastRedIntensity === "number" &&
+                        isFinite(this.lastRedIntensity)
+                        ? this.lastRedIntensity
+                        : 0;
                 const redDelta = Math.abs(redIntensity - prevRedIntensity);
                 this.lastRedIntensity = redIntensity;
-                const results = this.processFrame(imageData, timestamp, relativeTime, redIntensity, redDelta);
+                this.prevRedIntensity = prevRedIntensity;
+                const results = this.processFrame(
+                    imageData,
+                    timestamp,
+                    relativeTime,
+                    redIntensity,
+                    redDelta
+                );
 
                 return results;
             } catch (error) {
-
-                console.error('Analysis error:', error);
-                return { error: error.message || 'Unknown analysis error' };
+                console.error("Analysis error:", error);
+                return { error: error.message || "Unknown analysis error" };
             }
         }
 
-
-        processFrame(imageData, timestamp, relativeTime, redIntensity = 0, redDelta = 0) {
+        processFrame(
+            imageData,
+            timestamp,
+            relativeTime,
+            redIntensity = 0,
+            redDelta = 0
+        ) {
             const brightness = this.calculateAverageBrightness(imageData.data);
-            const brightnessDiff = Math.abs(brightness - this.metrics.lastFrameBrightness);
+            const brightnessDiff = Math.abs(
+                brightness - this.metrics.lastFrameBrightness
+            );
             const isFlash = brightnessDiff > this.thresholds.brightnessChange;
 
-            const dominantColor = window.AnalyzerHelpers.calculateDominantColor(imageData);
-            const dominantLab = window.AnalyzerHelpers.rgbToLab(dominantColor.r, dominantColor.g, dominantColor.b);
+            const dominantColor =
+                window.AnalyzerHelpers.calculateDominantColor(imageData);
+            const dominantLab = window.AnalyzerHelpers.rgbToLab(
+                dominantColor.r,
+                dominantColor.g,
+                dominantColor.b
+            );
 
             let cie76Delta = 0;
             if (this.lastDominantLab) {
-                cie76Delta = window.AnalyzerHelpers.cie76(dominantLab, this.lastDominantLab);
+                cie76Delta = window.AnalyzerHelpers.cie76(
+                    dominantLab,
+                    this.lastDominantLab
+                );
             }
             this.lastDominantLab = dominantLab;
 
@@ -237,7 +272,8 @@ if (!window.VideoAnalyzer) {
             let sceneChangeScore = 0;
             if (this.lastFrame && imageData) {
                 sceneChangeScore = window.AnalyzerHelpers.frameHistogramDiff(
-                    imageData.data, this.lastFrame.data
+                    imageData.data,
+                    this.lastFrame.data
                 );
             }
             this.sceneChangeHistory.push(sceneChangeScore);
@@ -250,8 +286,14 @@ if (!window.VideoAnalyzer) {
                 psi: this.calculatePSI(brightness, brightnessDiff),
                 spatialData: this.analyzeSpatialDistribution(imageData),
                 chromaticData: this.analyzeChromaticFlashes(imageData),
-                temporalContrastData: this.analyzeTemporalContrast(brightness, timestamp),
-                frameDiffData: window.AnalyzerHelpers.calculateFrameDifference.call(this, imageData),
+                temporalContrastData: this.analyzeTemporalContrast(
+                    brightness,
+                    timestamp
+                ),
+                frameDiffData: window.AnalyzerHelpers.calculateFrameDifference.call(
+                    this,
+                    imageData
+                ),
                 spectralData: this.performSpectralAnalysis(brightness),
                 coherenceData: this.calculateTemporalCoherence(brightness),
                 edgeData: this.detectEdges(imageData),
@@ -275,13 +317,20 @@ if (!window.VideoAnalyzer) {
             this.updateRiskLevel();
 
             const timelineEntry = this.createTimelineEntry(
-                relativeTime, timestamp, brightness, isFlash, brightnessDiff, metrics, redIntensity, redDelta
+                relativeTime,
+                timestamp,
+                brightness,
+                isFlash,
+                brightnessDiff,
+                metrics,
+                redIntensity,
+                redDelta
             );
 
             if (isFlash || brightnessDiff > 0.001 || metrics.temporalChange > 0.001) {
                 this.updateStorage(timelineEntry);
             }
-
+            this.lastFrame = imageData;
             return this.createResults(timelineEntry);
         }
 
@@ -295,8 +344,19 @@ if (!window.VideoAnalyzer) {
             this.canvas.height = Math.max(video.videoHeight / this.sampleSize, 1);
 
             try {
-                this.context.drawImage(video, 0, 0, this.canvas.width, this.canvas.height);
-                return this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                this.context.drawImage(
+                    video,
+                    0,
+                    0,
+                    this.canvas.width,
+                    this.canvas.height
+                );
+                return this.context.getImageData(
+                    0,
+                    0,
+                    this.canvas.width,
+                    this.canvas.height
+                );
             } catch (error) {
                 console.error('Frame capture error:', error);
                 return null;
@@ -329,7 +389,9 @@ if (!window.VideoAnalyzer) {
         }
 
         detectFlashSequence(brightness, timestamp) {
-            const brightnessDiff = Math.abs(brightness - this.metrics.lastFrameBrightness);
+            const brightnessDiff = Math.abs(
+                brightness - this.metrics.lastFrameBrightness
+            );
             if (brightnessDiff > this.thresholds.brightnessChange) {
                 this.metrics.flashCount++;
                 this.metrics.flashSequences.push({
@@ -370,10 +432,13 @@ if (!window.VideoAnalyzer) {
 
         analyzeRiskFactors() {
             const factors = [];
-            const flashRate = this.metrics.flashCount / (this.metrics.frameCount / 60);
+            const flashRate =
+                this.metrics.flashCount / (this.metrics.frameCount / 60);
             if (flashRate > 3) factors.push('High Flash Rate');
-            if (this.calculateAverageIntensity() > 0.5) factors.push('High Intensity');
-            if (this.metrics.flashSequences.length > 5) factors.push('Multiple Sequences');
+            if (this.calculateAverageIntensity() > 0.5)
+                factors.push('High Intensity');
+            if (this.metrics.flashSequences.length > 5)
+                factors.push('Multiple Sequences');
             return factors.length ? factors : ['No significant risk factors'];
         }
 
@@ -389,12 +454,24 @@ if (!window.VideoAnalyzer) {
             return window.AnalyzerHelpers.temporalVariance(values);
         }
 
+        // DEBUG
+        // Values are passed to the helper functions for ease of calibration
+        // If different values are provided, will override helper defaults
+
         detectColorSpikes(changes, fixedThreshold = 0.2, stdDevMultiplier = 2) {
-            return window.AnalyzerHelpers.colorSpikes(changes, fixedThreshold, stdDevMultiplier);
+            return window.AnalyzerHelpers.colorSpikes(
+                changes,
+                fixedThreshold,
+                stdDevMultiplier
+            );
         }
 
         calculateTemporalChange(currentBrightness, maxHistory = 1000) {
-            return window.AnalyzerHelpers.temporalChange.call(this, currentBrightness, maxHistory);
+            return window.AnalyzerHelpers.temporalChange.call(
+                this,
+                currentBrightness,
+                maxHistory
+            );
         }
 
         estimateFlickerFrequency() {
@@ -402,14 +479,34 @@ if (!window.VideoAnalyzer) {
         }
 
         calculateFrameEntropy(imageData, maxHistory = 1000) {
-            return window.AnalyzerHelpers.frameEntropy.call(this, imageData, maxHistory);
+            return window.AnalyzerHelpers.frameEntropy.call(
+                this,
+                imageData,
+                maxHistory
+            );
         }
 
-        calculatePSI(brightness, brightnessDiff, weights = { frequency: 0.3, intensity: 0.25, coverage: 0.2, duration: 0.15, brightness: 0.1 }) {
-
-            brightness = (typeof brightness === 'number' && brightness >= 0 && brightness <= 1) ? brightness : 0;
-            brightnessDiff = (typeof brightnessDiff === 'number' && brightnessDiff >= 0 && brightnessDiff <= 1) ? brightnessDiff : 0;
-
+        calculatePSI(
+            brightness,
+            brightnessDiff,
+            weights = {
+                frequency: 0.3,
+                intensity: 0.25,
+                coverage: 0.2,
+                duration: 0.15,
+                brightness: 0.1,
+            }
+        ) {
+            brightness =
+                typeof brightness === "number" && brightness >= 0 && brightness <= 1
+                    ? brightness
+                    : 0;
+            brightnessDiff =
+                typeof brightnessDiff === "number" &&
+                    brightnessDiff >= 0 &&
+                    brightnessDiff <= 1
+                    ? brightnessDiff
+                    : 0;
 
             const frameCount = this.metrics.frameCount || 1;
             const flashCount = this.metrics.flashCount || 0;
@@ -419,16 +516,30 @@ if (!window.VideoAnalyzer) {
 
             let coverage = 0;
             try {
-                coverage = this.calculateCoverage(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height));
-                coverage = (typeof coverage === 'number' && coverage >= 0 && coverage <= 1) ? coverage : 0;
+                coverage = this.calculateCoverage(
+                    this.context.getImageData(0, 0, this.canvas.width, this.canvas.height)
+                );
+                coverage =
+                    typeof coverage === "number" && coverage >= 0 && coverage <= 1
+                        ? coverage
+                        : 0;
             } catch (e) {
                 coverage = 0;
             }
 
             let duration = 0;
-            if (Array.isArray(this.metrics.flashSequences) && this.metrics.flashSequences.length > 0) {
-                const lastSeq = this.metrics.flashSequences[this.metrics.flashSequences.length - 1];
-                duration = (lastSeq && typeof lastSeq.frameDuration === 'number' && lastSeq.frameDuration >= 0) ? lastSeq.frameDuration : 0;
+            if (
+                Array.isArray(this.metrics.flashSequences) &&
+                this.metrics.flashSequences.length > 0
+            ) {
+                const lastSeq =
+                    this.metrics.flashSequences[this.metrics.flashSequences.length - 1];
+                duration =
+                    lastSeq &&
+                        typeof lastSeq.frameDuration === "number" &&
+                        lastSeq.frameDuration >= 0
+                        ? lastSeq.frameDuration
+                        : 0;
             }
 
             const normDuration = Math.min(duration / 50, 1);
@@ -439,43 +550,66 @@ if (!window.VideoAnalyzer) {
                 intensity: normIntensity,
                 coverage: coverage,
                 duration: normDuration,
-                brightness: brightness
+                brightness: brightness,
             };
 
-            const score = (
+            const score =
                 psi.frequency * (weights.frequency || 0.3) +
                 psi.intensity * (weights.intensity || 0.25) +
                 psi.coverage * (weights.coverage || 0.2) +
                 psi.duration * (weights.duration || 0.15) +
-                psi.brightness * (weights.brightness || 0.1)
-            );
+                psi.brightness * (weights.brightness || 0.1);
 
-
-            if (!Array.isArray(this.advancedMetrics.psiHistory)) this.advancedMetrics.psiHistory = [];
+            if (!Array.isArray(this.advancedMetrics.psiHistory))
+                this.advancedMetrics.psiHistory = [];
             this.advancedMetrics.psi = { score, components: psi };
-            this.advancedMetrics.psiHistory.push({ timestamp: Date.now(), score, components: psi });
-            if (this.advancedMetrics.psiHistory.length > 1000) this.advancedMetrics.psiHistory.shift();
+            this.advancedMetrics.psiHistory.push({
+                timestamp: Date.now(),
+                score,
+                components: psi,
+            });
+            if (this.advancedMetrics.psiHistory.length > 1000)
+                this.advancedMetrics.psiHistory.shift();
 
             // if (score > 0.8) console.warn('High PSI risk score:', score, psi);
 
             return { score, components: psi };
         }
 
-
         analyzeSpatialDistribution(imageData) {
             return window.AnalyzerHelpers.spatialDistribution(imageData);
         }
 
         analyzeChromaticFlashes(imageData, historyLen = 10) {
-            return window.AnalyzerHelpers.chromaticFlashes.call(this, imageData, historyLen);
+            return window.AnalyzerHelpers.chromaticFlashes.call(
+                this,
+                imageData,
+                historyLen
+            );
         }
 
         analyzeTemporalContrast(brightness, timestamp, bufferLen = 15) {
-            return window.AnalyzerHelpers.temporalContrast.call(this, brightness, timestamp, bufferLen);
+            return window.AnalyzerHelpers.temporalContrast.call(
+                this,
+                brightness,
+                timestamp,
+                bufferLen
+            );
         }
 
-        performSpectralAnalysis(brightness, bufferLen = 128, fftLen = 64, fps = 60) {
-            return window.AnalyzerHelpers.spectralAnalysis.call(this, brightness, bufferLen, fftLen, fps);
+        performSpectralAnalysis(
+            brightness,
+            bufferLen = 128,
+            fftLen = 64,
+            fps = 60
+        ) {
+            return window.AnalyzerHelpers.spectralAnalysis.call(
+                this,
+                brightness,
+                bufferLen,
+                fftLen,
+                fps
+            );
         }
 
         detectPeriodicity(signal, minLag = 2, threshold = 0.5) {
@@ -483,13 +617,22 @@ if (!window.VideoAnalyzer) {
         }
 
         calculateTemporalCoherence(brightness, windowSize = 30, maxLag = 10) {
-            return window.AnalyzerHelpers.temporalCoherence.call(this, brightness, windowSize, maxLag);
+            return window.AnalyzerHelpers.temporalCoherence.call(
+                this,
+                brightness,
+                windowSize,
+                maxLag
+            );
         }
 
         detectEdges(imageData, sobelThreshold = 50, maxHistory = 500) {
-            return window.AnalyzerHelpers.detectEdges.call(this, imageData, sobelThreshold, maxHistory);
+            return window.AnalyzerHelpers.detectEdges.call(
+                this,
+                imageData,
+                sobelThreshold,
+                maxHistory
+            );
         }
-
 
         getLuminance(data, idx, weights = [0.2126, 0.7152, 0.0722]) {
             return window.AnalyzerHelpers.luminance(data, idx, weights);
@@ -535,18 +678,21 @@ if (!window.VideoAnalyzer) {
                 flashSequences: [],
                 lastTimestamp: 0
             };
-            // Reset main data arrays
             this.timelineData = [];
             this.dataChunks = [];
             this.currentChunk = [];
             this._frameDiffHistory = new Float32Array(8);
 
-            const coherenceWindowSize = this.advancedMetrics.temporalCoherence?.windowSize || 30;
-            const edgeHistoryMax = this.advancedMetrics?.edgeDetection?.maxHistory || 500;
-            const chromaticHistoryLen = this.advancedMetrics?.chromaticFlashes?.maxLen || 10;
-            const colorHistoryLen = this.advancedMetrics?.colorHistory?.maxLen || 30;
-            const spectralBufferLen = this.advancedMetrics?.spectralAnalysis?.bufferLen || 128;
-            const spectralFftLen = this.advancedMetrics?.spectralAnalysis?.fftLen || 64;
+            const coherenceWindowSize =
+                this.advancedMetrics.temporalCoherence.windowSize || 30;
+            const edgeHistoryMax =
+                this.advancedMetrics.edgeDetection.maxHistory || 500;
+            const chromaticHistoryLen =
+                this.advancedMetrics.chromaticFlashes.maxLen || 10;
+            const colorHistoryLen = this.advancedMetrics.colorHistory.maxLen || 30;
+            const spectralBufferLen =
+                this.advancedMetrics.spectralAnalysis.bufferLen || 128;
+            const spectralFftLen = this.advancedMetrics.spectralAnalysis.fftLen || 64;
 
             this.advancedMetrics = {
                 colorVariance: [],
@@ -568,7 +714,7 @@ if (!window.VideoAnalyzer) {
                         intensity: 0,
                         coverage: 0,
                         duration: 0
-                    }
+                    },
                 },
                 spatialMap: {
                     center: 0,
@@ -614,8 +760,7 @@ if (!window.VideoAnalyzer) {
                     threshold: 30,
                     maxHistory: edgeHistoryMax
                 }
-            };
-
+            }; 
 
             this.temporalBuffer.clear();
         }
@@ -631,7 +776,16 @@ if (!window.VideoAnalyzer) {
             return score;
         }
 
-        createTimelineEntry(relativeTime, timestamp, brightness, isFlash, brightnessDiff, metrics, redIntensity = 0, redDelta = 0) {
+        createTimelineEntry(
+            relativeTime,
+            timestamp,
+            brightness,
+            isFlash,
+            brightnessDiff,
+            metrics,
+            redIntensity = 0,
+            redDelta = 0
+        ) {
             const entry = {
                 timestamp: timestamp,
                 relativeTimestamp: relativeTime,
@@ -657,7 +811,7 @@ if (!window.VideoAnalyzer) {
                 dominantLab: metrics.dominantLab,
                 cie76Delta: metrics.cie76Delta,
                 patternedStimulusScore: metrics.patternedStimulusScore,
-                sceneChangeScore: metrics.sceneChangeScore
+                sceneChangeScore: metrics.sceneChangeScore,
             };
             entry.spectralFlatness = metrics.spectralData?.spectralFlatness ?? 0;
             this.currentChunk.push(entry);
@@ -679,8 +833,11 @@ if (!window.VideoAnalyzer) {
                 flashCount: this.metrics.flashCount,
                 riskLevel: this.metrics.riskLevel,
                 framesAnalyzed: this.metrics.frameCount,
-                fps: Math.round(this.metrics.frameCount / Math.max(1, timelineEntry.timestamp - this.analysisStartTime)),
-                sequenceLength: this.metrics.flashSequences.length
+                fps: Math.round(
+                    (1000 * this.metrics.frameCount) /
+                    Math.max(1, timelineEntry.timestamp - this.analysisStartTime)
+                ),
+                sequenceLength: this.metrics.flashSequences.length,
             };
         }
 

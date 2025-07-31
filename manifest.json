@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "EPI-LENS",
-  "version": "6",
+  "name": "R TESTING EPI-LENS",
+  "version": "5",
   "description": "Real-time quantitative analysis of video content for photosensitive trigger detection.",
   "permissions": [
     "activeTab",
@@ -28,8 +28,15 @@
   "content_scripts": [{
     "matches": ["*://*.youtube.com/*"],
     "js": [
-    "risk-level-helper.js",
-    "analyzer-helpers.js",
+    "helpers/Color/labColorUtils.js",
+    "helpers/Risk/risk-level-helper.js",
+    "helpers/Spectral/dsp.js",
+    "helpers/Spectral/fft.js",
+    "helpers/Spatial/spatialFrameAnalysis.js",
+    "helpers/Spectral/spectralAnalysis.js",
+    "helpers/Spectral/spectralFlatness.js",
+    "helpers/Motion/frameDiff.js",
+    "helpers/Motion/frameHistoDiff.js",
     "helpers/Avg/avgBrightness.js",
     "helpers/Avg/avgRedIntensity.js",
     "helpers/Color/coverage.js",
@@ -44,7 +51,6 @@
     "helpers/Spatial/spatialDistrib.js",
     "helpers/Color/chromaticFlashes.js",
     "helpers/Temporal/tempContrast.js",
-    "helpers/Spectral/spectralAnalysis.js",
     "helpers/Temporal/periodicity.js",
     "helpers/Temporal/tempCoherence.js",
     "helpers/Spatial/spatialEdges.js",

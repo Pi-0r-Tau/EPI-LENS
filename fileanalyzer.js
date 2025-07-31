@@ -206,7 +206,7 @@ function openChartsView() {
     if (!video.paused) video.pause();
     const json = analyzer.generateJSON();
     chrome.storage.local.set({ epilensAnalysisData: json }, () => {
-        window.open('charts.html', '_blank');
+        window.open('Charting/charts.html', '_blank');
     });
 }
 
@@ -307,7 +307,7 @@ function stopAnalysis() {
 
 /**
  * Restarts the analysis process from the beginning, performing a full reset of the analysis state and UI
- * @returns {void}
+ *  
  */
 function restartAnalysis() {
     stopAnalysis();
@@ -400,7 +400,6 @@ function updateResults(result) {
  * @param {string} [result.riskLevel]
  * @param {Object} [result.psi]
  * @param {number} [result.psi.score]
- * @returns {void}
  */
 function updateSummaryPanelFields(result) {
     try {
@@ -704,10 +703,10 @@ function seekVideo(video, time) {
     };
     // TASK 2932: See story, this is messy but needed for future stats in the fileanalyzer html
 
-    window.updateSummaryPanelStatus = function() {
+    window.updateSummaryPanelStatus = function () {
     };
-    window.setSummaryPanelStatus = function(status) {
+    window.setSummaryPanelStatus = function () {
     };
-    window.setSummaryPanelFile = function() {
+    window.setSummaryPanelFile = function () {
     };
 })();
