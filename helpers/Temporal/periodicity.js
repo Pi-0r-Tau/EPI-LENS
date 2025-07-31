@@ -2,7 +2,7 @@ window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 window.AnalyzerHelpers.periodicity = function (
     signal,
     minLag = 2,
-    threshold = 0.5
+    threshold = 0.25
 ) {
     if (!Array.isArray(signal) || signal.length < minLag + 2) {
         return { isPeriodic: false, period: 0, confidence: 0, autocorr: [] };
