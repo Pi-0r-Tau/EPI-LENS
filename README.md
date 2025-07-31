@@ -85,6 +85,11 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 - NDJSON import and export supported
   - This helps with quota bytes exceeded when analysing multiple files in the fileanalyzer. As it exports each complete analysis after each video, if you have this issue you can load data into the charts view with NDJSON or JSON
 
+- Library based FFT, dsp.js, tried and tested as custom FFT was lacking.
+- Removed legacy analyzer-helpers.js and split in sub helper files: aiming for a highly modular codebase so each file can be tuned and improved simply.
+- Charting file structure rejiged for nicer folder based structure
+- Periodicity threshold updated from 0.5 to 0.25 to reflect scientific standards. 
+
 ## Recent updates to metrics
 - Patterned stimulus score
 - Dominant color (LAB)
@@ -98,8 +103,7 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 
 ## Updates in progress
 - Implementation of Jordan, J. B. & Vanderheiden, G. C. (2024). International Guidelines for Photosensitive Epilepsy: Gap Analysis and Recommendations. ACM Transactions on Accessible Computing, 17(3), 17:1 - 17:35. (https://github.com/jbjord/pseGuidelines)
-- Removing of legacy analyzer-helpers.js and splitting in sub helper files: aiming for a highly modular codebase so each file can be tuned and improved simply.
-- Library based FFT, dsp.js, tried and tested as custom FFT is lacking. 
+
 
 ## Future metrics
 - Chromatic Flicker Fusion Rate (CFFR)
@@ -222,7 +226,7 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 
 ### Frequency Analysis
 - **Spectral Analysis (X(k))**
-  - Custom FFT implementation
+  - dsp.js FFT
   - 64-sample window with overlap
   - Hanning window application
   - DC component filtering
