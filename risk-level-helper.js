@@ -18,15 +18,15 @@
 
         const flashSequences = metrics.flashSequences || [];
         let maxFlashesIn1s = 0;
-
+        // Sliding window rather than previous nested loops to find max number of flashes in 1 second window. 
         if (flashSequences.length > 0) {
             const timestamps = flashSequences.map(seq => seq.timestamp).sort((a, b) => a - b);
-            for (let i = 0; i < timestamps.length; i++) {
-                let count = 1;
-                for (let j = i + 1; j < timestamps.length; j++) {
-                    if (timestamps[j] - timestamps[i] <= 1000) count++;
-                    else break;
+            let start = 0;
+            for (let end = 0; end < timestamps.length; end++) {
+                while (timestamps[end] - timestamps[start] > 1000) {
+                    start++;
                 }
+                const count = end - start + 1;
                 if (count > maxFlashesIn1s) maxFlashesIn1s = count;
             }
         }
@@ -45,7 +45,7 @@
         const chromaHistory = advancedMetrics.chromaticFlashes?.lastColors || [];
         const latestChroma = chromaHistory.length ? chromaHistory[chromaHistory.length - 1] : { redGreen: 0, blueYellow: 0 };
         const redIntensity = typeof lastRedIntensity === 'number' ? lastRedIntensity : 0;
-        const redDelta = typeof lastRedIntensity === 'number' && typeof prevRedIntensity === 'number'? Math.abs(lastRedIntensity - prevRedIntensity) : 0;
+        const redDelta = typeof lastRedIntensity === 'number' && typeof prevRedIntensity === 'number' ? Math.abs(lastRedIntensity - prevRedIntensity) : 0;
         const patternedStimulusScore = patternHistory.length ? patternHistory[patternHistory.length - 1] : 0;
         const flickerHz = advancedMetrics.spectralAnalysis?.dominantFrequency || 0;
         const psiScore = advancedMetrics.psi?.score || 0;
