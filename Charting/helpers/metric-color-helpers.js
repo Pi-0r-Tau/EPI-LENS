@@ -1,13 +1,13 @@
 const DEFAULT_METRIC_COLORS = [
     "#2196f3", "#f44336", "#ff9800", "#4caf50", "#9c27b0", "#00bcd4", "#e91e63", "#8bc34a",
-    "#ffc107", "#3f51b5", "#607d8b", "#ff5722", "#cddc39", "#795548", "#673ab7", "#009688"
+    "#ffc107", "#3f51b5", "#607d8b", "#ff5722", "#cfda75ff", "#9c6d5bff", "#673ab7", "#009688"
 ];
 
 function getStoredMetricColors() {
     try {
         const stored = localStorage.getItem('epilensMetricColors');
         if (stored) return JSON.parse(stored);
-    } catch {}
+    } catch { }
     return {};
 }
 
@@ -154,5 +154,5 @@ window.MetricColorHelpers = {
     setMetricColor,
     showMetricColorCustomizer,
     getStoredMetricColors,
-    metricKeyToLabel 
+    metricKeyToLabel
 };

@@ -19,7 +19,7 @@ function setupChartTooltipAndInteraction(canvas, card, chart, getChartDataForDra
     tooltip.style.zIndex = 10;
     card.appendChild(tooltip);
 
-    canvas.onmousemove = function(e) {
+    canvas.onmousemove = function (e) {
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;

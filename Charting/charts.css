@@ -5,6 +5,7 @@ body {
     margin: 0;
     padding: 0;
 }
+
 .charts-container {
     max-width: 1300px;
     min-width: 900px;
@@ -14,16 +15,19 @@ body {
     box-shadow: 0 2px 16px #000a;
     padding: 24px;
 }
+
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 18px;
 }
+
 header h2 {
     margin: 0;
     font-size: 1.6em;
 }
+
 #addChartBtn {
     background: #2196f3;
     color: #fff;
@@ -33,19 +37,23 @@ header h2 {
     font-size: 1em;
     cursor: pointer;
 }
+
 #addChartBtn:hover {
     background: #1976d2;
 }
+
 #chartsArea {
     display: flex;
     flex-wrap: wrap;
     gap: 24px;
 }
+
 .chartsArea-single {
     display: flex !important;
     flex-direction: column !important;
     gap: 24px !important;
 }
+
 .chart-card {
     background: #222;
     border-radius: 6px;
@@ -57,16 +65,19 @@ header h2 {
     box-shadow: 0 1px 8px #0006;
     position: relative;
 }
+
 .chart-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
 }
+
 .chart-title {
     font-size: 1.1em;
     font-weight: bold;
 }
+
 .chart-actions button {
     background: #333;
     color: #fff;
@@ -77,9 +88,11 @@ header h2 {
     cursor: pointer;
     font-size: 0.95em;
 }
+
 .chart-actions button:hover {
     background: #444;
 }
+
 .chart-canvas {
     width: 100%;
     height: 220px;
@@ -88,6 +101,7 @@ header h2 {
     margin-bottom: 8px;
     display: block;
 }
+
 .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -96,28 +110,36 @@ header h2 {
     margin-top: 8px;
     font-size: 0.95em;
 }
-.data-table th, .data-table td {
+
+.data-table th,
+.data-table td {
     border: 1px solid #333;
     padding: 4px 8px;
     text-align: right;
 }
+
 .data-table th {
     background: #222;
     color: #90caf9;
 }
+
 .data-table tr:nth-child(even) {
     background: #20232a;
 }
+
 .playback-controls {
     margin-top: 24px;
     display: flex;
     align-items: center;
     gap: 12px;
 }
+
 #seekBar {
     width: 200px;
 }
-#playBtn, #pauseBtn {
+
+#playBtn,
+#pauseBtn {
     background: #2196f3;
     color: #fff;
     border: none;
@@ -126,25 +148,34 @@ header h2 {
     font-size: 1em;
     cursor: pointer;
 }
-#playBtn:hover, #pauseBtn:hover {
+
+#playBtn:hover,
+#pauseBtn:hover {
     background: #1976d2;
 }
+
 #playbackTime {
     font-size: 0.98em;
     color: #bbb;
 }
+
 .modal {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.7);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
 }
+
 .modal.hidden {
     display: none;
 }
+
 .modal-content {
     background: #232323;
     padding: 24px 32px;
@@ -153,10 +184,12 @@ header h2 {
     color: #fff;
     min-width: 320px;
 }
+
 .modal-content label {
     display: block;
     margin-bottom: 12px;
 }
+
 .modal-content select {
     background: #181818;
     color: #fff;
@@ -165,6 +198,7 @@ header h2 {
     padding: 4px 8px;
     margin-left: 8px;
 }
+
 .modal-content button {
     background: #2196f3;
     color: #fff;
@@ -174,10 +208,13 @@ header h2 {
     margin-right: 8px;
     cursor: pointer;
 }
+
 .modal-content button:hover {
     background: #1976d2;
 }
-#xAxisSelect, #yAxisSelectContainer {
+
+#xAxisSelect,
+#yAxisSelectContainer {
     background: #181818;
     color: #fff;
     border: 1px solid #444;
@@ -186,10 +223,13 @@ header h2 {
     font-size: 1em;
     margin-top: 2px;
 }
-#xAxisSelect:focus, #yAxisSelectContainer:focus-within {
+
+#xAxisSelect:focus,
+#yAxisSelectContainer:focus-within {
     border-color: #2196f3;
     outline: none;
 }
+
 .y-axis-checkbox-label {
     display: flex;
     align-items: center;
@@ -200,28 +240,37 @@ header h2 {
     border-radius: 2px;
     transition: background 0.13s;
 }
-.y-axis-checkbox-label:hover, .y-axis-checkbox-label.selected {
+
+.y-axis-checkbox-label:hover,
+.y-axis-checkbox-label.selected {
     background: #222;
 }
+
 .y-axis-checkbox {
     accent-color: #2196f3;
     width: 16px;
     height: 16px;
 }
-#xAxisSearch, #yAxisSearch {
+
+#xAxisSearch,
+#yAxisSearch {
     margin-bottom: 2px;
 }
+
 #addChartForm button {
     min-width: 80px;
 }
+
 ::-webkit-scrollbar {
     width: 8px;
     background: #232323;
 }
+
 ::-webkit-scrollbar-thumb {
     background: #181818;
     border-radius: 4px;
 }
+
 #exportOptionsModal .modal-content {
     width: 320px;
 }

@@ -1,6 +1,6 @@
 /**
  * @file charts.js
- * @description Chart drawing uses the charts-helpers.js
+ * @description Chart drawing uses the helpers/charts-helpers.js
  * @module charts
  */
 
@@ -166,17 +166,17 @@ const ALL_METRICS = [
     // Also added more metrics to choose from, as the NDJSON is the full analytical export and users can now import a NDJSON file.
     // Although not all of these metrics do currently export the math is there so nice task for later. Some of these are arrays so won't chart well but,
     // the user can still export them as a JSON/CSV/NDJSON. So pretty neat.
-    // This was a pain to do. 
+    // This was a pain to do.
     { key: "brightness", label: "Brightness", color: "#2196f3" },
     { key: "intensity", label: "Flash Intensity", color: "#f44336" },
     { key: "redIntensity", label: "Red Intensity", color: "#e53935" },
     { key: "redDelta", label: "Red Delta", color: "#ff5252" },
     { key: "riskLevel", label: "Risk", color: "#ff9800", convert: v => v === 'high' ? 1 : v === 'medium' ? 0.5 : 0 },
     { key: "psiScore", label: "PSI Score", color: "#8bc34a" },
-    { key: "psi.frequency", label: "PSI Frequency", color: "#8bc34a"},
-    { key: "psi.intensity", label: "PSI Intensity", color: "#8bc34a"},
-    { key: "psi.coverage", label: "PSI Coverage", color: "#8bc34a"},
-    { key: "psi.duration", label: "PSI Duration", color: "#8bc34a"},
+    { key: "psi.frequency", label: "PSI Frequency", color: "#8bc34a" },
+    { key: "psi.intensity", label: "PSI Intensity", color: "#8bc34a" },
+    { key: "psi.coverage", label: "PSI Coverage", color: "#8bc34a" },
+    { key: "psi.duration", label: "PSI Duration", color: "#8bc34a" },
     { key: "flickerFrequency", label: "Flicker Freq", color: "#00bcd4" },
     { key: "entropy", label: "Entropy", color: "#9c27b0" },
     { key: "dominantColor.r", label: "DomColor R", color: "#ff1744" },
@@ -217,7 +217,7 @@ const ALL_METRICS = [
     { key: "spatialMap.quadrant3", label: "Spatial Map Q3", color: "#2bb640ff" },
     { key: "spatialMap.quadrant4", label: "Spatial Map Q4", color: "#ffc107" },
     { key: "chromaticFlashes.redGreen", label: "Red-Green Contrast", color: "#e6c715ff" },
-    { key: "chromaticFlashes.blueYellow", label: "Blue-Yellow Contrast", color: "#ecf32185"}
+    { key: "chromaticFlashes.blueYellow", label: "Blue-Yellow Contrast", color: "#ecf32185" }
 
 ];
 
@@ -286,7 +286,7 @@ function flattenMetrics(row) {
         flat['spatialMap.periphery'] = Number(row.spatialMap?.periphery ?? 0);
         if (Array.isArray(row.spatialMap?.quadrants)) {
             row.spatialMap.quadrants.forEach((q, i) => {
-                flat[`spatialMap.quadrant${i+1}`] = Number(q ?? 0);
+                flat[`spatialMap.quadrant${i + 1}`] = Number(q ?? 0);
             });
         }
     }
@@ -1047,7 +1047,7 @@ function handleJsonFileSelected(e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = function(evt) {
+    reader.onload = function (evt) {
         try {
             const json = JSON.parse(evt.target.result);
             let data;
@@ -1092,7 +1092,7 @@ function handleNdJsonFileSelected(e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = function(evt) {
+    reader.onload = function (evt) {
         try {
             const content = evt.target.result;
             // Basically unwrap NDJSON into an array of objects
