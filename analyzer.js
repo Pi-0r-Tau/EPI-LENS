@@ -17,7 +17,6 @@ if (!window.VideoAnalyzer) {
      * @requires helpers/Risk/*
      * @requires helpers/Motion/*
      *
-     *
      */
     class VideoAnalyzer {
         constructor({
@@ -35,11 +34,14 @@ if (!window.VideoAnalyzer) {
                 flashCount: 0,
                 riskLevel: 'low',
                 timeline: [],
-                lastFrameBrightness: 0,
+                lastFrameBrightness: null,
                 frameCount: 0,
                 flashSequences: [],
                 lastTimestamp: 0
             };
+            this.lastRedIntensity = null;
+            this.lastDominantLab = null;
+            this.lastFrame = null;
             this.thresholds = {
                 brightnessChange: 0.1,
                 flashThreshold: 0.1,
@@ -156,7 +158,6 @@ if (!window.VideoAnalyzer) {
             this.lastRedIntensity = 0;
             this.patternHistory = [];
             this.sceneChangeHistory = [];
-            this.patternHashes = [];
 
             this._frameDiffHistory = new Float32Array(8);
             this._frameDiffIdx = 0;
@@ -218,8 +219,11 @@ if (!window.VideoAnalyzer) {
                     typeof this.lastRedIntensity === "number" &&
                         isFinite(this.lastRedIntensity)
                         ? this.lastRedIntensity
-                        : 0;
-                const redDelta = Math.abs(redIntensity - prevRedIntensity);
+                        : null;
+                let redDelta = 0;
+                if (prevRedIntensity !== null) {
+                    redDelta = Math.abs(redIntensity - prevRedIntensity);
+                }
                 this.lastRedIntensity = redIntensity;
                 this.prevRedIntensity = prevRedIntensity;
                 const results = this.processFrame(
@@ -244,11 +248,21 @@ if (!window.VideoAnalyzer) {
             redIntensity = 0,
             redDelta = 0
         ) {
+            // TASK 7982: First frame set lastFrameBrightness to 0 from null, avoiding the false positive flash at frame 1
             const brightness = this.calculateAverageBrightness(imageData.data);
-            const brightnessDiff = Math.abs(
-                brightness - this.metrics.lastFrameBrightness
-            );
-            const isFlash = brightnessDiff > this.thresholds.brightnessChange;
+            let brightnessDiff = 0;
+            let isFlash = false;
+
+            if (this.metrics.lastFrameBrightness !== null) {
+                brightnessDiff = Math.abs(
+                    brightness - this.metrics.lastFrameBrightness
+                );
+                isFlash = brightnessDiff > this.thresholds.brightnessChange;
+            } else {
+                this.metrics.lastFrameBrightness = brightness;
+                brightnessDiff = 0;
+                isFlash = false;
+            }
 
             const dominantColor =
                 window.AnalyzerHelpers.calculateDominantColor(imageData);
@@ -259,7 +273,8 @@ if (!window.VideoAnalyzer) {
             );
 
             let cie76Delta = 0;
-            if (this.lastDominantLab) {
+            // TASK 7982
+            if (this.lastDominantLab !== null) {
                 cie76Delta = window.AnalyzerHelpers.cie76(
                     dominantLab,
                     this.lastDominantLab
@@ -303,8 +318,12 @@ if (!window.VideoAnalyzer) {
                 patternedStimulusScore: patternedStimulusScore,
                 sceneChangeScore: sceneChangeScore
             };
-
-            if (isFlash && brightnessDiff > this.thresholds.flashThreshold) {
+            // Reduces false positives if data is invalid, avoids first frame false positive flash
+            if (
+                this.metrics.lastFrameBrightness !== null &&
+                isFlash &&
+                brightnessDiff > this.thresholds.flashThreshold
+            ) {
                 this.metrics.flashCount++;
                 this.metrics.flashSequences.push({
                     timestamp,
@@ -387,8 +406,12 @@ if (!window.VideoAnalyzer) {
         getTimelineData() {
             return this.timelineData;
         }
-
+        // reduces false positive for first frame by setting value if null 
         detectFlashSequence(brightness, timestamp) {
+            if (this.metrics.lastFrameBrightness === null) {
+                this.metrics.lastFrameBrightness = brightness;
+                return;
+            }
             const brightnessDiff = Math.abs(
                 brightness - this.metrics.lastFrameBrightness
             );
@@ -673,11 +696,14 @@ if (!window.VideoAnalyzer) {
                 flashCount: 0,
                 riskLevel: 'low',
                 timeline: [],
-                lastFrameBrightness: 0,
+                lastFrameBrightness: null,
                 frameCount: 0,
                 flashSequences: [],
                 lastTimestamp: 0
             };
+            this.lastRedIntensity = null;
+            this.lastDominantLab = null;
+            this.lastFrame = null;
             this.timelineData = [];
             this.dataChunks = [];
             this.currentChunk = [];
