@@ -21,25 +21,21 @@ window.AnalyzerHelpers.colorSpikes = function (
         }
         if (count < 2) continue;
         const mean = sum / count;
-
-        let sqDiffSum = 0;
+        // TASK 3011: Nicer naming, can't be asked having long names
+        let variance = 0;
         for (let i = 0; i < arr.length; i++) {
             const v = arr[i];
-            if (typeof v === "number" && !isNaN(v)) {
-                sqDiffSum += (v - mean) * (v - mean);
+            if (typeof v === 'number' && !isNaN(v)) {
+                const diff = v - mean;
+                variance += diff * diff;
             }
         }
-        const stdDev = Math.sqrt(sqDiffSum / count);
-        const spikeThreshold = mean + stdDevMultiplier * stdDev;
-
+        const stdDev = Math.sqrt(variance / count);
+        const threshold = mean + stdDevMultiplier * stdDev;
         for (let i = 0; i < arr.length; i++) {
             const change = arr[i];
-            if (
-                typeof change === "number" &&
-                !isNaN(change) &&
-                change > spikeThreshold &&
-                change > fixedThreshold
-            ) {
+            if (typeof change === 'number' && !isNaN(change) &&
+                change > threshold && change > fixedThreshold) {
                 spikes.push({ channel, frameIndex: i, magnitude: change });
             }
         }
