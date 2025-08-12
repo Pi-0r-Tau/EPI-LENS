@@ -1,3 +1,6 @@
+// Called by colorVar
+// Refactor TASK 5772: 
+// Updated to use Welfords method, allowing for a single pass approach previous was mean then variance two pass
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 window.AnalyzerHelpers.colorSpikes = function (
     changes,
@@ -8,42 +11,41 @@ window.AnalyzerHelpers.colorSpikes = function (
     const channels = ["r", "g", "b"];
     for (let c = 0; c < channels.length; c++) {
         const channel = channels[c];
-        const arr = Array.isArray(changes[channel]) ? changes[channel] : [];
-        if (arr.length < 2) continue;
+        const arr =
+            changes && Array.isArray(changes[channel]) ? changes[channel] : [];
+        const len = arr.length;
+        if (len < 2) continue;
+        let mean = 0;
+        let m2 = 0;
+        let count = 0;
 
-        let sum = 0, count = 0;
-        for (let i = 0; i < arr.length; i++) {
+        for (let i = 0; i < len; i++) {
             const v = arr[i];
-            if (typeof v === "number" && !isNaN(v)) {
-                sum += v;
-                count++;
-            }
+            if (typeof v !== "number" || !Number.isFinite(v)) continue;
+            count++;
+            const delta = v - mean;
+            mean += delta / count;
+            m2 += delta * (v - mean);
         }
         if (count < 2) continue;
-        const mean = sum / count;
-        // TASK 3011: Nicer naming, can't be asked having long names
-        let variance = 0;
-        for (let i = 0; i < arr.length; i++) {
-            const v = arr[i];
-            if (typeof v === 'number' && !isNaN(v)) {
-                const diff = v - mean;
-                variance += diff * diff;
-            }
-        }
-        const stdDev = Math.sqrt(variance / count);
+
+        let variance = m2 / count; // population variance
+        if (variance < 0) variance = 0; // guard against tiny FP rounding negatives
+        const stdDev = Math.sqrt(variance);
         const threshold = mean + stdDevMultiplier * stdDev;
-        for (let i = 0; i < arr.length; i++) {
+
+        // Detect spikes
+        for (let i = 0; i < len; i++) {
             const change = arr[i];
-            if (typeof change === 'number' && !isNaN(change) &&
-                change > threshold && change > fixedThreshold) {
+            if (typeof change !== "number" || !Number.isFinite(change)) continue;
+            if (change > fixedThreshold && change > threshold) {
                 spikes.push({ channel, frameIndex: i, magnitude: change });
             }
         }
     }
-    // DEBUG
+
     // if (spikes.length) console.warn('Color spikes detected:', spikes);
-    // if (spikes.length > 100) {
-    //     console.log('Thats alot of spikes:', spikes.length);
-    // }
+    // if (spikes.length > 100) console.log('Thats alot of spikes:', spikes.length);
+
     return spikes;
 };
