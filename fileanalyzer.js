@@ -51,6 +51,16 @@ let analysisIntervalInput = document.getElementById('analysisInterval');
 let analysisIntervalValueSpan = document.getElementById('analysisIntervalValue');
 let analysisIntervalFpsInfo = document.getElementById('analysisIntervalFpsInfo');
 
+// TASK 5771: reset risk escalation state safely for risk helper:
+// If video was part of playlist then the  risk level previously would not reset between videos
+function resetRiskEscalation() {
+    try {
+        if (window.RiskLevelHelper && typeof window.RiskLevelHelper.reset === 'function') {
+            window.RiskLevelHelper.reset();
+        }
+    } catch (e) { }
+}
+
 function updateAnalysisIntervalFpsInfo() {
     if (!analysisIntervalInput || !analysisIntervalFpsInfo) return;
     const interval = parseFloat(analysisIntervalInput.value);
@@ -210,7 +220,6 @@ function openChartsView() {
     });
 }
 
-
 function handleFileSelect(e) {
     playlist = Array.from(e.target.files);
     playlistIndex = 0;
@@ -218,9 +227,26 @@ function handleFileSelect(e) {
     loadVideoFromPlaylist(playlistIndex);
     updatePlaylistInfo();
 }
+// TASK 5771: Video playlist summary stats reset bewtween videos
+
+function resetSummaryPanelFields() {
+    try {
+        document.getElementById('SummaryFlashes').textContent = '0';
+        document.getElementById('SummaryRisk').textContent = '-';
+        document.getElementById('SummaryPSI').textContent = '-';
+        document.getElementById('SummaryAvgPSI').textContent = '-';
+        document.getElementById('SummaryMaxPSI').textContent = '-';
+        let flashesDiv = document.getElementById('SummaryFlashesList');
+        if (flashesDiv) {
+            flashesDiv.innerHTML = '<div style="color:#888;">None</div>';
+        }
+    } catch (e) {}
+}
 
 function loadVideoFromPlaylist(index) {
     if (index < 0 || index >= playlist.length) return;
+    resetSummaryPanelFields(); // Reset summary panel fields
+    resetRiskEscalation(); // TASK 5771: Risk reset between videos
     const file = playlist[index];
     const url = URL.createObjectURL(file);
     video.src = url;
@@ -261,6 +287,7 @@ function startAnalysis() {
     if (!video.src) return;
     if (!analyzer) analyzer = new VideoAnalyzer();
     analyzer.reset();
+    resetRiskEscalation(); // TASK 5771
 
     let intensity = 0.2, flashesPerSecond = 3;
     if (flashIntensityInput && flashesPerSecondInput) {
@@ -311,6 +338,7 @@ function stopAnalysis() {
  */
 function restartAnalysis() {
     stopAnalysis();
+    resetRiskEscalation(); // TASK 5771 
     if (analyzer) analyzer.reset();
     liveMetricsHistory = [];
     resultsPanel.innerHTML = '';

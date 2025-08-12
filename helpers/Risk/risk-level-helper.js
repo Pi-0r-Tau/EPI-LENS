@@ -55,7 +55,7 @@
             advancedMetrics,
             lastRedIntensity,
             prevRedIntensity,
-            patternHistory
+            patternHistory,
         } = params;
 
         // DEBUG
@@ -167,11 +167,16 @@
             flickerHz,
             patternedStimulusScore,
             flashCount: metrics.flashCount,
-            frameCount: metrics.frameCount
+            frameCount: metrics.frameCount,
         };
+    }
+    // TASK 5771: Risk reset between videos for playlist vidoe playing
+    function reset() {
+        highestRiskLevel = 'low';
     }
 
     window.RiskLevelHelper = {
-        calculateRiskLevel
+        calculateRiskLevel,
+        reset,
     };
 })();
