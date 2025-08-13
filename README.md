@@ -273,13 +273,6 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
   - Dynamic weight adjustment
   - Risk level categorization
 
-### Memory Management
-- All metrics use circular buffers
-- Efficient data structures for real-time processing
-- Automatic garbage collection
-- Sparse storage optimization
-- Memory footprint optimization
-
 ## Memory Management
 
 ### Data Chunking
@@ -292,7 +285,6 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 - Real-time buffer: 300 frames
 - Export buffer: All chunks + current
 - Timestamp tracking: Relative and absolute
-- Memory optimization: Sparse storage
 
 ### Performance Optimization
 - Frame rate limiting: 60fps
