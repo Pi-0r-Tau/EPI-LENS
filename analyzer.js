@@ -155,12 +155,15 @@ if (!window.VideoAnalyzer) {
             this.totalFrames = 0;
             this.analysisStartTime = null;
             this.lastExportTime = 0;
-            this.lastRedIntensity = 0;
             this.patternHistory = [];
             this.sceneChangeHistory = [];
-
             this._frameDiffHistory = new Float32Array(8);
             this._frameDiffIdx = 0;
+            this.redMetricsEnabled = false; // Default disabled
+            this.temporalContrastEnabled = false; // Default disabled
+            this.isFileAnalyzer = false;
+            this.temporalContrastSeries = [];
+            this.temporalContrastResults = [];
         }
 
         updateThresholds(thresholds) {
@@ -206,7 +209,6 @@ if (!window.VideoAnalyzer) {
 
                 // Update metrics for new frame
                 this.metrics.frameCount++;
-                this.metrics.lastTimestamp = timestamp;
 
                 // Capture frame and compute color metrics
                 const imageData = this.captureFrame(video);
@@ -226,6 +228,7 @@ if (!window.VideoAnalyzer) {
                 }
                 this.lastRedIntensity = redIntensity;
                 this.prevRedIntensity = prevRedIntensity;
+                this.metrics.lastTimestamp = timestamp;
                 const results = this.processFrame(
                     imageData,
                     timestamp,
@@ -293,6 +296,106 @@ if (!window.VideoAnalyzer) {
             }
             this.sceneChangeHistory.push(sceneChangeScore);
 
+            // Calculate red metrics for current frame only if enabled and in fileanalyzer.js/html
+            let redMetrics = null;
+            if (this.redMetricsEnabled && this.isFileAnalyzer) {
+                try {
+                    const redAreaFraction = this.getRedAreaFraction(
+                        { color: dominantColor },
+                        dominantLab
+                    );
+                    if (!this.redSeries) {
+                        this.redSeries = [];
+                        this.redAreaFractions = [];
+                    }
+                    this.redSeries.push({
+                        timestamp: timestamp,
+                        color: dominantColor,
+                        redAreaFraction: redAreaFraction
+                    });
+                    this.redAreaFractions.push(redAreaFraction);
+                    const maxFrames = 30;
+                    if (this.redSeries.length > maxFrames) {
+                        this.redSeries.shift();
+                        this.redAreaFractions.shift();
+                    }
+
+                    // If data is enough compute red metrics
+                    if (this.redSeries.length >= 5) {
+                        // At least 5 frames needed
+                        const timestamps = this.redSeries.map((s) => s.timestamp);
+                        redMetrics = this.computeRedWindowMetrics(
+                            0,
+                            this.redSeries.length - 1,
+                            timestamps,
+                            this.redAreaFractions,
+                            0.25 // WCAG 2.1 red area threshold
+                        );
+                    } else {
+                        // Lack of data, push default values
+                        redMetrics = {
+                            redAreaAvg: redAreaFraction,
+                            redAreaMax: redAreaFraction,
+                            redOnFraction: redAreaFraction >= 0.25 ? 1 : 0,
+                            redTransitions: 0,
+                            redFlashEvents: 0,
+                            redFlashPerSecond: 0,
+                            redFlickerInRiskBand: false,
+                            redAreaThresholdUsed: 0.25,
+                            windowDurationMs: 0
+                        };
+                    }
+                } catch (error) {
+                    console.warn('Red metrics calculation error:', error);
+                    redMetrics = null;
+                }
+            }
+            this.temporalContrastSeries.push({
+                timestamp: timestamp,
+                color: dominantColor
+            });
+
+            // Keep recent frames for temporal analysis (last 2 seconds) or 120 fps
+            const maxFrames = 120;
+            if (this.temporalContrastSeries.length > maxFrames) {
+                this.temporalContrastSeries.shift();
+            }
+
+            // Temporal contrast sensitivity if enabled and data is enough
+            let temporalContrastSensitivity = null;
+            if (
+                this.temporalContrastEnabled &&
+                this.isFileAnalyzer &&
+                this.temporalContrastSeries.length >= 10
+            ) {
+                const analysisInterval = this.analysisInterval || 1 / 30; // Default of 30fps
+                const effectiveFPS = 1 / analysisInterval;
+                const windowSizeMs = Math.max(1000, analysisInterval * 1000 * 10);
+                const adaptiveHalfLife = Math.min(500, windowSizeMs / 3);
+
+                this.temporalContrastResults =
+                    window.AnalyzerHelpers.analyzeTemporalContrastSensitivity.call(
+                        this,
+                        this.temporalContrastSeries,
+                        windowSizeMs,
+                        {
+                            threshold: 2.3,
+                            useWeighting: true,
+                            weightDecay: 0.1,
+                            halfLifeMs: adaptiveHalfLife,
+                            computePercentiles: true,
+                            analysisInterval: analysisInterval,
+                            effectiveFPS: effectiveFPS
+                        }
+                    );
+                if (this.temporalContrastResults.length > 0) {
+                    temporalContrastSensitivity =
+                        this.temporalContrastResults[
+                        this.temporalContrastResults.length - 1
+                        ];
+                }
+            }
+
             const metrics = {
                 colorVariance: this.calculateColorVariance(imageData),
                 temporalChange: this.calculateTemporalChange(brightness),
@@ -316,9 +419,16 @@ if (!window.VideoAnalyzer) {
                 dominantLab: dominantLab,
                 cie76Delta: cie76Delta,
                 patternedStimulusScore: patternedStimulusScore,
-                sceneChangeScore: sceneChangeScore
+                sceneChangeScore: sceneChangeScore,
+                contrastSensitivity: this.analyzeContrastSensitivity(imageData, {
+                    threshold: 2.3,
+                    useWeighting: true,
+                    weightDecay: 0.1,
+                }),
+                redMetrics: redMetrics,
+                temporalContrastSensitivity: temporalContrastSensitivity
             };
-            // Reduces false positives if data is invalid, avoids first frame false positive flash
+
             if (
                 this.metrics.lastFrameBrightness !== null &&
                 isFlash &&
@@ -648,6 +758,50 @@ if (!window.VideoAnalyzer) {
             );
         }
 
+        isSaturatedRed(color, lab, thresholds) {
+            return window.AnalyzerHelpers.isSaturatedRed.call(
+                this,
+                color,
+                lab,
+                thresholds
+            );
+        }
+
+        getRedAreaFraction(sample, lab, thresholds) {
+            return window.AnalyzerHelpers.getRedAreaFraction.call(
+                this,
+                sample,
+                lab,
+                thresholds
+            );
+        }
+
+        precomputeRedSeries(sortedSeries, labs, thresholds) {
+            return window.AnalyzerHelpers.precomputeRedSeries.call(
+                this,
+                sortedSeries,
+                labs,
+                thresholds
+            );
+        }
+
+        computeRedWindowMetrics(
+            startIdx,
+            endIdx,
+            timestamps,
+            redAreaFractions,
+            redAreaOnThreshold
+        ) {
+            return window.AnalyzerHelpers.computeRedWindowMetrics.call(
+                this,
+                startIdx,
+                endIdx,
+                timestamps,
+                redAreaFractions,
+                redAreaOnThreshold
+            );
+        }
+
         detectEdges(imageData, sobelThreshold = 50, maxHistory = 500) {
             return window.AnalyzerHelpers.detectEdges.call(
                 this,
@@ -708,6 +862,16 @@ if (!window.VideoAnalyzer) {
             this.dataChunks = [];
             this.currentChunk = [];
             this._frameDiffHistory = new Float32Array(8);
+
+            if (this.redMetricsEnabled && this.isFileAnalyzer) {
+                this.redSeries = [];
+                this.redAreaFractions = [];
+            }
+
+            if (this.temporalContrastEnabled && this.isFileAnalyzer) {
+                this.temporalContrastSeries = [];
+                this.temporalContrastResults = [];
+            }
 
             const coherenceWindowSize =
                 this.advancedMetrics.temporalCoherence.windowSize || 30;
@@ -838,6 +1002,9 @@ if (!window.VideoAnalyzer) {
                 cie76Delta: metrics.cie76Delta,
                 patternedStimulusScore: metrics.patternedStimulusScore,
                 sceneChangeScore: metrics.sceneChangeScore,
+                contrastSensitivity: metrics.contrastSensitivity,
+                redMetrics: metrics.redMetrics,
+                temporalContrastSensitivity: metrics.temporalContrastSensitivity,
             };
             entry.spectralFlatness = metrics.spectralData?.spectralFlatness ?? 0;
             this.currentChunk.push(entry);
@@ -869,6 +1036,36 @@ if (!window.VideoAnalyzer) {
 
         performFFT(signal) {
             return window.AnalyzerHelpers.performFFT(signal);
+        }
+
+        analyzeContrastSensitivity(imageData, options = {}) {
+            if (
+                window.AnalyzerHelpers &&
+                typeof window.AnalyzerHelpers
+                    .calculateContrastSensitivityFromImageData === "function"
+            ) {
+                return window.AnalyzerHelpers.calculateContrastSensitivityFromImageData(
+                    imageData,
+                    options
+                );
+            }
+
+            const data = imageData && imageData.data;
+            if (!data || !data.length) return null;
+
+            const colors = [];
+            for (let i = 0; i < data.length; i += 4) {
+                colors.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
+            }
+
+            return this.calculateContrastSensitivity(colors, options);
+        }
+
+        calculateContrastSensitivity(colors, options = {}) {
+            return window.AnalyzerHelpers.calculateContrastSensitivity(
+                colors,
+                options
+            );
         }
     }
 
