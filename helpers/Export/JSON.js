@@ -8,6 +8,7 @@ window.AnalyzerHelpers.generateJSON = function () {
                 totalFramesAnalyzed: this.metrics.frameCount,
                 totalFlashesDetected: this.metrics.flashCount,
                 riskLevel: this.metrics.riskLevel,
+                redMetricsEnabled: !!this.redMetricsEnabled,
             },
             analysis: [...this.dataChunks.flat(), ...this.currentChunk]
                 .filter((entry) => entry.timestamp >= 0)
@@ -28,7 +29,9 @@ window.AnalyzerHelpers.generateJSON = function () {
                         rChange * rChange + gChange * gChange + bChange * bChange
                     );
 
-                    return {
+                    const contrastSensitivity = entry.contrastSensitivity || {};
+                    const temporalContrastSensitivity = entry.temporalContrastSensitivity || {};
+                    const baseEntry = {
                         timestamp: Number(entry.timestamp || 0).toFixed(6),
                         brightness: Number(entry.brightness || 0).toFixed(4),
                         isFlash: entry.isFlash,
@@ -119,7 +122,85 @@ window.AnalyzerHelpers.generateJSON = function () {
                             entry.patternedStimulusScore || 0
                         ).toFixed(4),
                         sceneChangeScore: Number(entry.sceneChangeScore || 0).toFixed(4),
+
+                        contrastSensitivity: {
+                            sensitivity: Number(contrastSensitivity.sensitivity || 0).toFixed(4),
+                            fluctuations: Number(contrastSensitivity.fluctuations || 0).toFixed(4),
+                            averageDeltaE: Number(contrastSensitivity.averageDeltaE || 0).toFixed(4),
+                            maxDeltaE: Number(contrastSensitivity.maxDeltaE || 0).toFixed(4),
+                            significantChanges: contrastSensitivity.significantChanges || 0,
+                            totalSamples: contrastSensitivity.totalSamples || 0,
+                            fluctuationRate: Number(contrastSensitivity.fluctuationRate || 0).toFixed(4),
+                            weightedAverageDeltaE: Number(contrastSensitivity.weightedAverageDeltaE || 0).toFixed(4),
+                            windowSize: contrastSensitivity.windowSize || 0,
+                            weightDecay: Number(contrastSensitivity.weightDecay || 0).toFixed(6),
+                            coefficientOfVariation: Number(contrastSensitivity.coefficientOfVariation || 0).toFixed(4),
+                            medianDeltaE: Number(contrastSensitivity.medianDeltaE || 0).toFixed(4),
+                            p90DeltaE: Number(contrastSensitivity.p90DeltaE || 0).toFixed(4),
+                            p95DeltaE: Number(contrastSensitivity.p95DeltaE || 0).toFixed(4),
+                        },
+                        temporalContrastSensitivity: {
+                            startTime: Number(temporalContrastSensitivity.startTime || 0).toFixed(2),
+                            endTime: Number(temporalContrastSensitivity.endTime || 0).toFixed(2),
+                            duration: Number(temporalContrastSensitivity.duration || 0).toFixed(2),
+                            sampleCount: temporalContrastSensitivity.sampleCount || 0,
+                            sensitivity: Number(temporalContrastSensitivity.sensitivity || 0).toFixed(4),
+                            fluctuations: Number(temporalContrastSensitivity.fluctuations || 0).toFixed(4),
+                            averageDeltaE: Number(temporalContrastSensitivity.averageDeltaE || 0).toFixed(4),
+                            maxDeltaE: Number(temporalContrastSensitivity.maxDeltaE || 0).toFixed(4),
+                            significantChanges: temporalContrastSensitivity.significantChanges || 0,
+                            totalSamples: temporalContrastSensitivity.totalSamples || 0,
+                            fluctuationRate: Number(temporalContrastSensitivity.fluctuationRate || 0).toFixed(4),
+                            weightedAverageDeltaE: Number(temporalContrastSensitivity.weightedAverageDeltaE || 0).toFixed(4),
+                            windowSize: temporalContrastSensitivity.windowSize || 0,
+                            weightDecay: Number(temporalContrastSensitivity.weightDecay || 0).toFixed(6),
+                            coefficientOfVariation: Number(temporalContrastSensitivity.coefficientOfVariation || 0).toFixed(4),
+                            medianDeltaE: Number(temporalContrastSensitivity.medianDeltaE || 0).toFixed(4),
+                            p90DeltaE: Number(temporalContrastSensitivity.p90DeltaE || 0).toFixed(4),
+                            p95DeltaE: Number(temporalContrastSensitivity.p95DeltaE || 0).toFixed(4),
+                            streamWeightedAverageDeltaE: Number(temporalContrastSensitivity.streamWeightedAverageDeltaE || 0).toFixed(4)
+                        },
                     };
+
+                    // Include temporal contrast sensitivity only if enabled via fileanalyzer.js
+                    if (this.temporalContrastEnabled && this.isFileAnalyzer) {
+                        baseEntry.temporalContrastSensitivity = {
+                            startTime: Number(temporalContrastSensitivity.startTime || 0).toFixed(2),
+                            endTime: Number(temporalContrastSensitivity.endTime || 0).toFixed(2),
+                            duration: Number(temporalContrastSensitivity.duration || 0).toFixed(2),
+                            sampleCount: temporalContrastSensitivity.sampleCount || 0,
+                            sensitivity: Number(temporalContrastSensitivity.sensitivity || 0).toFixed(4),
+                            fluctuations: Number(temporalContrastSensitivity.fluctuations || 0).toFixed(4),
+                            averageDeltaE: Number(temporalContrastSensitivity.averageDeltaE || 0).toFixed(4),
+                            maxDeltaE: Number(temporalContrastSensitivity.maxDeltaE || 0).toFixed(4),
+                            significantChanges: temporalContrastSensitivity.significantChanges || 0,
+                            totalSamples: temporalContrastSensitivity.totalSamples || 0,
+                            fluctuationRate: Number(temporalContrastSensitivity.fluctuationRate || 0).toFixed(4),
+                            weightedAverageDeltaE: Number(temporalContrastSensitivity.weightedAverageDeltaE || 0).toFixed(4),
+                            windowSize: temporalContrastSensitivity.windowSize || 0,
+                            weightDecay: Number(temporalContrastSensitivity.weightDecay || 0).toFixed(6),
+                            coefficientOfVariation: Number(temporalContrastSensitivity.coefficientOfVariation || 0).toFixed(4),
+                            medianDeltaE: Number(temporalContrastSensitivity.medianDeltaE || 0).toFixed(4),
+                            p90DeltaE: Number(temporalContrastSensitivity.p90DeltaE || 0).toFixed(4),
+                            p95DeltaE: Number(temporalContrastSensitivity.p95DeltaE || 0).toFixed(4),
+                            streamWeightedAverageDeltaE: Number(temporalContrastSensitivity.streamWeightedAverageDeltaE || 0).toFixed(4)
+                        };
+                    }
+
+                    // Include red metrics only if enabled via fileanalyzer.js, toggled via fileanalyzer.html
+                    if (this.redMetricsEnabled) {
+                        baseEntry.redMetrics = {
+                            redAreaAvg: Number(entry.redMetrics?.redAreaAvg || 0).toFixed(4),
+                            redAreaMax: Number(entry.redMetrics?.redAreaMax || 0).toFixed(4),
+                            redOnFraction: Number(entry.redMetrics?.redOnFraction || 0).toFixed(4),
+                            redTransitions: entry.redMetrics?.redTransitions || 0,
+                            redFlashEvents: entry.redMetrics?.redFlashEvents || 0,
+                            redFlashPerSecond: Number(entry.redMetrics?.redFlashPerSecond || 0).toFixed(4),
+                            redFlickerInRiskBand: !!entry.redMetrics?.redFlickerInRiskBand,
+                        };
+                    }
+
+                    return baseEntry;
                 }),
             colorHistory: {
                 r: this.advancedMetrics.colorHistory.r,
