@@ -217,9 +217,45 @@ const ALL_METRICS = [
     { key: "spatialMap.quadrant3", label: "Spatial Map Q3", color: "#2bb640ff" },
     { key: "spatialMap.quadrant4", label: "Spatial Map Q4", color: "#ffc107" },
     { key: "chromaticFlashes.redGreen", label: "Red-Green Contrast", color: "#e6c715ff" },
-    { key: "chromaticFlashes.blueYellow", label: "Blue-Yellow Contrast", color: "#ecf32185" }
-
+    { key: "chromaticFlashes.blueYellow", label: "Blue-Yellow Contrast", color: "#ecf32185" },
+    { key: "contrastSensitivity.sensitivity", label: "Contrast Sensitivity", color: "#ffb300" },
+    { key: "contrastSensitivity.fluctuations", label: "Contrast Fluctuations", color: "#ff7043" },
+    { key: "contrastSensitivity.averageDeltaE", label: "Contrast Avg DeltaE", color: "#ab47bc" },
+    { key: "contrastSensitivity.maxDeltaE", label: "Contrast Max DeltaE", color: "#26a69a" },
+    { key: "contrastSensitivity.significantChanges", label: "Contrast Significant Changes", color: "#789262" },
+    { key: "contrastSensitivity.totalSamples", label: "Contrast Total Samples", color: "#8d6e63" },
+    { key: "contrastSensitivity.fluctuationRate", label: "Contrast Fluctuation Rate", color: "#ffa726" },
+    { key: "contrastSensitivity.weightedAverageDeltaE", label: "Contrast Weighted Avg DeltaE", color: "#42a5f5" },
+    { key: "contrastSensitivity.windowSize", label: "Contrast Window Size", color: "#bdbdbd" },
+    { key: "contrastSensitivity.weightDecay", label: "Contrast Weight Decay", color: "#789262" },
+    { key: "contrastSensitivity.coefficientOfVariation", label: "Contrast Coefficient of Variation", color: "#e57373" },
+    { key: "contrastSensitivity.medianDeltaE", label: "Contrast 90th Percentile DeltaE", color: "#64b5f6" },
+    { key: "contrastSensitivity.p90DeltaE", label: "Contrast 90th Percentile DeltaE", color: "#81c784" },
+    { key: "contrastSensitivity.p95DeltaE", label: "Contrast 95th Percentile DeltaE", color: "#ffd54f" },
+    { key: "temporalContrastSensitivity.duration", label: "Temporal Contrast Duration", color: "#a1887f" },
+    { key: "temporalContrastSensitivity.sampleCount", label: "Temporal Contrast Sample Count", color: "#bcaaa4" },
+    { key: "temporalContrastSensitivity.sensitivity", label: "Temporal Contrast Sensitivity", color: "#d7ccc8" },
+    { key: "temporalContrastSensitivity.fluctuations", label: "Temporal Contrast Fluctuations", color: "#efebe9" },
+    { key: "temporalContrastSensitivity.averageDeltaE", label: "Temporal Contrast Avg DeltaE", color: "#ff6f00" },
+    { key: "temporalContrastSensitivity.maxDeltaE", label: "Temporal Contrast Max DeltaE", color: "#ff8f00" },
+    { key: "temporalContrastSensitivity.significantChanges", label: "Temporal Contrast Significant Changes", color: "#ffa000" },
+    { key: "temporalContrastSensitivity.totalSamples", label: "Temporal Contrast Total Samples", color: "#ffb300" },
+    { key: "temporalContrastSensitivity.fluctuationRate", label: "Temporal Contrast Fluctuation Rate", color: "#ffc107" },
+    { key: "temporalContrastSensitivity.weightedAverageDeltaE", label: "Temporal Contrast Weighted Avg DeltaE", color: "#ffca28" },
+    { key: "temporalContrastSensitivity.coefficientOfVariation", label: "Temporal Contrast Coefficient of Variation", color: "#ffe082" },
+    { key: "temporalContrastSensitivity.medianDeltaE", label: "Temporal Contrast Median DeltaE", color: "#ffecb3" },
+    { key: "temporalContrastSensitivity.p90DeltaE", label: "Temporal Contrast 90th Percentile DeltaE", color: "#fff3e0" },
+    { key: "temporalContrastSensitivity.p95DeltaE", label: "Temporal Contrast 95th Percentile DeltaE", color: "#fff8e1" },
+    { key: "temporalContrastSensitivity.streamWeightedAverageDeltaE", label: "Temporal Contrast Stream Weighted Avg DeltaE", color: "#fffde7" },
+    { key: "redMetrics.redAreaAvg", label: "Red Area Average", color: "#d32f2f" },
+    { key: "redMetrics.redAreaMax", label: "Red Area Maximum", color: "#f44336" },
+    { key: "redMetrics.redOnFraction", label: "Red On Fraction", color: "#e57373" },
+    { key: "redMetrics.redTransitions", label: "Red Transitions", color: "#ff5722" },
+    { key: "redMetrics.redFlashEvents", label: "Red Flash Events", color: "#ff7043" },
+    { key: "redMetrics.redFlashPerSecond", label: "Red Flash Per Second", color: "#ff8a65" },
+    { key: "redMetrics.redFlickerInRiskBand", label: "Red Flicker In Risk Band", color: "#ffab91", convert: v => v ? 1 : 0 }
 ];
+
 
 /**
  * Flattens nested metrics for charting and table display.
@@ -332,6 +368,55 @@ function flattenMetrics(row) {
     // Scene Change Detection
     flat['sceneChangeScore'] = Number(row.sceneChangeScore ?? 0);
 
+
+
+    // Contrast Sensitivity
+    if (row.contrastSensitivity) {
+        const cs = row.contrastSensitivity;
+        flat['contrastSensitivity.sensitivity'] = Number(cs.sensitivity ?? 0);
+        flat['contrastSensitivity.fluctuations'] = Number(cs.fluctuations ?? 0);
+        flat['contrastSensitivity.averageDeltaE'] = Number(cs.averageDeltaE ?? 0);
+        flat['contrastSensitivity.maxDeltaE'] = Number(cs.maxDeltaE ?? 0);
+        flat['contrastSensitivity.significantChanges'] = Number(cs.significantChanges ?? 0);
+        flat['contrastSensitivity.totalSamples'] = Number(cs.totalSamples ?? 0);
+        flat['contrastSensitivity.fluctuationRate'] = Number(cs.fluctuationRate ?? 0);
+        flat['contrastSensitivity.weightedAverageDeltaE'] = Number(cs.weightedAverageDeltaE ?? 0);
+        flat['contrastSensitivity.coefficientOfVariation'] = Number(cs.coefficientOfVariation ?? 0);
+        flat['contrastSensitivity.medianDeltaE'] = Number(cs.medianDeltaE ?? 0);
+        flat['contrastSensitivity.p90DeltaE'] = Number(cs.p90DeltaE ?? 0);
+        flat['contrastSensitivity.p95DeltaE'] = Number(cs.p95DeltaE ?? 0)
+    }
+
+    // Temporal Contrast Sensitivity
+    if (row.temporalContrastSensitivity) {
+        const tcs = row.temporalContrastSensitivity;
+        flat['temporalContrastSensitivity.duration'] = Number(tcs.duration ?? 0);
+        flat['temporalContrastSensitivity.sampleCount'] = Number(tcs.sampleCount ?? 0);
+        flat['temporalContrastSensitivity.sensitivity'] = Number(tcs.sensitivity ?? 0);
+        flat['temporalContrastSensitivity.fluctuations'] = Number(tcs.fluctuations ?? 0);
+        flat['temporalContrastSensitivity.averageDeltaE'] = Number(tcs.averageDeltaE ?? 0);
+        flat['temporalContrastSensitivity.maxDeltaE'] = Number(tcs.maxDeltaE ?? 0);
+        flat['temporalContrastSensitivity.significantChanges'] = Number(tcs.significantChanges ?? 0);
+        flat['temporalContrastSensitivity.totalSamples'] = Number(tcs.totalSamples ?? 0);
+        flat['temporalContrastSensitivity.fluctuationRate'] = Number(tcs.fluctuationRate ?? 0);
+        flat['temporalContrastSensitivity.weightedAverageDeltaE'] = Number(tcs.weightedAverageDeltaE ?? 0);
+        flat['temporalContrastSensitivity.coefficientOfVariation'] = Number(tcs.coefficientOfVariation ?? 0);
+        flat['temporalContrastSensitivity.medianDeltaE'] = Number(tcs.medianDeltaE ?? 0);
+        flat['temporalContrastSensitivity.p90DeltaE'] = Number(tcs.p90DeltaE ?? 0);
+        flat['temporalContrastSensitivity.p95DeltaE'] = Number(tcs.p95DeltaE ?? 0);
+        flat['temporalContrastSensitivity.streamWeightedAverageDeltaE'] = Number(tcs.streamWeightedAverageDeltaE ?? 0);
+    }
+    // Red metrics
+    if (row.redMetrics) {
+        const rm = row.redMetrics;
+        flat['redMetrics.redAreaAvg'] = Number(rm.redAreaAvg ?? 0);
+        flat['redMetrics.redAreaMax'] = Number(rm.redAreaMax ?? 0);
+        flat['redMetrics.redOnFraction'] = Number(rm.redOnFraction ?? 0);
+        flat['redMetrics.redTransitions'] = Number(rm.redTransitions ?? 0);
+        flat['redMetrics.redFlashEvents'] = Number(rm.redFlashEvents ?? 0);
+        flat['redMetrics.redFlashPerSecond'] = Number(rm.redFlashPerSecond ?? 0);
+        flat['redMetrics.redFlickerInRiskBand'] = rm.redFlickerInRiskBand ? 1 : 0;
+    }
     return flat;
 }
 
