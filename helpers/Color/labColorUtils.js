@@ -122,3 +122,231 @@ window.AnalyzerHelpers.extractDominantColors = function (data, n = 5) {
       count,
     }));
 };
+
+/* Saturated Red Detection
+
+Adds red detection without re-linearizing sRGB
+- The Lab a* and chroma always computed via rgbToLab.
+- If linR/G/B are not present, skips the linear gate and rely on Lab gate only.
+
+At some point in this project I messed up the standarization of the timings, so for some reason I pass both miliseconds and seconds. So apologies for that.
+So I have some hacky way to detect the duration be it in miliseconds or seconds.
+*/
+
+(function () {
+  const AH = (window.AnalyzerHelpers = window.AnalyzerHelpers || {});
+
+  // Defaults for saturated red and area gating
+  AH.defaultRedThresholds = AH.defaultRedThresholds || {
+    // Linear sRGB thresholds (0..1) Only applied if color.linR/linG/linB are provided.
+    rHi: 0.8, // Red threshold
+    gLo: 0.25, // Green suppression
+    bLo: 0.25, // Blue suppression
+    // Lab cross-check thresholds
+    aThresh: 30, // a* threshold
+    cThresh: 35, // Chroma threshold
+    // Area fraction to treat "red ON" for flash counting - higher threshold
+    // W3C WCAG 2.1 0.25 for red area fraction.
+    areaThreshold: 0.25,
+    // Red area fraction calculation thresholds
+    redDominanceThreshold: 50, // RGB dominance threshold
+    redIntensityThreshold: 0.6, // Minimum red intensity
+    minRedAreaFraction: 0.3, // Minimum return value for detected red areas
+    weakRedMultiplier: 0.05, // Multiplier for weak red content
+    maxWeakRedFraction: 0.1, // Maximum value for weak red content
+  };
+
+  function clamp01(x) {
+    return x < 0 ? 0 : x > 1 ? 1 : x;
+  }
+
+  /**
+   * Determine if a color is saturated red.
+   * Uses Lab gate always; uses linear sRGB gate only if color.linR/G/B provided.
+   */
+  AH.isSaturatedRed = function isSaturatedRed(color, lab, thresholds) {
+    const T = Object.assign({}, AH.defaultRedThresholds, thresholds || {});
+    // Linear RGB gate
+    // If color.linR/G/B are not provided, skip gate
+    let gateRGB = true; // default to true so Lab gate alone can pass
+    if (
+      typeof color.linR === "number" &&
+      typeof color.linG === "number" &&
+      typeof color.linB === "number"
+    ) {
+      gateRGB = color.linR > T.rHi && color.linG < T.gLo && color.linB < T.bLo;
+    }
+
+    // Lab cross-check gate
+    const a = lab.a;
+    const b = lab.b;
+    const chroma = Math.sqrt(a * a + b * b);
+    const gateLab = a > T.aThresh && chroma > T.cThresh;
+
+    return gateRGB && gateLab;
+  };
+
+  AH.getRedAreaFraction = function getRedAreaFraction(sample, lab, thresholds) {
+    if (sample && typeof sample.redAreaFraction === "number") {
+      return clamp01(sample.redAreaFraction);
+    }
+
+    const T = Object.assign({}, AH.defaultRedThresholds, thresholds || {});
+    const color = sample.color;
+
+    // How much red exceeds green and blue for dominance
+    const redDominance = color.r - Math.max(color.g, color.b);
+    const redIntensity = color.r / 255;
+    // If
+    // Red is significantly higher than green/blue
+    // Red intensity is high enough
+    // Passes Lab color space checks
+    const isRed = AH.isSaturatedRed(sample.color, lab, T);
+    const dominanceThreshold = T.redDominanceThreshold || 50;
+    const intensityThreshold = T.redIntensityThreshold || 0.6;
+    const hasRedDominance =
+      redDominance > dominanceThreshold && redIntensity > intensityThreshold;
+
+    if (isRed && hasRedDominance) {
+      // Now how 'red' is it, is it really red, how 'really' red is that
+      const minRedFraction = T.minRedAreaFraction || 0.3;
+      return Math.max(minRedFraction, redIntensity);
+    } else {
+      const weakRedMultiplier = T.weakRedMultiplier || 0.05;
+      const maxWeakRed = T.maxWeakRedFraction || 0.1;
+      return Math.min(redIntensity * weakRedMultiplier, maxWeakRed);
+    }
+  };
+
+  AH.precomputeRedSeries = function precomputeRedSeries(
+    sortedSeries,
+    labs,
+    thresholds
+  ) {
+    const T = Object.assign({}, AH.defaultRedThresholds, thresholds || {});
+    const n = sortedSeries.length;
+    const redAreaFractions = new Array(n);
+    const redOn = new Array(n);
+    for (let i = 0; i < n; i++) {
+      const raf = AH.getRedAreaFraction(sortedSeries[i], labs[i], T);
+      redAreaFractions[i] = raf;
+      redOn[i] = raf >= T.areaThreshold ? 1 : 0;
+    }
+    return { redAreaFractions, redOn, thresholdsUsed: T };
+  };
+
+  // Median of positive timestamp deltas
+  function medianPositiveDelta(ts, startIdx, endIdx) {
+    const i0 = Math.min(startIdx, endIdx);
+    const i1 = Math.max(startIdx, endIdx);
+    const deltas = [];
+    for (let i = i0 + 1; i <= i1; i++) {
+      const d = ts[i] - ts[i - 1];
+      if (Number.isFinite(d) && d > 0) deltas.push(d);
+    }
+    if (deltas.length === 0) return null;
+    deltas.sort((a, b) => a - b);
+    const m = deltas.length >> 1;
+    return deltas.length % 2 ? deltas[m] : 0.5 * (deltas[m - 1] + deltas[m]);
+  }
+
+  // Infer duration in seconds from timestamps that may be in seconds or milliseconds
+  function inferDurationSec(timestamps, startIdx, endIdx) {
+    const i0 = Math.min(startIdx, endIdx);
+    const i1 = Math.max(startIdx, endIdx);
+    let span = timestamps[i1] - timestamps[i0];
+
+    // Try to infer unit using median frame delta
+    const med = medianPositiveDelta(timestamps, i0, i1);
+
+    // If it is a valid span, use it; otherwise fallback to med * frames
+    if (!Number.isFinite(span) || span <= 0) {
+      if (Number.isFinite(med) && med > 0) {
+        span = med * (i1 - i0);
+      } else {
+        // Final fallback attempt: assume 30 FPS
+        return (i1 - i0) / 30;
+      }
+    }
+
+    // If the typical frame delta is < 1, timestamps are likely in seconds
+    // If all fails, assume milliseconds
+    const inSeconds = Number.isFinite(med) ? med < 1 : Math.abs(span) < 10;
+    return inSeconds ? span : span / 1000;
+  }
+
+  AH.computeRedWindowMetrics = function computeRedWindowMetrics(
+    startIdx,
+    endIdx,
+    timestamps,
+    redAreaFractions,
+    redAreaOnThreshold
+  ) {
+    const r3 = (x) => Math.round(x * 1000) / 1000; // Round to 3 decimal places
+
+    const i0 = Math.min(startIdx, endIdx);
+    const i1 = Math.max(startIdx, endIdx);
+    const samples = i1 - i0 + 1;
+
+    // Single-sample windows can't have transitions or rate
+    if (samples <= 1) {
+      const raf = redAreaFractions[i0] ?? 0;
+      return {
+        redAreaAvg: r3(raf),
+        redAreaMax: r3(raf),
+        redOnFraction: r3(raf >= redAreaOnThreshold ? 1 : 0),
+        redTransitions: 0,
+        redFlashEvents: 0,
+        redFlashPerSecond: 0,
+        redFlickerInRiskBand: false,
+        redAreaThresholdUsed: redAreaOnThreshold,
+        windowDurationMs: 0,
+      };
+    }
+
+    let redAreaSum = 0;
+    let redAreaMax = 0;
+    let redOnCount = 0;
+    let transitions = 0;
+
+    let prevOn = null;
+    for (let i = i0; i <= i1; i++) {
+      const raf = redAreaFractions[i] ?? 0;
+      redAreaSum += raf;
+      if (raf > redAreaMax) redAreaMax = raf;
+      const on = raf >= redAreaOnThreshold ? 1 : 0;
+      redOnCount += on;
+      if (prevOn !== null && on !== prevOn) transitions++;
+      prevOn = on;
+    }
+
+    // Duration in seconds and ms, supporting timestamps in s or ms (Sorry for the hacky way)
+    const durationSec = inferDurationSec(timestamps, i0, i1);
+    const durationMs = durationSec * 1000;
+
+    // Two opposing transitions ≈ one flash
+    const redFlashEvents = transitions >= 2 ? Math.floor(transitions / 2) : 0;
+
+    // Calculate flash rate clamp to a upper bound
+    let redFlashPerSecond = 0;
+    if (redFlashEvents > 0 && durationSec > 0) {
+      redFlashPerSecond = redFlashEvents / durationSec;
+      if (redFlashPerSecond > 60) redFlashPerSecond = 60; // Clamp to 60 flashes per second / 60 Hz
+    }
+
+    const redFlickerInRiskBand =
+      redFlashPerSecond >= 3 && redFlashPerSecond <= 30;
+
+    return {
+      redAreaAvg: r3(redAreaSum / samples),
+      redAreaMax: r3(redAreaMax),
+      redOnFraction: r3(redOnCount / samples),
+      redTransitions: transitions,
+      redFlashEvents,
+      redFlashPerSecond: r3(redFlashPerSecond),
+      redFlickerInRiskBand,
+      redAreaThresholdUsed: redAreaOnThreshold,
+      windowDurationMs: Math.round(durationMs),
+    };
+  };
+})();
