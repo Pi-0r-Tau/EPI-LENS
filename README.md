@@ -90,6 +90,10 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 - Charting file structure rejiged for nicer folder based structure
 - Periodicity threshold updated from 0.5 to 0.25 to reflect scientific standards. 
 
+- fileanalyzer now has Red metrics and Contrast Sensitivity metrics that are toggle based
+- Updated the export logic to enable clean exports regardless of if these toggles are used.
+- Order-Statistic AVL Tree for percentiles of Contrast Sensitivity
+
 ## Recent updates to metrics
 - Patterned stimulus score
 - Dominant color (LAB)
@@ -100,6 +104,26 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 -  Scene Change Score
 - Spectral Flatness
 - Color Change Magnitude
+- Contrast Sensitivity:
+  - Normalized Sensitivity
+  - Fluctuations (Std. of color differences)
+  - Avg. Delta E
+  - Max. Delta E
+  - Significant Changes
+  - Fluctuation Rate
+  - Weighted Avg. Delta E
+  - Coefficient of Variation (Ratio of fluctuations to the Avg.)
+  - Median Delta E
+  - P90 Delta E
+  - P95 Delta E
+  - Stream weighted Avg. Delta E
+- Saturated Red Detection:
+  - Red Area Avg.
+  - Red Area Max.
+  - Red Transitions
+  - Red Flash Events
+  - Red Flashes per second
+  - Red Flicker Risk Band
 
 ## Updates in progress
 - Implementation of Jordan, J. B. & Vanderheiden, G. C. (2024). International Guidelines for Photosensitive Epilepsy: Gap Analysis and Recommendations. ACM Transactions on Accessible Computing, 17(3), 17:1 - 17:35. (https://github.com/jbjord/pseGuidelines)
