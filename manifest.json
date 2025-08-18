@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "R TESTING EPI-LENS",
-  "version": "5",
+  "name": "EPI-LENS",
+  "version": "7.1",
   "description": "Real-time quantitative analysis of video content for photosensitive trigger detection.",
   "permissions": [
     "activeTab",
@@ -42,6 +42,8 @@
     "helpers/Color/coverage.js",
     "helpers/Avg/avgIntensity.js",
     "helpers/Color/colorVar.js",
+    "helpers/Color/percentileTree.js",
+    "helpers/Color/contrastSen.js",
     "helpers/Color/colorHist.js",
     "helpers/Temporal/tempVar.js",
     "helpers/Color/colorSpikes.js",

@@ -50,6 +50,10 @@ let flashesPerSecondInput = document.getElementById('flashesPerSecondThreshold')
 let analysisIntervalInput = document.getElementById('analysisInterval');
 let analysisIntervalValueSpan = document.getElementById('analysisIntervalValue');
 let analysisIntervalFpsInfo = document.getElementById('analysisIntervalFpsInfo');
+let redMetricsEnabled = false;
+let redMetricsToggle = null;
+let temporalContrastEnabled = false;
+let temporalContrastToggle = null;
 
 // TASK 5771: reset risk escalation state safely for risk helper:
 // If video was part of playlist then the  risk level previously would not reset between videos
@@ -83,6 +87,34 @@ if (analysisIntervalInput && analysisIntervalValueSpan) {
         updateAnalysisIntervalFpsInfo();
     });
     updateAnalysisIntervalFpsInfo();
+}
+
+const savedRedMetrics = localStorage.getItem('epilens_redMetricsEnabled');
+redMetricsEnabled = savedRedMetrics === 'true';
+
+const savedTemporalContrast = localStorage.getItem('epilens_temporalContrastEnabled');
+temporalContrastEnabled = savedTemporalContrast === 'true';
+
+// Initialize red metrics toggle
+redMetricsToggle = document.getElementById('redMetricsToggle');
+if (redMetricsToggle) {
+    redMetricsToggle.checked = redMetricsEnabled;
+    redMetricsToggle.addEventListener('change', () => {
+        redMetricsEnabled = redMetricsToggle.checked;
+        localStorage.setItem('epilens_redMetricsEnabled', redMetricsEnabled.toString());
+        console.log('Red metrics', redMetricsEnabled ? 'enabled' : 'disabled');
+    });
+}
+
+// Temporal contrast toggle
+temporalContrastToggle = document.getElementById('temporalContrastToggle');
+if (temporalContrastToggle) {
+    temporalContrastToggle.checked = temporalContrastEnabled;
+    temporalContrastToggle.addEventListener('change', () => {
+        temporalContrastEnabled = temporalContrastToggle.checked;
+        localStorage.setItem('epilens_temporalContrastEnabled', temporalContrastEnabled.toString());
+        console.log('Temporal contrast sensitivity', temporalContrastEnabled ? 'enabled' : 'disabled');
+    });
 }
 
 // Threshold value displays
@@ -288,6 +320,10 @@ function startAnalysis() {
     if (!analyzer) analyzer = new VideoAnalyzer();
     analyzer.reset();
     resetRiskEscalation(); // TASK 5771
+    analyzer.redMetricsEnabled = redMetricsEnabled;
+    analyzer.temporalContrastEnabled = temporalContrastEnabled;
+    analyzer.isFileAnalyzer = true;
+    //console.log(`Red metrics ${redMetricsEnabled ? 'ENABLED' : 'DISABLED'} for analysis`);
 
     let intensity = 0.2, flashesPerSecond = 3;
     if (flashIntensityInput && flashesPerSecondInput) {
@@ -613,7 +649,7 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
     const duration = video.duration;
     for (let t = 0; t < duration; t += interval) {
         await seekVideo(video, t);
-        await new Promise(res => setTimeout(res, 20));
+        await new Promise(res => setTimeout(res, 10)); // Seek delay to ensure video is ready adjusted from 20ms to 10ms
         if (!isAnalyzing) break;
         const result = analyzer.analyzeFrame(video, t);
         if (result) {

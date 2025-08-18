@@ -24,10 +24,28 @@
                     <input type="range" id="flashesPerSecondThreshold" min="1" max="10" step="0.1" value="3" style="width:100%;">
                     <span id="flashesPerSecondValue" style="color:#90caf9;">3.0</span>
                 </div>
-                <div>
+                <div style="margin-bottom:10px;">
                     <label for="flashIntensityThreshold">Flash Intensity Threshold</label>
                     <input type="range" id="flashIntensityThreshold" min="0.05" max="1" step="0.01" value="0.2" style="width:100%;">
                     <span id="flashIntensityValue" style="color:#90caf9;">0.20</span>
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:flex;align-items:center;cursor:pointer;">
+                        <input type="checkbox" id="redMetricsToggle" style="margin-right:8px;">
+                        <span style="color:#fff;">Enable Red Metrics Analysis</span>
+                    </label>
+                    <div style="font-size:0.97em;color:#bbb;margin-top:4px;margin-left:20px;">
+                        Analyzes red flashing content using saturated red detection.<br>
+                    </div>
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:flex;align-items:center;cursor:pointer;">
+                        <input type="checkbox" id="temporalContrastToggle" style="margin-right:8px;">
+                        <span style="color:#fff;">Enable Temporal Contrast Sensitivity</span>
+                    </label>
+                    <div style="font-size:0.97em;color:#bbb;margin-top:4px;margin-left:20px;">
+                        Analyzes color contrast changes over time using CIE Delta-E calculations.<br>
+                    </div>
                 </div>
                 <div>
                     <label for="analysisInterval">Analysis Interval (seconds)</label>
@@ -123,6 +141,8 @@
     <script src="helpers/Color/coverage.js"></script>
     <script src="helpers/Avg/avgIntensity.js"></script>
     <script src="helpers/Color/colorVar.js"></script>
+    <script src="helpers/Color/percentileTree.js"></script>
+    <script src="helpers/Color/contrastSen.js"></script>
     <script src="helpers/Color/colorHist.js"></script>
     <script src="helpers/Temporal/tempVar.js"></script>
     <script src="helpers/Color/colorSpikes.js"></script>
