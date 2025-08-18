@@ -1,7 +1,7 @@
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 window.AnalyzerHelpers.generateCSV = function () {
     try {
-        const headers = [
+        const baseHeaders = [
             "Timestamp",
             "Brightness",
             "Flash Detected",
@@ -49,7 +49,52 @@ window.AnalyzerHelpers.generateCSV = function () {
             "Patterned Stimulus Score",
             "Scene Change Score",
             "Color Change Magnitude",
+            "Contrast Sensitivity",
+            "Contrast Fluctuations",
+            "Contrast Avg DeltaE",
+            "Contrast Max DeltaE",
+            "Contrast Significant Changes",
+            "Contrast Total Samples",
+            "Contrast Fluctuation Rate",
+            "Contrast Weighted Avg DeltaE",
+            "Contrast Window Size",
+            "Contrast Weight Decay",
+            "Contrast Coefficient of Variation",
+            "Contrast Median DeltaE",
+            "Contrast 90th Percentile DeltaE",
+            "Contrast 95th Percentile DeltaE",
         ];
+
+        const temporalContrastHeaders = [
+            "Temporal Window Duration",
+            "Temporal Window Sample Count",
+            "Temporal Window Sensitivity",
+            "Temporal Window Fluctuations",
+            "Temporal Window Avg DeltaE",
+            "Temporal Window Max DeltaE",
+            "Temporal Window Significant Changes",
+            "Temporal Stream Weighted Avg DeltaE",
+        ];
+
+        const redMetricsHeaders = [
+            "Red Area Avg",
+            "Red Area Max",
+            "Red On Fraction",
+            "Red Transitions",
+            "Red Flash Events",
+            "Red Flash Per Second",
+            "Red Flicker In Risk Band",
+        ];
+
+        // fileanalyzer.js metrics that can be enabled/disabled
+        let headers = [...baseHeaders];
+        if (this.temporalContrastEnabled && this.isFileAnalyzer) {
+            headers = [...headers, ...temporalContrastHeaders];
+        }
+        if (this.redMetricsEnabled) {
+            headers = [...headers, ...redMetricsHeaders];
+        }
+
         const allData = [...this.dataChunks.flat(), ...this.currentChunk]
             .filter((entry) => entry.timestamp >= 0)
             .sort((a, b) => a.timestamp - b.timestamp);
@@ -73,7 +118,9 @@ window.AnalyzerHelpers.generateCSV = function () {
                 rChange * rChange + gChange * gChange + bChange * bChange
             );
 
-            return [
+            const cs = entry.contrastSensitivity || {};
+            const tcs = entry.temporalContrastSensitivity || {};
+            const baseRow = [
                 Number(entry.timestamp || 0).toFixed(6),
                 Number(entry.brightness || 0).toFixed(4),
                 entry.isFlash ? "1" : "0",
@@ -121,7 +168,52 @@ window.AnalyzerHelpers.generateCSV = function () {
                 Number(entry.patternedStimulusScore || 0).toFixed(4),
                 Number(entry.sceneChangeScore || 0).toFixed(4),
                 Number(colorChangeMagnitude).toFixed(4),
+                Number(cs.sensitivity || 0).toFixed(4),
+                Number(cs.fluctuations || 0).toFixed(4),
+                Number(cs.averageDeltaE || 0).toFixed(4),
+                Number(cs.maxDeltaE || 0).toFixed(4),
+                cs.significantChanges || 0,
+                cs.totalSamples || 0,
+                Number(cs.fluctuationRate || 0).toFixed(4),
+                Number(cs.weightedAverageDeltaE || 0).toFixed(4),
+                cs.windowSize || 0,
+                Number(cs.weightDecay || 0).toFixed(6),
+                Number(cs.coefficientOfVariation || 0).toFixed(4),
+                Number(cs.medianDeltaE || 0).toFixed(4),
+                Number(cs.p90DeltaE || 0).toFixed(4),
+                Number(cs.p95DeltaE || 0).toFixed(4),
             ];
+
+            const temporalContrastRow = [
+                Number(tcs.duration || 0).toFixed(2),
+                tcs.sampleCount || 0,
+                Number(tcs.sensitivity || 0).toFixed(4),
+                Number(tcs.fluctuations || 0).toFixed(4),
+                Number(tcs.averageDeltaE || 0).toFixed(4),
+                Number(tcs.maxDeltaE || 0).toFixed(4),
+                tcs.significantChanges || 0,
+                Number(tcs.streamWeightedAverageDeltaE || 0).toFixed(4),
+            ];
+
+            const redMetricsRow = [
+                Number(entry.redMetrics?.redAreaAvg || 0).toFixed(4),
+                Number(entry.redMetrics?.redAreaMax || 0).toFixed(4),
+                Number(entry.redMetrics?.redOnFraction || 0).toFixed(4),
+                entry.redMetrics?.redTransitions || 0,
+                entry.redMetrics?.redFlashEvents || 0,
+                Number(entry.redMetrics?.redFlashPerSecond || 0).toFixed(4),
+                entry.redMetrics?.redFlickerInRiskBand ? "1" : "0",
+            ];
+
+            // Builds row based on enabled features from fileanalyzer.js
+            let row = [...baseRow];
+            if (this.temporalContrastEnabled && this.isFileAnalyzer) {
+                row = [...row, ...temporalContrastRow];
+            }
+            if (this.redMetricsEnabled) {
+                row = [...row, ...redMetricsRow];
+            }
+            return row;
         });
         return [headers, ...rows].map((row) => row.join(",")).join("\n");
     } catch (error) {
