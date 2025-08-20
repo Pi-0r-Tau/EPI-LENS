@@ -649,7 +649,7 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
     const duration = video.duration;
     for (let t = 0; t < duration; t += interval) {
         await seekVideo(video, t);
-        await new Promise(res => setTimeout(res, 10)); // Seek delay to ensure video is ready adjusted from 20ms to 10ms
+        await new Promise(res => setTimeout(res, 100)); // Seek delay to ensure video is ready adjusted from 10 to 100ms. Idiot moment here.
         if (!isAnalyzing) break;
         const result = analyzer.analyzeFrame(video, t);
         if (result) {
