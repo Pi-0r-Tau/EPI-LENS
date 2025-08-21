@@ -17,6 +17,7 @@ let liveMetricsGraph = document.getElementById('liveMetricsGraph');
 let liveMetricsLegend = document.getElementById('liveMetricsLegend');
 let liveMetricsHistory = [];
 let metricSelector = null;
+let currentVideoObjectUrl = null; // TASK 1972
 
 const ALL_METRICS = [
     { key: "brightness", label: "Brightness", color: "#2196f3" },
@@ -275,8 +276,13 @@ function loadVideoFromPlaylist(index) {
     resetSummaryPanelFields(); // Reset summary panel fields
     resetRiskEscalation(); // TASK 5771: Risk reset between videos
     const file = playlist[index];
-    const url = URL.createObjectURL(file);
-    video.src = url;
+    // TASK 1972: Revoke previous object URL if exists
+    if (currentVideoObjectUrl) {
+        URL.revokeObjectURL(currentVideoObjectUrl);
+        currentVideoObjectUrl = null;
+    }
+    currentVideoObjectUrl = URL.createObjectURL(file);
+    video.src = currentVideoObjectUrl;
     video.style.display = 'block';
     controls.style.display = 'flex';
     resultsPanel.innerHTML = '';
