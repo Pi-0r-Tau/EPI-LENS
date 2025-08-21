@@ -15,7 +15,8 @@ Think of it like PEAT (Photosensitive Epilepsy Analysis Tool) but open source, v
 
 Graphs above shows a small selection of metrics for ease of understanding
 
-![image](https://github.com/user-attachments/assets/31da1e58-d44d-4382-9aaa-3e55d0a5b449)
+![image](https://github.com/user-attachments/assets/567c3121-8f48-473a-ad80-84187c8d1faf)
+
 
 
 
@@ -93,6 +94,10 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 - fileanalyzer now has Red metrics and Contrast Sensitivity metrics that are toggle based
 - Updated the export logic to enable clean exports regardless of if these toggles are used.
 - Order-Statistic AVL Tree for percentiles of Contrast Sensitivity
+
+- Local Video Analysis now has an overlay for optional metrics, with user preferences saved to local storage. The metric that are accessible via this overlay are:
+  - Saturated Red Detection
+  - Contrast Sensitivity
 
 ## Recent updates to metrics
 - Patterned stimulus score
