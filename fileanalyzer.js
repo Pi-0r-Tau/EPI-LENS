@@ -50,6 +50,12 @@ let redMetricsEnabled = false;
 let redMetricsToggle = null;
 let temporalContrastEnabled = false;
 let temporalContrastToggle = null;
+// TASK 4890: Optional metrics via overlay menu
+// Settings overlay elements
+let settingsOverlay = null;
+let openSettingsBtn = null;
+let closeSettingsBtn = null;
+let saveSettingsBtn = null;
 
 // TASK 5771: reset risk escalation state safely for risk helper:
 // If video was part of playlist then the  risk level previously would not reset between videos
@@ -84,33 +90,92 @@ if (analysisIntervalInput && analysisIntervalValueSpan) {
     });
     updateAnalysisIntervalFpsInfo();
 }
+// Task 4289: savedRedMetrics renamed to prefRedMetrics
+const prefRedMetrics = localStorage.getItem('epilens_redMetricsEnabled');
+redMetricsEnabled = prefRedMetrics === 'true';
 
-const savedRedMetrics = localStorage.getItem('epilens_redMetricsEnabled');
-redMetricsEnabled = savedRedMetrics === 'true';
+// Task 4289: savedTemporalContrast renamed to prefTemporalContrast
+const prefTemporalContrast = localStorage.getItem('epilens_temporalContrastEnabled');
+temporalContrastEnabled = prefTemporalContrast === 'true';
 
-const savedTemporalContrast = localStorage.getItem('epilens_temporalContrastEnabled');
-temporalContrastEnabled = savedTemporalContrast === 'true';
+// TASK 4890:
+//Initialize settings overlay
+function initializeSettingsOverlay() {
+  settingsOverlay = document.getElementById("settingsOverlay");
+  openSettingsBtn = document.getElementById("openSettingsBtn");
+  closeSettingsBtn = document.getElementById("closeSettingsBtn");
+  saveSettingsBtn = document.getElementById("saveSettingsBtn");
+  redMetricsToggle = document.getElementById("redMetricsToggle");
+  temporalContrastToggle = document.getElementById("temporalContrastToggle");
 
-// Initialize red metrics toggle
-redMetricsToggle = document.getElementById('redMetricsToggle');
 if (redMetricsToggle) {
     redMetricsToggle.checked = redMetricsEnabled;
-    redMetricsToggle.addEventListener('change', () => {
-        redMetricsEnabled = redMetricsToggle.checked;
-        localStorage.setItem('epilens_redMetricsEnabled', redMetricsEnabled.toString());
-        console.log('Red metrics', redMetricsEnabled ? 'enabled' : 'disabled');
-    });
 }
 
-// Temporal contrast toggle
-temporalContrastToggle = document.getElementById('temporalContrastToggle');
 if (temporalContrastToggle) {
     temporalContrastToggle.checked = temporalContrastEnabled;
-    temporalContrastToggle.addEventListener('change', () => {
-        temporalContrastEnabled = temporalContrastToggle.checked;
-        localStorage.setItem('epilens_temporalContrastEnabled', temporalContrastEnabled.toString());
-        console.log('Temporal contrast sensitivity', temporalContrastEnabled ? 'enabled' : 'disabled');
+  }
+
+  if (openSettingsBtn) {
+    openSettingsBtn.addEventListener('click', openSettings);
+  }
+
+  if (closeSettingsBtn) {
+    closeSettingsBtn.addEventListener('click', closeSettings);
+  }
+
+  if (saveSettingsBtn) {
+    saveSettingsBtn.addEventListener('click', prefSettings);
+  }
+  if (settingsOverlay) {
+    settingsOverlay.addEventListener('click', (e) => {
+      if (e.target === settingsOverlay) {
+        closeSettings();
+      }
     });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (
+      e.key === 'Escape' &&
+      settingsOverlay &&
+      settingsOverlay.style.display === 'flex'
+    ) {
+      closeSettings();
+    }
+  });
+}
+
+function openSettings() {
+  if (settingsOverlay) {
+    settingsOverlay.style.display = 'flex';
+    if (redMetricsToggle) redMetricsToggle.checked = redMetricsEnabled;
+    if (temporalContrastToggle)
+      temporalContrastToggle.checked = temporalContrastEnabled;
+  }
+}
+
+function closeSettings() {
+  if (settingsOverlay) {
+    settingsOverlay.style.display = 'none';
+  }
+}
+
+function prefSettings() {
+  if (redMetricsToggle) {
+    redMetricsEnabled = redMetricsToggle.checked;
+    localStorage.setItem(
+      'epilens_redMetricsEnabled',
+      redMetricsEnabled.toString()
+    );
+  }
+
+  if (temporalContrastToggle) {
+    temporalContrastEnabled = temporalContrastToggle.checked;
+    localStorage.setItem('epilens_temporalContrastEnabled', temporalContrastEnabled.toString());
+    console.log('Temporal contrast sensitivity', temporalContrastEnabled ? 'enabled' : 'disabled');
+}
+
+  closeSettings();
 }
 
 // Threshold value displays
@@ -132,6 +197,8 @@ if (analysisIntervalInput && analysisIntervalValueSpan) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    // TASK 4890:
+      initializeSettingsOverlay();
     if (!chartsBtn) {
         chartsBtn = document.createElement('button');
         chartsBtn.id = 'openChartsViewBtn';
@@ -203,8 +270,8 @@ window.addEventListener('DOMContentLoaded', () => {
     if (videoSizeUp) videoSizeUp.onclick = function() {
         if (videoSizeIdx < videoSizes.length - 1) { videoSizeIdx++; applyVideoSize(); }
     };
-
-    const liveMetricsGraph = document.getElementById('liveMetricsGraph');
+    // TASK 1973: As liveMetricsGraph is defined via let, dont want to redefine it via const
+    liveMetricsGraph = document.getElementById('liveMetricsGraph');
     const graphSizeDown = document.getElementById('graphSizeDown');
     const graphSizeUp = document.getElementById('graphSizeUp');
     let graphSizes = [
