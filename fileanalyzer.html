@@ -17,6 +17,12 @@
                 <input type="file" id="videoFileInput" accept="video/*" multiple>
                 <div id="playlistInfo" style="color:#90caf9;font-size:0.98em;margin-top:8px;"></div>
             </div>
+
+            <div class="panel" id="settingsPanel">
+                <h3>Metric Configuration</h3>
+                <button id="openSettingsBtn">Optional Metric Settings</button>
+            </div>
+
             <div class="panel" id="thresholdPanel">
                 <h3>Thresholds</h3>
                 <div style="margin-bottom:10px;">
@@ -28,24 +34,6 @@
                     <label for="flashIntensityThreshold">Flash Intensity Threshold</label>
                     <input type="range" id="flashIntensityThreshold" min="0.05" max="1" step="0.01" value="0.2" style="width:100%;">
                     <span id="flashIntensityValue" style="color:#90caf9;">0.20</span>
-                </div>
-                <div style="margin-bottom:15px;">
-                    <label style="display:flex;align-items:center;cursor:pointer;">
-                        <input type="checkbox" id="redMetricsToggle" style="margin-right:8px;">
-                        <span style="color:#fff;">Enable Red Metrics Analysis</span>
-                    </label>
-                    <div style="font-size:0.97em;color:#bbb;margin-top:4px;margin-left:20px;">
-                        Analyzes red flashing content using saturated red detection.<br>
-                    </div>
-                </div>
-                <div style="margin-bottom:15px;">
-                    <label style="display:flex;align-items:center;cursor:pointer;">
-                        <input type="checkbox" id="temporalContrastToggle" style="margin-right:8px;">
-                        <span style="color:#fff;">Enable Temporal Contrast Sensitivity</span>
-                    </label>
-                    <div style="font-size:0.97em;color:#bbb;margin-top:4px;margin-left:20px;">
-                        Analyzes color contrast changes over time using CIE Delta-E calculations.<br>
-                    </div>
                 </div>
                 <div>
                     <label for="analysisInterval">Analysis Interval (seconds)</label>
@@ -126,6 +114,44 @@
                 <div id="fileAnalysisResults" class="results-panel"></div>
             </div>
         </main>
+    </div>
+    <div id="settingsOverlay" class="settings-overlay">
+        <div class="settings-modal">
+            <h2>Analysis Settings</h2>
+
+            <div class="settings-section">
+                <h3>Optional Metrics</h3>
+
+                <div class="settings-toggle">
+                    <label>
+                        <input type="checkbox" id="redMetricsToggle">
+                        <div class="toggle-content">
+                            <div class="toggle-title">Red Metrics Analysis</div>
+                            <div class="toggle-description">
+                                Analyzes red flashing content using saturated red detection. This metric specifically targets red-based photosensitive triggers.
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="settings-toggle">
+                    <label>
+                        <input type="checkbox" id="temporalContrastToggle">
+                        <div class="toggle-content">
+                            <div class="toggle-title">Temporal Contrast Sensitivity</div>
+                            <div class="toggle-description">
+                                Analyzes color contrast changes over time using CIE Delta-E calculations. Helps detect subtle color transitions that may trigger photosensitivity.
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button class="settings-btn secondary" id="closeSettingsBtn">Close</button>
+                <button class="settings-btn" id="saveSettingsBtn">Save Settings</button>
+            </div>
+        </div>
     </div>
     <script src="helpers/Spectral/dsp.js"></script>
     <script src="helpers/Risk/risk-level-helper.js"></script>
