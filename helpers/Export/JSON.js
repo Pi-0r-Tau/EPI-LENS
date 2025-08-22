@@ -9,6 +9,7 @@ window.AnalyzerHelpers.generateJSON = function () {
                 totalFlashesDetected: this.metrics.flashCount,
                 riskLevel: this.metrics.riskLevel,
                 redMetricsEnabled: !!this.redMetricsEnabled,
+                temporalContrastEnabled: !!this.temporalContrastEnabled, // TASK 1959: JSON meta to include correct true or false for optional metrics
             },
             analysis: [...this.dataChunks.flat(), ...this.currentChunk]
                 .filter((entry) => entry.timestamp >= 0)
@@ -139,31 +140,10 @@ window.AnalyzerHelpers.generateJSON = function () {
                             p90DeltaE: Number(contrastSensitivity.p90DeltaE || 0).toFixed(4),
                             p95DeltaE: Number(contrastSensitivity.p95DeltaE || 0).toFixed(4),
                         },
-                        temporalContrastSensitivity: {
-                            startTime: Number(temporalContrastSensitivity.startTime || 0).toFixed(2),
-                            endTime: Number(temporalContrastSensitivity.endTime || 0).toFixed(2),
-                            duration: Number(temporalContrastSensitivity.duration || 0).toFixed(2),
-                            sampleCount: temporalContrastSensitivity.sampleCount || 0,
-                            sensitivity: Number(temporalContrastSensitivity.sensitivity || 0).toFixed(4),
-                            fluctuations: Number(temporalContrastSensitivity.fluctuations || 0).toFixed(4),
-                            averageDeltaE: Number(temporalContrastSensitivity.averageDeltaE || 0).toFixed(4),
-                            maxDeltaE: Number(temporalContrastSensitivity.maxDeltaE || 0).toFixed(4),
-                            significantChanges: temporalContrastSensitivity.significantChanges || 0,
-                            totalSamples: temporalContrastSensitivity.totalSamples || 0,
-                            fluctuationRate: Number(temporalContrastSensitivity.fluctuationRate || 0).toFixed(4),
-                            weightedAverageDeltaE: Number(temporalContrastSensitivity.weightedAverageDeltaE || 0).toFixed(4),
-                            windowSize: temporalContrastSensitivity.windowSize || 0,
-                            weightDecay: Number(temporalContrastSensitivity.weightDecay || 0).toFixed(6),
-                            coefficientOfVariation: Number(temporalContrastSensitivity.coefficientOfVariation || 0).toFixed(4),
-                            medianDeltaE: Number(temporalContrastSensitivity.medianDeltaE || 0).toFixed(4),
-                            p90DeltaE: Number(temporalContrastSensitivity.p90DeltaE || 0).toFixed(4),
-                            p95DeltaE: Number(temporalContrastSensitivity.p95DeltaE || 0).toFixed(4),
-                            streamWeightedAverageDeltaE: Number(temporalContrastSensitivity.streamWeightedAverageDeltaE || 0).toFixed(4)
-                        },
                     };
-
-                    // Include temporal contrast sensitivity only if enabled via fileanalyzer.js
-                    if (this.temporalContrastEnabled && this.isFileAnalyzer) {
+                       // TASK 1959: Removal of dup temporalContrastSen and conditional check based on html toggle
+                      // Include temporal contrast sensitivity only if enabled via fileanalyzer.js
+                    if (this.temporalContrastEnabled && this.isFileAnalyzer && entry.temporalContrastSensitivity) {
                         baseEntry.temporalContrastSensitivity = {
                             startTime: Number(temporalContrastSensitivity.startTime || 0).toFixed(2),
                             endTime: Number(temporalContrastSensitivity.endTime || 0).toFixed(2),
