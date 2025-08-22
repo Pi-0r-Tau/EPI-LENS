@@ -733,30 +733,45 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
         baseFilename = `epilens-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}`;
     }
 
+    // TASK 1962: Await all exports to complete before proceeding
+    // fixes issues with large exports being cut off, aka the NDJSON export
+    const exportPromises = [];
     let exportDelay = 100;
 
     if (exportCSV) {
-        setTimeout(() => {
-            const csv = analyzer.generateCSV();
-            downloadFile(csv, `${baseFilename}.csv`, 'text/csv');
-        }, exportDelay);
+        exportPromises.push(new Promise(resolve => {
+            setTimeout(() => {
+                const csv = analyzer.generateCSV();
+                downloadFile(csv, `${baseFilename}.csv`, 'text/csv');
+                resolve();
+            }, exportDelay);
+        }));
         exportDelay += 150;
     }
 
     if (exportJSON) {
-        setTimeout(() => {
-            const json = analyzer.generateJSON();
-            downloadFile(json, `${baseFilename}.json`, 'application/json');
-        }, exportDelay);
+        exportPromises.push(new Promise(resolve => {
+            setTimeout(() => {
+                const json = analyzer.generateJSON();
+                downloadFile(json, `${baseFilename}.json`, 'application/json');
+                resolve();
+            }, exportDelay);
+        }));
         exportDelay += 150;
     }
 
     if (exportNDJSON) {
-        setTimeout(() => {
-            const ndjson = analyzer.generateNDJSON();
-            downloadFile(ndjson, `${baseFilename}.ndjson`, 'application/x-ndjson');
-        }, exportDelay);
+        exportPromises.push(new Promise(resolve => {
+            setTimeout(() => {
+                const ndjson = analyzer.generateNDJSON();
+                downloadFile(ndjson, `${baseFilename}.ndjson`, 'application/x-ndjson');
+                resolve();
+            }, exportDelay);
+        }));
     }
+
+    // TASK 1962: Await all exports to complete before proceeding
+    await Promise.all(exportPromises);
 
      try {
         if (analyzer && analyzer.timelineData && analyzer.timelineData.length > 0) {
