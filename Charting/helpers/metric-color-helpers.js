@@ -1,6 +1,6 @@
 const DEFAULT_METRIC_COLORS = [
     "#2196f3", "#f44336", "#ff9800", "#4caf50", "#9c27b0", "#00bcd4", "#e91e63", "#8bc34a",
-    "#ffc107", "#3f51b5", "#607d8b", "#ff5722", "#cfda75ff", "#9c6d5bff", "#673ab7", "#009688"
+    "#ffc107", "#3f51b5", "#607d8b", "#ff5722", "#cddc39", "#795548", "#673ab7", "#009688"
 ];
 
 function getStoredMetricColors() {
@@ -38,6 +38,15 @@ function hashString(str) {
 
 function metricKeyToLabel(key) {
     const parts = key.split('.');
+    if (parts[0] === "contrastSensitivity" && parts.length === 2) {
+        // weightedAverageDeltaE -> "Weighted Average Delta E"
+        return parts[1]
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/^./, m => m.toUpperCase())
+            .replace(/([A-Z]+)/g, ' $1')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
     if (parts.length === 1) {
         return capitalize(parts[0]);
     }
