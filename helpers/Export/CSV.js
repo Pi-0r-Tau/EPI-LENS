@@ -1,5 +1,6 @@
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
-window.AnalyzerHelpers.generateCSV = function () {
+
+window.AnalyzerHelpers.streamCSV = function* () {
     try {
         const baseHeaders = [
             "Timestamp",
@@ -31,8 +32,10 @@ window.AnalyzerHelpers.generateCSV = function () {
             "Temporal Contrast Rate",
             "Frame Difference",
             "Motion Ratio",
-            "Dominant Frequency",
+            "Dominant Frequency (Hz)",
+            "Dominant Inst. Frequency (Hz)",
             "Spectral Flatness",
+            "Spectral Confidence",
             "Temporal Coherence",
             "Edge Density",
             "Edge Count",
@@ -86,7 +89,6 @@ window.AnalyzerHelpers.generateCSV = function () {
             "Red Flicker In Risk Band",
         ];
 
-        // fileanalyzer.js metrics that can be enabled/disabled
         let headers = [...baseHeaders];
         if (this.temporalContrastEnabled && this.isFileAnalyzer) {
             headers = [...headers, ...temporalContrastHeaders];
@@ -95,14 +97,13 @@ window.AnalyzerHelpers.generateCSV = function () {
             headers = [...headers, ...redMetricsHeaders];
         }
 
+        yield headers.join(",") + "\n";
+
         const allData = [...this.dataChunks.flat(), ...this.currentChunk]
             .filter((entry) => entry.timestamp >= 0)
             .sort((a, b) => a.timestamp - b.timestamp);
 
-        console.log(
-            `Exporting data: ${allData.length} frames, from ${this.analysisStartTime} to ${this.lastExportTime}`
-        );
-        const rows = allData.map((entry) => {
+        for (const entry of allData) {
             const colorVar = entry.colorVariance || {
                 current: { r: 0, g: 0, b: 0 },
                 temporal: { r: 0, g: 0, b: 0 },
@@ -151,7 +152,9 @@ window.AnalyzerHelpers.generateCSV = function () {
                 Number(entry.frameDifference?.difference || 0).toFixed(4),
                 Number(entry.frameDifference?.motion || 0).toFixed(4),
                 Number(entry.spectralAnalysis?.dominantFrequency || 0).toFixed(2),
+                Number(entry.spectralAnalysis?.dominantInstFreq || 0).toFixed(2),
                 Number(entry.spectralFlatness || 0).toFixed(4),
+                Number(entry.spectralAnalysis?.confidence || 0).toFixed(4),
                 Number(entry.temporalCoherence?.coherenceScore || 0).toFixed(4),
                 Number(entry.edgeDetection?.edgeDensity || 0).toFixed(4),
                 Number(entry.edgeDetection?.edgeCount || 0),
@@ -213,11 +216,17 @@ window.AnalyzerHelpers.generateCSV = function () {
             if (this.redMetricsEnabled) {
                 row = [...row, ...redMetricsRow];
             }
-            return row;
-        });
-        return [headers, ...rows].map((row) => row.join(",")).join("\n");
+            yield row.join(",") + "\n";
+        }
     } catch (error) {
-        console.error("CSV generation error:", error);
-        return "Error generating CSV";
+        yield "Error generating CSV\n";
     }
+};
+
+window.AnalyzerHelpers.generateCSV = function () {
+    let csv = "";
+    for (const line of window.AnalyzerHelpers.streamCSV.call(this)) {
+        csv += line;
+    }
+    return csv;
 };

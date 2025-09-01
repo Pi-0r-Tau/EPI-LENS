@@ -1,6 +1,15 @@
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 window.AnalyzerHelpers.generateJSON = function () {
     try {
+        const allEntries = [...this.dataChunks.flat(), ...this.currentChunk]
+            .filter((entry) => entry.timestamp >= 0)
+            .sort((a, b) => a.timestamp - b.timestamp);
+
+        const binResolution = Number(
+            allEntries.find(
+                (entry) => entry.spectralAnalysis && entry.spectralAnalysis.binResolution
+            )?.spectralAnalysis?.binResolution || 0
+        );
         const data = {
             metadata: {
                 videoTitle: this.videoTitle || document.title,
@@ -10,6 +19,7 @@ window.AnalyzerHelpers.generateJSON = function () {
                 riskLevel: this.metrics.riskLevel,
                 redMetricsEnabled: !!this.redMetricsEnabled,
                 temporalContrastEnabled: !!this.temporalContrastEnabled, // TASK 1959: JSON meta to include correct true or false for optional metrics
+                spectralBinResolution: binResolution, // in Hz
             },
             analysis: [...this.dataChunks.flat(), ...this.currentChunk]
                 .filter((entry) => entry.timestamp >= 0)
@@ -86,8 +96,11 @@ window.AnalyzerHelpers.generateJSON = function () {
                             dominantFrequency: Number(
                                 entry.spectralAnalysis?.dominantFrequency || 0
                             ).toFixed(2),
+                            dominantInstFreq: Number(entry.spectralAnalysis?.dominantInstFreq || 0).toFixed(2),
                             spectrum: entry.spectralAnalysis?.spectrum || [],
                             spectralFlatness: Number(entry.spectralFlatness || 0).toFixed(4),
+                            confidence: Number(entry.spectralAnalysis?.confidence || 0).toFixed(4),
+
                         },
                         temporalCoherence: {
                             score: Number(

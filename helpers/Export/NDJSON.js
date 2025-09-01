@@ -1,11 +1,11 @@
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
-window.AnalyzerHelpers.generateNDJSON = function () {
+window.AnalyzerHelpers.streamNDJSON = function* () {
     try {
         const allData = [...this.dataChunks.flat(), ...this.currentChunk]
             .filter((entry) => entry.timestamp >= 0)
             .sort((a, b) => a.timestamp - b.timestamp);
-            
-        const lines = allData.map((entry) => {
+
+        for (const entry of allData) {
             const colorVar = entry.colorVariance || {
                 current: { r: 0, g: 0, b: 0 },
                 temporal: { r: 0, g: 0, b: 0 },
@@ -68,6 +68,7 @@ window.AnalyzerHelpers.generateNDJSON = function () {
                     ).toFixed(2),
                     spectralFlatness: Number(entry.spectralFlatness || 0).toFixed(4),
                     spectrum: entry.spectralAnalysis?.spectrum || [],
+                    confidence: Number(entry.spectralAnalysis?.confidence || 0).toFixed(4),
                 },
                 temporalCoherence: {
                     score: Number(entry.temporalCoherence?.coherenceScore || 0).toFixed(
@@ -173,12 +174,17 @@ window.AnalyzerHelpers.generateNDJSON = function () {
                 };
             }
 
-            return JSON.stringify(frameData);
-        });
-
-        return lines.join("\n");
+            yield JSON.stringify(frameData) + "\n";
+        }
     } catch (error) {
-        console.error("NDJSON generation error:", error);
-        return JSON.stringify({ error: "Error generating NDJSON" }) + "\n";
+        yield JSON.stringify({ error: "Error generating NDJSON" }) + "\n";
     }
+};
+
+window.AnalyzerHelpers.generateNDJSON = function () {
+    let ndjson = "";
+    for (const line of window.AnalyzerHelpers.streamNDJSON.call(this)) {
+        ndjson += line;
+    }
+    return ndjson;
 };
