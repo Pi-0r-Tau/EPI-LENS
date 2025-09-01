@@ -1,6 +1,7 @@
 "use strict";
 
 if (!window.VideoAnalyzer) {
+    const canvasPool = new window.CanvasPool();
     /**
      * @description EPI LENS orchestrator analysis engine:
      * Metrics are accessed via window.AnalyzerHelpers. to ensure modularity, quick debugging and maintainability.
@@ -47,8 +48,8 @@ if (!window.VideoAnalyzer) {
                 flashThreshold: 0.1,
                 minSequenceLength: 3
             };
-            this.canvas = document.createElement("canvas");
-            this.context = this.canvas.getContext("2d", { willReadFrequently: true });
+            this.canvas = null; // Obtained via canvaspool.js
+            this.context = null;
             this.sampleSize = 4;
             this.timelineData = [];
             this.detailedData = [];
@@ -468,9 +469,17 @@ if (!window.VideoAnalyzer) {
                 throw new Error('Invalid video dimensions');
             }
 
-            // Set canvas size based on video dimensions
-            this.canvas.width = Math.max(video.videoWidth / this.sampleSize, 1);
-            this.canvas.height = Math.max(video.videoHeight / this.sampleSize, 1);
+            // Calc canvas dimensions
+            const canvasWidth = Math.max(video.videoWidth / this.sampleSize, 1);
+            const canvasHeight = Math.max(video.videoHeight / this.sampleSize, 1);
+
+            if (!this.canvas || this.canvas.width !== canvasWidth || this.canvas.height !== canvasHeight) {
+                if (this.canvas) {
+                    canvasPool.release(this.canvas);
+                }
+                this.canvas = canvasPool.get(canvasWidth, canvasHeight);
+                this.context = this.canvas.getContext("2d", { willReadFrequently: true });
+            }
 
             try {
                 this.context.drawImage(
@@ -818,7 +827,7 @@ if (!window.VideoAnalyzer) {
         calculateEdgeChange(window = 2) {
             return window.AnalyzerHelpers.edgeChange.call(this, window);
         }
-
+        // Used via yt analyzer instance only
         generateCSV() {
             return window.AnalyzerHelpers.generateCSV.call(this);
         }
@@ -834,9 +843,19 @@ if (!window.VideoAnalyzer) {
         generateJSON() {
             return window.AnalyzerHelpers.generateJSON.call(this);
         }
-
+        // Used via yt analyzer instance only
         generateNDJSON() {
             return window.AnalyzerHelpers.generateNDJSON.call(this);
+        }
+
+        // Used via fileanalyzer instance only
+        streamNDJSON() {
+            return window.AnalyzerHelpers.streamNDJSON.call(this);
+        }
+
+        // Used via fileanalyzer instance only
+        streamCSV() {
+            return window.AnalyzerHelpers.streamCSV.call(this);
         }
 
         reset() {
@@ -862,6 +881,13 @@ if (!window.VideoAnalyzer) {
             this.dataChunks = [];
             this.currentChunk = [];
             this._frameDiffHistory = new Float32Array(8);
+
+            // Return canvas to pool
+            if (this.canvas) {
+                canvasPool.release(this.canvas);
+                this.canvas = null;
+                this.context = null;
+            }
 
             if (this.redMetricsEnabled && this.isFileAnalyzer) {
                 this.redSeries = [];
@@ -953,6 +979,15 @@ if (!window.VideoAnalyzer) {
             }; 
 
             this.temporalBuffer.clear();
+        }
+
+        destroy() {
+            if (this.canvas) {
+                canvasPool.release(this.canvas);
+                this.canvas = null;
+                this.context = null;
+            }
+            canvasPool.clear();
         }
 
         calculateDominantColor(imageData) {
