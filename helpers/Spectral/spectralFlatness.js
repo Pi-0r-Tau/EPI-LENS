@@ -1,5 +1,9 @@
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
-window.AnalyzerHelpers.computeSpectralFlatness = function (spectrum) {
+window.AnalyzerHelpers.computeSpectralFlatness = function (
+    spectrum,
+    kMin,
+    kMax
+) {
     if (!spectrum || spectrum.length === 0) return 0;
 
     // Convert to amplitude array if needed
@@ -11,10 +15,22 @@ window.AnalyzerHelpers.computeSpectralFlatness = function (spectrum) {
     } else {
         amplitudes = spectrum;
     }
+    const len = amplitudes.length;
+    // Clamp and default kMin/kMax to full range if not provided
+    const start =
+        typeof kMin === "number"
+            ? Math.max(0, Math.min(len - 1, Math.floor(kMin)))
+            : 0;
+    const end =
+        typeof kMax === "number"
+            ? Math.max(start, Math.min(len - 1, Math.floor(kMax)))
+            : len - 1;
 
     // Compute geometric and arithmetic means of positive amplitudes
-    let nonZeroCount = 0, logSum = 0, arithSum = 0;
-    for (let i = 0; i < amplitudes.length; ++i) {
+    let nonZeroCount = 0,
+        logSum = 0,
+        arithSum = 0;
+    for (let i = start; i <= end; ++i) {
         const a = amplitudes[i];
         if (a > 0) {
             logSum += Math.log(a);
@@ -28,4 +44,4 @@ window.AnalyzerHelpers.computeSpectralFlatness = function (spectrum) {
     const arithMean = arithSum / nonZeroCount;
 
     return arithMean === 0 ? 0 : geoMean / arithMean;
-}
+};
