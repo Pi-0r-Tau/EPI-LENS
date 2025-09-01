@@ -2,58 +2,64 @@
 <html>
 <head>
     <link rel="stylesheet" href="styles.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
 </head>
 <body>
     <div class="container">
-        <h2>Research Mode</h2>
+        <header class="popup-header" role="banner">
+            <h1>Research Mode</h1>
+            <div></div>
+        </header>
 
-        <div class="threshold-controls">
-            <div class="threshold-group">
-                <label for="flashThreshold">Flashes Per Second Threshold</label>
-                <input type="range" id="flashThreshold" min="1" max="10" step="0.5" value="3">
-                <span class="threshold-value" id="flashThresholdValue">3.0</span>
-            </div>
+        <main role="main">
+            <section class="threshold-controls" aria-label="Threshold controls">
+                <div class="threshold-group">
+                    <label for="flashThreshold">Flashes Per Second Threshold</label>
+                    <input type="range" id="flashThreshold" min="1" max="10" step="0.5" value="3">
+                    <span class="threshold-value" id="flashThresholdValue">3.0</span>
+                </div>
 
-            <div class="threshold-group">
-                <label for="intensityThreshold">Flash Intensity Threshold</label>
-                <input type="range" id="intensityThreshold" min="0.1" max="1" step="0.05" value="0.2">
-                <span class="threshold-value" id="intensityThresholdValue">0.20</span>
-            </div>
-        </div>
+                <div class="threshold-group">
+                    <label for="intensityThreshold">Flash Intensity Threshold</label>
+                    <input type="range" id="intensityThreshold" min="0.1" max="1" step="0.05" value="0.2">
+                    <span class="threshold-value" id="intensityThresholdValue">0.20</span>
+                </div>
+            </section>
 
-        <div class="controls">
-            <button id="startAnalysis">Start Analysis</button>
-            <button id="stopAnalysis">Stop Analysis</button>
-            <button id="clearAllDataBtn" style="background:#f44336;">Clear All Data</button>
-            <button id="openFileAnalyzerTab" style="background:#8bc34a;">Local Video File Analysis</button>
-        </div>
+            <section class="controls" aria-label="Actions">
+                <button id="startAnalysis">Start Analysis</button>
+                <button id="stopAnalysis">Stop Analysis</button>
+                <button id="clearAllDataBtn" style="background:#f44336;">Clear All Data</button>
+                <button id="openFileAnalyzerTab" style="background:#8bc34a;">Local Video File Analysis</button>
+            </section>
 
-        <div class="video-progress">
-            <div class="progress-container">
-                <div class="progress-bar" id="videoProgress"></div>
-            </div>
-            <div class="progress-time">
-                <span id="currentTime">0:00</span>
-                <span id="duration">0:00</span>
-            </div>
-        </div>
+            <section class="video-progress" aria-label="Video progress">
+                <div class="progress-container">
+                    <div class="progress-bar" id="videoProgress"></div>
+                </div>
+                <div class="progress-time">
+                    <span id="currentTime">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </section>
 
-        <div class="key-metrics">
-            <div class="stat-card flash-count">
-                <h3>Detected Flashes</h3>
-                <div class="value" id="flashCount" data-metric="flashCount">0</div>
-            </div>
-            <div class="stat-card risk-indicator">
-                <h3>Risk Level</h3>
-                <div class="value" id="riskLevel" data-metric="riskLevel">Low</div>
-                <div class="risk-indicator-bar" id="riskIndicatorBar"></div>
-            </div>
-        </div>
+            <section class="key-metrics" aria-label="Key metrics">
+                <div class="stat-card flash-count">
+                    <h3>Detected Flashes</h3>
+                    <div class="value" id="flashCount" data-metric="flashCount">0</div>
+                </div>
+                <div class="stat-card risk-indicator">
+                    <h3>Risk Level</h3>
+                    <div class="value" id="riskLevel" data-metric="riskLevel">Low</div>
+                    <div class="risk-indicator-bar" id="riskIndicatorBar"></div>
+                </div>
+            </section>
 
-        <div style="margin: 16px 0;">
-            <canvas id="metricsGraph" width="340" height="100" style="width:100%;background:#181818;border-radius:4px;"></canvas>
-            <div id="metricsLegend" style="margin-top:6px;"></div>
-        </div>
+            <section aria-label="Metrics graph" style="margin: 16px 0;">
+                <canvas id="metricsGraph" width="340" height="100" style="width:100%;background:#181818;border-radius:4px;"></canvas>
+                <div id="metricsLegend" style="margin-top:6px;"></div>
+            </section>
 
 
         <div class="analytics-panel">
@@ -98,14 +104,17 @@
                 <h4>Edge Detection</h4>
                 <div id="edgeMetrics" class="metrics-panel">
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
 
-        <div class="export-controls">
-            <button id="exportCSV">Export CSV</button>
-            <button id="exportJSON">Export JSON</button>
-            <button id="exportNDJSON">Export NDJSON</button>
-        </div>
+        <footer class="popup-footer" role="contentinfo">
+            <div class="export-controls">
+                <button id="exportCSV">Export CSV</button>
+                <button id="exportJSON">Export JSON</button>
+                <button id="exportNDJSON">Export NDJSON</button>
+            </div>
+            <div></div>
+        </footer>
     </div>
     <script src="helpers/Spectral/dsp.js"></script>
     <script src="helpers/Risk/risk-level-helper.js"></script>
@@ -141,7 +150,7 @@
     <script src="helpers/Export/reports.js"></script>
     <script src="helpers/Export/JSON.js"></script>
     <script src="helpers/Export/NDJSON.js"></script>
-
+    <script src="canvaspool.js"></script>
     <script src="analyzer.js"></script>
     <script src="popup.js"></script>
 </body>

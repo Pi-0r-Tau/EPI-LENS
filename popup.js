@@ -3,10 +3,9 @@
  * @module popup
  */
 "use strict";
+let controls = {};
 
 document.addEventListener('DOMContentLoaded', () => {
-    let controls = {};
-
     function initializeControls() {
         controls = {
             startBtn: document.getElementById('startAnalysis'),
@@ -189,8 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize controls after DOM is loaded
     initializeControls();
 });
-
-let controls = {};
 
 function formatTime(seconds) {
     if (isNaN(seconds)) return "0:00";
