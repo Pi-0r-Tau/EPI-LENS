@@ -17,18 +17,17 @@ let liveMetricsGraph = document.getElementById('liveMetricsGraph');
 let liveMetricsLegend = document.getElementById('liveMetricsLegend');
 let liveMetricsHistory = [];
 let metricSelector = null;
-let currentVideoObjectUrl = null; // TASK 1972
+let currentVideoObjectUrl = null;
 
 const ALL_METRICS = [
     { key: "brightness", label: "Brightness", color: "#2196f3" },
     { key: "intensity", label: "Flash Intensity", color: "#f44336" },
     { key: "redIntensity", label: "Red Intensity", color: "#e53935" },
     { key: "redDelta", label: "Red Delta", color: "#ff5252" },
-    { key: "riskLevel", label: "Risk", color: "#ff9800", convert: v => v === 'high' ? 1 : v === 'medium' ? 0.5 : 0 },
+    { key: "riskLevel", label: "Risk", color: "#ff9800", convert: (v) => (v === 'high' ? 1 : v === 'medium' ? 0.5 : 0) },
     { key: "psiScore", label: "PSI Score", color: "#8bc34a" },
     { key: "flickerFrequency", label: "Flicker Freq", color: "#00bcd4" },
     { key: "entropy", label: "Entropy", color: "#9c27b0" },
-     // TASK 4891: Removed dominant RGB and LAB metrics for live graphing as not helpful and cluttered
     { key: "cie76Delta", label: "CIE76 Δ", color: "#ffea00" },
     { key: "patternedStimulusScore", label: "Patterned Stimulus", color: "#00e5ff" },
     { key: "spectralFlatness", label: "Spectral Flatness", color: "#ffd600" },
@@ -560,7 +559,7 @@ function updateLiveMetricsChart(data) {
         entropy: data.entropy || 0,
         temporalChange: data.temporalChange || 0,
         frameDiff: data.frameDifference?.difference || 0,
-        // TASK 4891
+        // TASK 4891: Removed dominant RGB and LAB metrics for live graphing as not helpful and cluttered
         cie76Delta: data.cie76Delta ?? 0,
         patternedStimulusScore: data.patternedStimulusScore ?? 0,
         spectralFlatness: typeof data.spectralFlatness !== "undefined" ? Number(data.spectralFlatness) : (data.spectralAnalysis?.spectralFlatness ?? 0),
@@ -632,7 +631,11 @@ function exportSelectedFormats() {
 
     if (exportCSV) {
         setTimeout(() => {
-            const csv = analyzer.generateCSV();
+            // Stream CSV
+            let csv = '';
+            for (const line of analyzer.streamCSV()) {
+                csv += line;
+            }
             downloadFile(csv, `${baseFilename}.csv`, 'text/csv');
         }, exportDelay);
         exportDelay += 150;
@@ -640,6 +643,7 @@ function exportSelectedFormats() {
 
     if (exportJSON) {
         setTimeout(() => {
+            // JSON requires full data object for generation, so no streaming
             const json = analyzer.generateJSON();
             downloadFile(json, `${baseFilename}.json`, 'application/json');
         }, exportDelay);
@@ -648,7 +652,11 @@ function exportSelectedFormats() {
 
     if (exportNDJSON) {
         setTimeout(() => {
-            const ndjson = analyzer.generateNDJSON();
+            // Stream NDJSON
+            let ndjson = '';
+            for (const line of analyzer.streamNDJSON()) {
+                ndjson += line;
+            }
             downloadFile(ndjson, `${baseFilename}.ndjson`, 'application/x-ndjson');
         }, exportDelay);
     }
@@ -741,7 +749,11 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
     if (exportCSV) {
         exportPromises.push(new Promise(resolve => {
             setTimeout(() => {
-                const csv = analyzer.generateCSV();
+                // Stream CSV lines and join for download
+                let csv = '';
+                for (const line of analyzer.streamCSV()) {
+                    csv += line;
+                }
                 downloadFile(csv, `${baseFilename}.csv`, 'text/csv');
                 resolve();
             }, exportDelay);
@@ -763,7 +775,11 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
     if (exportNDJSON) {
         exportPromises.push(new Promise(resolve => {
             setTimeout(() => {
-                const ndjson = analyzer.generateNDJSON();
+                // Stream NDJSON lines and join for download
+                let ndjson = '';
+                for (const line of analyzer.streamNDJSON()) {
+                    ndjson += line;
+                }
                 downloadFile(ndjson, `${baseFilename}.ndjson`, 'application/x-ndjson');
                 resolve();
             }, exportDelay);
@@ -799,7 +815,7 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
                 flashesDiv.innerHTML = renderFlashTimestamps(flashes);
             }
         }
-    } catch (e) {}
+    } catch (e) { }
     if (playlistIndex < playlist.length - 1) {
         playlistIndex++;
         loadVideoFromPlaylist(playlistIndex);
