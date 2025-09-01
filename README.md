@@ -129,6 +129,8 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
   - Red Flash Events
   - Red Flashes per second
   - Red Flicker Risk Band
+- Spectral Dominant Instantaneous Frequency
+
 
 ## Updates in progress
 - Implementation of Jordan, J. B. & Vanderheiden, G. C. (2024). International Guidelines for Photosensitive Epilepsy: Gap Analysis and Recommendations. ACM Transactions on Accessible Computing, 17(3), 17:1 - 17:35. (https://github.com/jbjord/pseGuidelines)
