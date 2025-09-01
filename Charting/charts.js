@@ -1,6 +1,6 @@
 /**
  * @file charts.js
- * @description Chart drawing uses the helpers/charts-helpers.js
+ * @description Chart drawing uses the charts-helpers.js
  * @module charts
  */
 
@@ -187,6 +187,7 @@ const ALL_METRICS = [
     { key: "dominantLab.b", label: "DomLab b", color: "#ba68c8" },
     { key: "cie76Delta", label: "CIE76 Δ", color: "#ffea00" },
     { key: "spectralFlatness", label: "Spectral Flatness", color: "#ffd600" },
+    { key: "spectralAnalysis.confidence", label: "Spectral Confidence", color: "#440e0eff" },
     { key: "colorVariance.current.r", label: "Color Var R", color: "#ff9800" },
     { key: "colorVariance.current.g", label: "Color Var G", color: "#ffc107" },
     { key: "colorVariance.current.b", label: "Color Var B", color: "#ffeb3b" },
@@ -210,6 +211,7 @@ const ALL_METRICS = [
     { key: "frameDifference.difference", label: "Frame Diff", color: "#4f36f4ff" },
     { key: "frameDifference.motion", label: "Motion Ratio", color: "#ffeb3b" },
     { key: "spectralAnalysis.dominantFrequency", label: "Spectral Dominant Freq", color: "#9c27b0" },
+    { key: "spectralAnalysis.dominantInstFreq", label: "Spectral Dominant Inst Freq", color: "#e91e63" },
     { key: "spectralAnalysis.spectralFlatness", label: "Spectral Flatness", color: "#673ab7" },
     { key: "temporalContrast.maxRate", label: "Max Temporal Contrast Rate", color: "#3f51b5" },
     { key: "spatialMap.quadrant1", label: "Spatial Map Q1", color: "#8bc34a" },
@@ -298,7 +300,9 @@ function flattenMetrics(row) {
     // spectralAnalysis
     if (row.spectralAnalysis) {
         flat['spectralAnalysis.dominantFrequency'] = Number(row.spectralAnalysis?.dominantFrequency ?? 0);
+        flat['spectralAnalysis.dominantInstFreq'] = Number(row.spectralAnalysis?.dominantInstFreq ?? 0);
         flat['spectralAnalysis.spectralFlatness'] = Number(row.spectralAnalysis?.spectralFlatness ?? row.spectralFlatness ?? 0);
+        flat['spectralAnalysis.confidence'] = Number(row.spectralAnalysis?.confidence ?? 0);
     }
     if (typeof row.spectralFlatness !== "undefined") {
         flat['spectralFlatness'] = Number(row.spectralFlatness ?? 0);
@@ -499,11 +503,12 @@ function setupAddChartModal() {
         renderYAxisOptions();
         xAxisSearch.value = "";
         yAxisSearch.value = "";
-        if (availableFields.length > 1) {
-            let defaultY = availableFields[1] !== availableFields[0] ? availableFields[1] : availableFields[0];
-            yAxisChecked.add(defaultY);
-            renderYAxisOptions();
-        }
+        // Defaulted to always having brightness selected as default metric, this way annoying, keeping it incase I need it
+       // if (availableFields.length > 1) {
+         //   let defaultY = availableFields[1] !== availableFields[0] ? availableFields[1] : availableFields[0];
+         //   yAxisChecked.add(defaultY);
+        //    renderYAxisOptions();
+       // }
         modal.classList.remove('hidden');
     };
     closeModalBtn.onclick = () => modal.classList.add('hidden');
