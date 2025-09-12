@@ -15,6 +15,16 @@ let isPlaying = false;
 let zoomMode = 'fit';
 let zoomWindowSize = 40;
 let chartViewMode = 'multi';
+// TASK 086
+// Prev renderAllCharts woud fire far to much per a window resize, so limited it via debounce
+// This means that it only fires, once, after the user stops resizing the chart
+function debounce(fn, wait = 120) {
+    let t;
+    return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), wait);
+    };
+}
 
 // selection zoom
 let selectionZoom = null; // {startIdx, endIdx} or null
@@ -135,6 +145,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const container = document.querySelector('.charts-container');
         if (container) container.insertBefore(zoomControls, container.firstChild.nextSibling);
+        // TASK 086
+        window.addEventListener('resize', debounce(() => {
+            renderAllCharts();
+        }, 150));
     }
 })
 
@@ -707,7 +721,7 @@ function renderChartCard(chart, idx) {
         });
         chartTypeSelect.value = chart.metricChartTypes[yMetric] || 'line';
         chartTypeSelect.onchange = (e) => {
-            chart.metricChartTypes[yMetric] = chartTypeSelect.value;
+            chart.metricChartTypes[yMetric] = e.target.value;
             renderAllCharts();
         };
 
@@ -774,36 +788,52 @@ function renderChartCard(chart, idx) {
     };
     canvas.onmousemove = (e) => {
         if (!isSelecting) return;
-        const rect = canvas.getBoundingClientRect();
+        const rect = canvas.getBoundingClientRect(); 
         selectEnd = e.clientX - rect.left;
         const x1 = Math.min(selectStart, selectEnd);
         const x2 = Math.max(selectStart, selectEnd);
-        selectionRect.style.left = (canvas.offsetLeft + x1) + 'px';
-        selectionRect.style.top = (canvas.offsetTop) + 'px';
-        selectionRect.style.width = (x2 - x1) + 'px';
-        selectionRect.style.height = canvas.height + 'px';
+        // position selectionRect relative to the card using page layout
+        // Gets actual pos relative to viewport, then calculates pos relative to card container
+        const cardRect = card.getBoundingClientRect();
+        const leftOffset = rect.left - cardRect.left;
+        selectionRect.style.left = (leftOffset + x1) + 'px';
+        selectionRect.style.top = (rect.top - cardRect.top) + 'px';
+        selectionRect.style.width = Math.max(1, x2 - x1) + 'px';
+        selectionRect.style.height = rect.height + 'px';
     };
     canvas.onmouseup = (e) => {
         if (!isSelecting) return;
         isSelecting = false;
-        selectionRect && (selectionRect.style.display = 'none');
+        // Rejig to use a safer conditional, prev used AND op.
+        if (selectionRect) selectionRect.style.display = 'none';
         const rect = canvas.getBoundingClientRect();
         selectEnd = e.clientX - rect.left;
         const data = getMultiYAxisChartData(chart);
         const [start, end] = getZoomedIndices(data.x.length);
         const xVals = data.x;
-        const left = 40, right = 10, w = canvas.width - left - right;
-        let minPx = Math.min(selectStart, selectEnd);
-        let maxPx = Math.max(selectStart, selectEnd);
+        const left = 40, right = 10;
+        const w = rect.width - left - right;
+        const minPx = Math.min(selectStart, selectEnd);
+        const maxPx = Math.max(selectStart, selectEnd);
+
         let minIdx = 0, maxIdx = xVals.length - 1;
-        for (let i = 0; i < xVals.length; ++i) {
-            let px = left + ((i) / (xVals.length - 1)) * w;
-            if (px >= minPx) { minIdx = i; break; }
+        // TASK 086:
+        // (xVals.length - 1) would become (1 - 1) = 0;
+        // So if division by zero occured then output would be NaN or Inf
+        // So changed so that only runs when (xVals.length > 1), preventing div by zero 
+        if (xVals.length > 1) {
+            for (let i = 0; i < xVals.length; ++i) {
+                let px = left + (i / (xVals.length - 1)) * w;
+                if (px >= minPx) { minIdx = i; break; }
+            }
+            for (let i = xVals.length - 1; i >= 0; --i) {
+                let px = left + (i / (xVals.length - 1)) * w;
+                if (px <= maxPx) { maxIdx = i; break; }
+            }
+        } else {
+            minIdx = 0; maxIdx = 0;
         }
-        for (let i = xVals.length - 1; i >= 0; --i) {
-            let px = left + ((i) / (xVals.length - 1)) * w;
-            if (px <= maxPx) { maxIdx = i; break; }
-        }
+
         // Set selection zoom globally for all charts
         if (minIdx < maxIdx) {
             selectionZoom = { start: start + minIdx, end: start + maxIdx + 1 };
