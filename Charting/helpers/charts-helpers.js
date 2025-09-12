@@ -1,28 +1,78 @@
+function ensureHiDPI(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = canvas.clientWidth || canvas.width;
+    const cssHeight = canvas.clientHeight || canvas.height;
+    const targetW = Math.round(cssWidth * dpr);
+    const targetH = Math.round(cssHeight * dpr);
+    if (canvas.width !== targetW || canvas.height !== targetH || canvas._dpr !== dpr) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+        canvas.style.width = cssWidth + 'px';
+        canvas.style.height = cssHeight + 'px';
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        canvas._dpr = dpr;
+    }
+}
+
+function drawGrid(ctx, left, top, w, h, xSteps = 5, ySteps = 5) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+
+    // horizontal lines
+    for (let i = 0; i <= ySteps; ++i) {
+        const y = top + h - (h * (i / ySteps));
+        ctx.beginPath();
+        ctx.moveTo(left, y + 0.5);
+        ctx.lineTo(left + w, y + 0.5);
+        ctx.stroke();
+    }
+
+    // vertical ls
+    for (let i = 0; i <= xSteps; ++i) {
+        const x = left + w * (i / xSteps);
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, top);
+        ctx.lineTo(x + 0.5, top + h);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
 function drawIsFlashScatter(canvas, chart, getMultiYAxisChartData) {
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ensureHiDPI(canvas);
+    const DPR = window.devicePixelRatio || 1;
+    const width = canvas.width / DPR;
+    const height = canvas.height / DPR;
+    ctx.clearRect(0, 0, width, height);
 
     const left = 40, right = 10, top = 20, bottom = 30;
-    const w = canvas.width - left - right;
-    const h = canvas.height - top - bottom;
+    const w = width - left - right;
+    const h = height - top - bottom;
     let data = getMultiYAxisChartData(chart);
 
     let minX = Math.min(...data.x), maxX = Math.max(...data.x);
     let minY = 0, maxY = 1;
+    // Graph Grid
+    drawGrid(ctx, left, top, w, h, 5, 2);
 
     ctx.strokeStyle = "#888";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(left, top);
-    ctx.lineTo(left, canvas.height - bottom);
-    ctx.lineTo(canvas.width - right, canvas.height - bottom);
+    ctx.lineTo(left, height - bottom);
+    ctx.lineTo(width - right, height - bottom);
     ctx.stroke();
 
     // Axis labels
     ctx.fillStyle = "#bbb";
     ctx.font = "12px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(chart.x, left + w / 2, canvas.height - 6);
+    ctx.fillText(chart.x, left + w / 2, height - 6);
     ctx.save();
     ctx.translate(14, top + h / 2);
     ctx.rotate(-Math.PI / 2);
@@ -63,23 +113,29 @@ function drawIsFlashScatter(canvas, chart, getMultiYAxisChartData) {
 
 function drawMultiYAxisChart(canvas, chart, getChartDataForDraw, getMetricColor) {
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ensureHiDPI(canvas);
+    const DPR = window.devicePixelRatio || 1;
+    const width = canvas.width / DPR;
+    const height = canvas.height / DPR;
+    ctx.clearRect(0, 0, width, height);
 
     const { xVals, yVals, left, w, h, minX, maxX, minY, maxY } = getChartDataForDraw(canvas, chart);
+    // Grid Graph
+    drawGrid(ctx, left, 20, w, h, 5, 5);
 
     ctx.strokeStyle = "#888";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(left, 20);
-    ctx.lineTo(left, canvas.height - 30);
-    ctx.lineTo(canvas.width - 10, canvas.height - 30);
+    ctx.lineTo(left, height - 30);
+    ctx.lineTo(width - 10, height - 30);
     ctx.stroke();
 
     // Labels
     ctx.fillStyle = "#bbb";
     ctx.font = "12px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(chart.x, left + w / 2, canvas.height - 6);
+    ctx.fillText(chart.x, left + w / 2, height - 6);
     ctx.save();
     ctx.translate(14, 20 + h / 2);
     ctx.rotate(-Math.PI / 2);
@@ -126,31 +182,36 @@ function drawMultiYAxisChart(canvas, chart, getChartDataForDraw, getMetricColor)
 
 function drawMultiYAxisScatter(canvas, chart, getMultiYAxisChartData, getMetricColor) {
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ensureHiDPI(canvas);
+    const DPR = window.devicePixelRatio || 1;
+    const width = canvas.width / DPR;
+    const height = canvas.height / DPR;
+    ctx.clearRect(0, 0, width, height);
 
     const left = 40, right = 10, top = 20, bottom = 30;
-    const w = canvas.width - left - right;
-    const h = canvas.height - top - bottom;
+    const w = width - left - right;
+    const h = height - top - bottom;
     let data = getMultiYAxisChartData(chart);
 
     let minX = Math.min(...data.x), maxX = Math.max(...data.x);
     let minY = Math.min(...data.y.flat()), maxY = Math.max(...data.y.flat());
     if (minX === maxX) maxX += 1;
     if (minY === maxY) maxY += 1;
+    drawGrid(ctx, left, top, w, h, 5, 5);
 
     ctx.strokeStyle = "#888";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(left, top);
-    ctx.lineTo(left, canvas.height - bottom);
-    ctx.lineTo(canvas.width - right, canvas.height - bottom);
+    ctx.lineTo(left, height - bottom);
+    ctx.lineTo(width - right, height - bottom);
     ctx.stroke();
 
     // Labels
     ctx.fillStyle = "#bbb";
     ctx.font = "12px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(chart.x, left + w / 2, canvas.height - 6);
+    ctx.fillText(chart.x, left + w / 2, height - 6);
     ctx.save();
     ctx.translate(14, top + h / 2);
     ctx.rotate(-Math.PI / 2);
@@ -195,22 +256,28 @@ function drawMultiYAxisScatter(canvas, chart, getMultiYAxisChartData, getMetricC
 
 function drawMultiYAxisBar(canvas, chart, getMultiYAxisChartData, getMetricColor) {
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ensureHiDPI(canvas);
+    const DPR = window.devicePixelRatio || 1;
+    const width = canvas.width / DPR;
+    const height = canvas.height / DPR;
+    ctx.clearRect(0, 0, width, height);
 
     const left = 40, right = 10, top = 20, bottom = 30;
-    const w = canvas.width - left - right;
-    const h = canvas.height - top - bottom;
+    const w = width - left - right;
+    const h = height - top - bottom;
     let data = getMultiYAxisChartData(chart);
 
     let minY = Math.min(...data.y.flat()), maxY = Math.max(...data.y.flat());
     if (minY === maxY) maxY += 1;
+    const xSteps = Math.max(1, Math.min(5, data.x.length - 1 || 1));
+    drawGrid(ctx, left, top, w, h, xSteps, 5);
 
     ctx.strokeStyle = "#888";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(left, top);
-    ctx.lineTo(left, canvas.height - bottom);
-    ctx.lineTo(canvas.width - right, canvas.height - bottom);
+    ctx.lineTo(left, height - bottom);
+    ctx.lineTo(width - right, height - bottom);
     ctx.stroke();
 
     // Labels
@@ -220,7 +287,7 @@ function drawMultiYAxisBar(canvas, chart, getMultiYAxisChartData, getMetricColor
     let metricLabel = window.MetricColorHelpers && window.MetricColorHelpers.metricKeyToLabel
         ? window.MetricColorHelpers.metricKeyToLabel
         : (x => x);
-    ctx.fillText(metricLabel(chart.x), left + w / 2, canvas.height - 6);
+    ctx.fillText(metricLabel(chart.x), left + w / 2, height - 6);
     ctx.save();
     ctx.translate(14, top + h / 2);
     ctx.rotate(-Math.PI / 2);
@@ -266,25 +333,30 @@ function drawMultiYAxisBar(canvas, chart, getMultiYAxisChartData, getMetricColor
 
 function drawMultiYAxisMixed(canvas, chart, getMultiYAxisChartData, getMetricColor, metricChartTypes) {
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ensureHiDPI(canvas);
+    const DPR = window.devicePixelRatio || 1;
+    const width = canvas.width / DPR;
+    const height = canvas.height / DPR;
+    ctx.clearRect(0, 0, width, height);
 
     const left = 40, right = 10, top = 20, bottom = 30;
-    const w = canvas.width - left - right;
-    const h = canvas.height - top - bottom;
+    const w = width - left - right;
+    const h = height - top - bottom;
     let data = getMultiYAxisChartData(chart);
 
     let minX = Math.min(...data.x), maxX = Math.max(...data.x);
     let minY = Math.min(...data.y.flat()), maxY = Math.max(...data.y.flat());
     if (minX === maxX) maxX += 1;
     if (minY === maxY) maxY += 1;
+    drawGrid(ctx, left, top, w, h, 5, 5);
 
     // Axes
     ctx.strokeStyle = "#888";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(left, top);
-    ctx.lineTo(left, canvas.height - bottom);
-    ctx.lineTo(canvas.width - right, canvas.height - bottom);
+    ctx.lineTo(left, height - bottom);
+    ctx.lineTo(width - right, height - bottom);
     ctx.stroke();
 
     // Labels
@@ -294,7 +366,7 @@ function drawMultiYAxisMixed(canvas, chart, getMultiYAxisChartData, getMetricCol
     let metricLabel = window.MetricColorHelpers && window.MetricColorHelpers.metricKeyToLabel
         ? window.MetricColorHelpers.metricKeyToLabel
         : (x => x);
-    ctx.fillText(metricLabel(chart.x), left + w / 2, canvas.height - 6);
+    ctx.fillText(metricLabel(chart.x), left + w / 2, height - 6);
     ctx.save();
     ctx.translate(14, top + h / 2);
     ctx.rotate(-Math.PI / 2);
