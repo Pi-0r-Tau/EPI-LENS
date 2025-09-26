@@ -72,7 +72,8 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
     - RGB to LAB color space conversion improved for perceptual color difference measurements
  
 - NDJSON import and export supported
-  - This helps with quota bytes exceeded when analysing multiple files in the fileanalyzer. As it exports each complete analysis after each video, if you have this issue you can load data into the charts view with NDJSON or JSON
+  - This helps with quota bytes exceeded when analysing multiple files in the fileanalyzer.
+  -  As it exports each complete analysis after each video, if you have this issue you can load data into the charts view with NDJSON or JSON
 
 - Library based FFT, dsp.js, tried and tested as custom FFT was lacking.
 - Removed legacy analyzer-helpers.js and split in sub helper files: aiming for a highly modular codebase so each file can be tuned and improved simply.
