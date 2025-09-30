@@ -1,3 +1,9 @@
+/**
+ * Currently not used, this is a experimental file for exploring the usage of pdf for html exports. 
+ * Helper functions are referenced and wired in via the analyzer.js but not called correctly.
+ * This is being actively worked on, along with new export filetypes. 
+ */
+
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 
 window.AnalyzerHelpers.generateReport = function () {
