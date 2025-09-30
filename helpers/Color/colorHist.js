@@ -1,4 +1,12 @@
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
+/**
+ * Analyzes color history and returns variance, spikes and, AVG change for RGB channels
+ * @returns {{
+ *   variance: { r: number, g: number, b: number },
+ *   spikes: Array<any>,
+ *   averageChange: { r: number, g: number, b: number }
+ * }}
+ */
 window.AnalyzerHelpers.colorHistory = function () {
     const history = this.advancedMetrics.colorHistory;
     const n = Math.min(history.r.length, history.g.length, history.b.length);
