@@ -38,10 +38,12 @@ window.AnalyzerHelpers.temporalCoherence = function (
             lags: [],
         };
 
-    const validBuffer = [];
+    const validBuffer = new Float32Array(len);
     for (let i = 0; i < len; i++) {
-        const v = ring.buffer[i];
-        validBuffer.push(typeof v === "number" && isFinite(v) ? v : 0);
+        // reads data in chronological order, accounting for ring buffer rotations
+        const bufIdx = (ring.idx - len + i + windowSize) % windowSize;
+        const v = ring.buffer[bufIdx];
+        validBuffer[i] = typeof v === "number" && isFinite(v) ? v : 0;
     }
 
     const mean = validBuffer.reduce((a, b) => a + b, 0) / len;
@@ -67,13 +69,12 @@ window.AnalyzerHelpers.temporalCoherence = function (
     if (typeof this.detectPeriodicity === "function") {
         periodicity = this.detectPeriodicity(validBuffer);
     }
-
+    // Store history
     tc.coherenceHistory = tc.coherenceHistory || [];
     tc.coherenceHistory.push({
         timestamp: Date.now(),
         coherenceScore,
-        periodicity,
-        buffer: [...validBuffer],
+        periodicityScore: periodicity.confidence,  // TASK 191: Just the number, not full object
     });
     if (tc.coherenceHistory.length > 1000) tc.coherenceHistory.shift();
 
