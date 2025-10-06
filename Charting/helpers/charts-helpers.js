@@ -93,10 +93,11 @@ function drawIsFlashScatter(canvas, chart, getMultiYAxisChartData) {
     for (let i = 0; i <= 5; ++i) {
         let xVal = minX + (maxX - minX) * (i / 5);
         let x = left + w * (i / 5);
-        ctx.fillText(xVal.toFixed(2), x, canvas.height - bottom + 16);
+        // TASK 23 Scatter:Ensure that x axis label appears for different sized screens
+        ctx.fillText(xVal.toFixed(2), x, height - bottom + 16); 
         ctx.beginPath();
-        ctx.moveTo(x, canvas.height - bottom);
-        ctx.lineTo(x, canvas.height - bottom + 3);
+        ctx.moveTo(x, height - bottom);
+        ctx.lineTo(x, height - bottom + 3);
         ctx.stroke();
     }
 
