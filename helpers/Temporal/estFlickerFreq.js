@@ -2,7 +2,7 @@
 /**
  * Est. flicker freq in Hz via analyzing time differences between significant brightness changes
  * Analyzer.js threshold for brightnessChange is 0.1
- *Ingnores the full signal, this is picked up by FFT via DSP.js
+ * Flicker freq from brightness change peaks, via median time between peaks.
  */
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 window.AnalyzerHelpers.estFlickerFrequency = function () {
