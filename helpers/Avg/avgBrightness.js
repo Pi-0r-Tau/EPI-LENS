@@ -5,53 +5,27 @@
  */
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 AnalyzerHelpers.avgBrightness = function (data) {
-    const len = data.length;
-    if (len < 4) return 0;
+  const len = data.length;
+  if (len < 4) return 0;
 
-    // BT.709 coefficients for luminance
-    const R_COEF = 0.2126,
-        G_COEF = 0.7152,
-        B_COEF = 0.0722;
+  const pixelCount = len >>> 2; // Number of pixels (4 bytes each)
+  const lumi = AnalyzerHelpers.luminance;
 
-    let luminanceSum = 0,
-        i = 0;
-    const pixelCount = len >>> 2;
+  let sum = 0, i = 0;
+  const max = len - (len % 32);
 
-    const max = len - (len % 32);
-    for (; i < max; i += 32) {
-        // Loop is unrolled to reduce loop interations
-        // Each iteration processes 8 pixels (32 bytes)
-        luminanceSum +=
-            data[i] * R_COEF +
-            data[i + 1] * G_COEF +
-            data[i + 2] * B_COEF +
-            data[i + 4] * R_COEF +
-            data[i + 5] * G_COEF +
-            data[i + 6] * B_COEF +
-            data[i + 8] * R_COEF +
-            data[i + 9] * G_COEF +
-            data[i + 10] * B_COEF +
-            data[i + 12] * R_COEF +
-            data[i + 13] * G_COEF +
-            data[i + 14] * B_COEF +
-            data[i + 16] * R_COEF +
-            data[i + 17] * G_COEF +
-            data[i + 18] * B_COEF +
-            data[i + 20] * R_COEF +
-            data[i + 21] * G_COEF +
-            data[i + 22] * B_COEF +
-            data[i + 24] * R_COEF +
-            data[i + 25] * G_COEF +
-            data[i + 26] * B_COEF +
-            data[i + 28] * R_COEF +
-            data[i + 29] * G_COEF +
-            data[i + 30] * B_COEF;
-    }
+  // process 8 pixels per iteration (32 bytes)
+  for (; i < max; i += 32) {
+    sum += lumi(data, i) + lumi(data, i + 4) +
+           lumi(data, i + 8) + lumi(data, i + 12) +
+           lumi(data, i + 16) + lumi(data, i + 20) +
+           lumi(data, i + 24) + lumi(data, i + 28);
+  }
 
-    for (; i < len; i += 4) {
-        luminanceSum +=
-            data[i] * R_COEF + data[i + 1] * G_COEF + data[i + 2] * B_COEF;
-    }
+  // clean up
+  for (; i < len; i += 4) {
+    sum += lumi(data, i);
+  }
 
-    return luminanceSum / (pixelCount * 255);
+  return sum / pixelCount;
 };

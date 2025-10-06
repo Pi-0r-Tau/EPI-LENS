@@ -1,24 +1,19 @@
+// relative luminance with sRGB gamma correction
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
-window.AnalyzerHelpers.luminance = function (
-    data,
-    idx,
-    weights = [0.2126, 0.7152, 0.0722]
-) {
-    if (!Array.isArray(data) && !(data instanceof Uint8ClampedArray)) return 0;
-    const len = data.length;
-    if (typeof idx !== "number" || idx < 0 || idx > len - 3) return 0;
 
-    const r =
-        typeof data[idx] === "number" && isFinite(data[idx]) ? data[idx] : 0;
-    const g =
-        typeof data[idx + 1] === "number" && isFinite(data[idx + 1])
-            ? data[idx + 1]
-            : 0;
-    const b =
-        typeof data[idx + 2] === "number" && isFinite(data[idx + 2])
-            ? data[idx + 2]
-            : 0;
+// Pre-compute linearization lookup table (LUT)
+(function() {
+  const LUT = new Float32Array(256);
+  for (let i = 0; i < 256; i++) {
+    const val = i / 255;
+    LUT[i] = val > 0.04045
+      ? Math.pow((val + 0.055) / 1.055, 2.4)
+      : val / 12.92;
+  }
 
-    // BT.709 weights for perceptual luminance
-    return r * weights[0] + g * weights[1] + b * weights[2];
-};
+  AnalyzerHelpers.luminance = function(data, idx) {
+    return LUT[data[idx]] * 0.2126 +
+           LUT[data[idx + 1]] * 0.7152 +
+           LUT[data[idx + 2]] * 0.0722;
+  };
+})();
