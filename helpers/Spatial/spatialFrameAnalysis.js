@@ -4,9 +4,6 @@ window.AnalyzerHelpers.sobelEdgeMap = function (gray, width, height) {
         throw new Error('Input buffer size does not match canvas size');
 
     const edge = new Float32Array(width * height);
-    // Sobel kernels:
-    //   Gx: [-1 0 1; -2 0 2; -1 0 1]
-    //   Gy: [-1 -2 -1; 0 0 0; 1 2 1]
     for (let y = 1; y < height - 1; ++y) {
         const rowOffset = y * width;
         const prevRowOffset = rowOffset - width;
@@ -68,14 +65,13 @@ window.AnalyzerHelpers.detectPatternedStimulus = function (imageData) {
                 }
             }
             const variance = count > 1 ? M2 / count : 0; // Treats each block of pixels as a population
-            blockScores[blockIdx++] = Math.sqrt(variance) / 128; // Midpoint normalization of 255
+            blockScores[blockIdx++] = Math.sqrt(variance) / 127.5; // Normalize to max std dev for 0 - 255 range
             totalContrast += blockScores[blockIdx - 1];
         }
     }
     const avgBlockContrast = blockCount ? totalContrast / blockCount : 0;
-
-    // this.sobelEdgeMap called to get edge strength per row
-    const edge = this.sobelEdgeMap(gray, width, height);
+    // namespace ref to window from this
+    const edge = window.AnalyzerHelpers.sobelEdgeMap(gray, width, height);
     const edgeRowSum = new Float32Array(height);
     let totalEdge = 0;
     for (let y = 0; y < height; y++) {
