@@ -312,7 +312,8 @@ function drawMultiYAxisBar(canvas, chart, getMultiYAxisChartData, getMetricColor
     // X ticks
     for (let i = 0; i < data.x.length; ++i) {
         let x = left + (i / (data.x.length - 1)) * w;
-        ctx.fillText(String(data.x[i]), x, canvas.height - bottom + 16);
+        // TASK 23: drawMultiYAxisBar
+        ctx.fillText(String(data.x[i]), x, height - bottom + 16); 
     }
 
     const groupWidth = w / data.x.length;
