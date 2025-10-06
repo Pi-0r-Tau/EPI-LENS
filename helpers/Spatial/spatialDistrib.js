@@ -13,14 +13,14 @@ window.AnalyzerHelpers.spatialDistribution = function (imageData) {
     let centerPixels = 0, peripheryPixels = 0;
     const halfW = width / 2, halfH = height / 2;
     const quadrantCounts = [0, 0, 0, 0];
-
+    // TASK 26: Removal of validation as Uint8ClmapedArray wil be numeric so no point it validation in hot path
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const i = (y * width + x) * 4;
-            let r = data[i], g = data[i + 1], b = data[i + 2];
-            r = (typeof r === 'number' && !isNaN(r)) ? r : 0;
-            g = (typeof g === 'number' && !isNaN(g)) ? g : 0;
-            b = (typeof b === 'number' && !isNaN(b)) ? b : 0;
+            let r = data[i],
+                g = data[i + 1],
+                b = data[i + 2];
+
             const brightness = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255;
 
             const dx = x - halfW, dy = y - halfH;
