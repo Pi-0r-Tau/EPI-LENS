@@ -35,6 +35,9 @@ window.AnalyzerHelpers.calculateFrameDifference = function (currentFrame) {
     // So.... Overkill it is.
     // Don't want to use too small blocks, as it would increase noise.
     // Overkill is better than underkill. 
+    // TASK 25:
+    // Clean up of loop unrolling, to a more simple approach
+    // Loop unrolling just added extra variable overhead, more operations basically overthought the logic 
     for (
         let blockOffset = 0;
         blockOffset <= len - blockSize;
@@ -42,17 +45,15 @@ window.AnalyzerHelpers.calculateFrameDifference = function (currentFrame) {
     ) {
         let localDiff = 0,
             localMotion = 0;
-        for (let pixelOffset = 0; pixelOffset < blockSize; pixelOffset += 16) { // 16 = (R, G, B, A) * 4
-            for (let k = 0; k < 16; k += 4) {
-                const idx = blockOffset + pixelOffset + k;
-                // Ingores alpha channel
-                const rDiff = Math.abs(data1[idx] - data2[idx]);
-                const gDiff = Math.abs(data1[idx + 1] - data2[idx + 1]);
-                const bDiff = Math.abs(data1[idx + 2] - data2[idx + 2]);
-                const diff = rDiff + gDiff + bDiff;
-                localDiff += diff;
-                localMotion += diff > threshold ? 1 : 0;
-            }
+        for (let pixelOffset = 0; pixelOffset < blockSize; pixelOffset += 4) {
+            const idx = blockOffset + pixelOffset;
+            // Ignores alpha channel
+            const rDiff = Math.abs(data1[idx] - data2[idx]);
+            const gDiff = Math.abs(data1[idx + 1] - data2[idx + 1]);
+            const bDiff = Math.abs(data1[idx + 2] - data2[idx + 2]);
+            const diff = rDiff + gDiff + bDiff;
+            localDiff += diff;
+            localMotion += diff > threshold ? 1 : 0;
         }
         totalDiff += localDiff;
         motionPixels += localMotion;
