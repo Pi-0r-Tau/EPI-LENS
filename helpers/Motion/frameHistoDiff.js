@@ -7,11 +7,12 @@ window.AnalyzerHelpers.frameHistogramDiff = function (data1, data2) {
     // Unint32Array as in testing csv results were all zero, this change has seemed to fix it
     const hist1 = new Uint32Array(bins),
         hist2 = new Uint32Array(bins);
-    const rWeight = 0.2126,
-        gWeight = 0.7152,
-        bWeight = 0.0722; // sRGB luminance
     const binSize = 256 / bins;
 
+    // Grab the LUT
+    const getLuminance = window.AnalyzerHelpers.luminance;
+    const useLUT = typeof getLuminance === 'function';
+    
     // Linear luminance is closer to human vision, Harding FPA and PEAT use it so why not.
     function srgb2linear(v) {
         v /= 255;
@@ -22,15 +23,25 @@ window.AnalyzerHelpers.frameHistogramDiff = function (data1, data2) {
         // Skip if both pixels are fully transparent, reduce computation and it's pretty pointless to skew results for pixels that I can't even see.
         if (data1[i + 3] === 0 && data2[i + 3] === 0) continue;
 
-        // Calculate luminance for each pixel
-        const lum1 =
-            srgb2linear(data1[i]) * rWeight +
-            srgb2linear(data1[i + 1]) * gWeight +
-            srgb2linear(data1[i + 2]) * bWeight;
-        const lum2 =
-            srgb2linear(data2[i]) * rWeight +
-            srgb2linear(data2[i + 1]) * gWeight +
-            srgb2linear(data2[i + 2]) * bWeight;
+        let lum1, lum2;
+
+        if (useLUT) {
+            lum1 = getLuminance(data1, i);
+            lum2 = getLuminance(data2, i);
+        } else {
+        // Fallback path calculate on the fly
+        // If this is used something has gone wrong, but hey at least it works
+        const rWeight = 0.2126, gWeight = 0.7152, bWeight = 0.0722;
+
+      lum1 =
+        srgb2linear(data1[i]) * rWeight +
+        srgb2linear(data1[i + 1]) * gWeight +
+        srgb2linear(data1[i + 2]) * bWeight;
+      lum2 =
+        srgb2linear(data2[i]) * rWeight +
+        srgb2linear(data2[i + 1]) * gWeight +
+        srgb2linear(data2[i + 2]) * bWeight;
+    }
 
         const v1 = Math.floor(lum1 * 255);
         const v2 = Math.floor(lum2 * 255);
