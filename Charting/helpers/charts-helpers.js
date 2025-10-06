@@ -159,10 +159,11 @@ function drawMultiYAxisChart(canvas, chart, getChartDataForDraw, getMetricColor)
     for (let i = 0; i <= 5; ++i) {
         let xVal = minX + (maxX - minX) * (i / 5);
         let x = left + w * (i / 5);
-        ctx.fillText(xVal.toFixed(2), x, canvas.height - 30 + 16);
+        //TASK 23: drawMultiYAxisChart
+        ctx.fillText(xVal.toFixed(2), x, height - bottom + 16);
         ctx.beginPath();
-        ctx.moveTo(x, canvas.height - 30);
-        ctx.lineTo(x, canvas.height - 30 + 3);
+        ctx.moveTo(x, height - bottom);
+        ctx.lineTo(x, height - bottom + 3);
         ctx.stroke();
     }
 
