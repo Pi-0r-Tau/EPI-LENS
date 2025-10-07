@@ -248,6 +248,34 @@ So I have some hacky way to detect the duration be it in miliseconds or seconds.
     return { redAreaFractions, redOn, thresholdsUsed: T };
   };
 
+  AH.computePerFrameRedStates = function computePerFrameRedStates(
+    redAreaFractions,
+    redAreaOnThreshold
+  ) {
+    const n = redAreaFractions.length;
+    const redStates = new Array(n);
+    const redTransitions = new Array(n);
+
+    let prevOn = null;
+    for (let i = 0; i < n; i++) {
+      const raf = redAreaFractions[i] ?? 0;
+      const on = raf >= redAreaOnThreshold ? 1 : 0;
+
+      redStates[i] = on;
+
+      // Mark frame as having a transition (0 or 1)
+      if (prevOn !== null && on !== prevOn) {
+        redTransitions[i] = 1;
+      } else {
+        redTransitions[i] = 0;
+      }
+
+      prevOn = on;
+    }
+
+    return { redStates, redTransitions };
+  };
+
   // Median of positive timestamp deltas
   function medianPositiveDelta(ts, startIdx, endIdx) {
     const i0 = Math.min(startIdx, endIdx);
