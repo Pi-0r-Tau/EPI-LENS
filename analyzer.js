@@ -299,6 +299,10 @@ if (!window.VideoAnalyzer) {
 
             // Calculate red metrics for current frame only if enabled and in fileanalyzer.js/html
             let redMetrics = null;
+            // TASK 4128 Per frame red metric for red state and transition wiring
+            let redState = 0;
+            let redTransition = 0;
+
             if (this.redMetricsEnabled && this.isFileAnalyzer) {
                 try {
                     const redAreaFraction = this.getRedAreaFraction(
@@ -321,7 +325,18 @@ if (!window.VideoAnalyzer) {
                         this.redAreaFractions.shift();
                     }
 
-                    // If data is enough compute red metrics
+                    // TASK 4128
+                    const perFrameStates = this.computePerFrameRedStates(
+                        this.redAreaFractions,
+                        0.25 // WCAG 2.1 red area threshold
+                    );
+
+                    // Get current frames state 
+                    const currentIdx = this.redAreaFractions.length - 1;
+                    redState = perFrameStates.redStates[currentIdx];
+                    redTransition = perFrameStates.redTransitions[currentIdx];
+
+                    // If data is enough compute red window metrics
                     if (this.redSeries.length >= 5) {
                         // At least 5 frames needed
                         const timestamps = this.redSeries.map((s) => s.timestamp);
@@ -343,12 +358,15 @@ if (!window.VideoAnalyzer) {
                             redFlashPerSecond: 0,
                             redFlickerInRiskBand: false,
                             redAreaThresholdUsed: 0.25,
-                            windowDurationMs: 0
+                            windowDurationMs: 0,
+                            windowSampleCount: this.redSeries.length // debug
                         };
                     }
                 } catch (error) {
                     console.warn('Red metrics calculation error:', error);
                     redMetrics = null;
+                    redState = 0;
+                    redTransition = 0;
                 }
             }
             this.temporalContrastSeries.push({
@@ -427,6 +445,8 @@ if (!window.VideoAnalyzer) {
                     weightDecay: 0.1,
                 }),
                 redMetrics: redMetrics,
+                redState: redState,
+                redTransition: redTransition,
                 temporalContrastSensitivity: temporalContrastSensitivity
             };
 
@@ -810,6 +830,14 @@ if (!window.VideoAnalyzer) {
                 redAreaOnThreshold
             );
         }
+        // TASK 4128
+        computePerFrameRedStates(redAreaFractions, redAreaOnThreshold) {
+            return window.AnalyzerHelpers.computePerFrameRedStates.call(
+                this,
+                redAreaFractions,
+                redAreaOnThreshold
+            );
+        }
 
         detectEdges(imageData, sobelThreshold = 50, maxHistory = 500) {
             return window.AnalyzerHelpers.detectEdges.call(
@@ -1039,6 +1067,8 @@ if (!window.VideoAnalyzer) {
                 sceneChangeScore: metrics.sceneChangeScore,
                 contrastSensitivity: metrics.contrastSensitivity,
                 redMetrics: metrics.redMetrics,
+                redState: metrics.redState || 0,
+                redTransition: metrics.redTransition || 0,
                 temporalContrastSensitivity: metrics.temporalContrastSensitivity,
             };
             entry.spectralFlatness = metrics.spectralData?.spectralFlatness ?? 0;
