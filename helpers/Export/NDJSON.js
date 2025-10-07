@@ -171,6 +171,8 @@ window.AnalyzerHelpers.streamNDJSON = function* () {
                     redFlashEvents: entry.redMetrics?.redFlashEvents || 0,
                     redFlashPerSecond: Number(entry.redMetrics?.redFlashPerSecond || 0).toFixed(4),
                     redFlickerInRiskBand: !!entry.redMetrics?.redFlickerInRiskBand,
+                    redState: entry.redMetrics?.redState || 0,
+                    redTransitions: entry.redMetrics?.redTransitions || 0
                 };
             }
 
