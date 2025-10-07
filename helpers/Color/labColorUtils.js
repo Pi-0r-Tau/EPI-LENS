@@ -162,8 +162,16 @@ So I have some hacky way to detect the duration be it in miliseconds or seconds.
    * Determine if a color is saturated red.
    * Uses Lab gate always; uses linear sRGB gate only if color.linR/G/B provided.
    */
+
+  let _cachedInput = null;
+  let _cachedThresholds = null;
+
   AH.isSaturatedRed = function isSaturatedRed(color, lab, thresholds) {
-    const T = Object.assign({}, AH.defaultRedThresholds, thresholds || {});
+    if (thresholds !== _cachedInput) {
+      _cachedThresholds = Object.assign({}, AH.defaultRedThresholds, thresholds || {});
+      _cachedInput = thresholds;
+    }
+    const T = _cachedThresholds;
     // Linear RGB gate
     // If color.linR/G/B are not provided, skip gate
     let gateRGB = true; // default to true so Lab gate alone can pass
@@ -183,13 +191,20 @@ So I have some hacky way to detect the duration be it in miliseconds or seconds.
 
     return gateRGB && gateLab;
   };
+  
+  let _cachedRedAreaThresholds = null;
+  let _cachedRedAreaInput = null;
 
   AH.getRedAreaFraction = function getRedAreaFraction(sample, lab, thresholds) {
     if (sample && typeof sample.redAreaFraction === "number") {
       return clamp01(sample.redAreaFraction);
     }
 
-    const T = Object.assign({}, AH.defaultRedThresholds, thresholds || {});
+    if (thresholds !== _cachedRedAreaInput) {
+      _cachedRedAreaThresholds = Object.assign({}, AH.defaultRedThresholds, thresholds || {});
+      _cachedRedAreaInput = thresholds;
+    }
+    const T = _cachedRedAreaThresholds;
     const color = sample.color;
 
     // How much red exceeds green and blue for dominance
@@ -208,11 +223,11 @@ So I have some hacky way to detect the duration be it in miliseconds or seconds.
     if (isRed && hasRedDominance) {
       // Now how 'red' is it, is it really red, how 'really' red is that
       const minRedFraction = T.minRedAreaFraction || 0.3;
-      return Math.max(minRedFraction, redIntensity);
+      return clamp01(Math.max(minRedFraction, Math.min(redIntensity, 1.0)));
     } else {
       const weakRedMultiplier = T.weakRedMultiplier || 0.05;
       const maxWeakRed = T.maxWeakRedFraction || 0.1;
-      return Math.min(redIntensity * weakRedMultiplier, maxWeakRed);
+      return clamp01(Math.min(redIntensity * weakRedMultiplier, maxWeakRed));
     }
   };
 
