@@ -80,6 +80,7 @@ window.AnalyzerHelpers.calculateDominantColor = function (imageData) {
   if (count === 0) return { r: 0, g: 0, b: 0 };
 
   const invCount = 1 / count;
+  // Returns floating point RGB values as thresholding is applied later
   return {
     r: r * invCount,
     g: g * invCount,
@@ -95,12 +96,12 @@ window.AnalyzerHelpers.cie76 = function (lab1, lab2) {
 };
 
 window.AnalyzerHelpers.extractDominantColors = function (data, n = 5) {
-  if (!data || data.length === 0 || data.length % 4 !== 0) return [];
+  if (!data || data.length === 0) return [];
   // Quantize each channel to 3 bits
   // Map key: 0xRRGGBB integer, value: count
   const colorMap = new Map();
-  for (let i = 0; i < data.length; i += 4) {
-    if (data[i + 3] === 0) continue; // reduce computation for transparent pixels; ignore them don't want them skewing resultss
+  for (let i = 0; i + 3 < data.length; i += 4) {
+    if (data[i + 3] === 0) continue; // ignore transparent pixels; ignore them don't want them skewing resultss
     const r = (data[i] >> 5) << 5; // 0-255 reduced to 0,32,64,...224
     const g = (data[i + 1] >> 5) << 5;
     const b = (data[i + 2] >> 5) << 5;
@@ -136,9 +137,9 @@ So I have some hacky way to detect the duration be it in miliseconds or seconds.
   // Defaults for saturated red and area gating
   AH.defaultRedThresholds = AH.defaultRedThresholds || {
     // Linear sRGB thresholds (0..1) Only applied if color.linR/linG/linB are provided.
-    rHi: 0.8, // Red threshold
-    gLo: 0.25, // Green suppression
-    bLo: 0.25, // Blue suppression
+    rHi: 0.85, // Red threshold
+    gLo: 0.15, // Green suppression
+    bLo: 0.15, // Blue suppression
     // Lab cross-check thresholds
     aThresh: 30, // a* threshold
     cThresh: 35, // Chroma threshold
@@ -146,10 +147,10 @@ So I have some hacky way to detect the duration be it in miliseconds or seconds.
     // W3C WCAG 2.1 0.25 for red area fraction.
     areaThreshold: 0.25,
     // Red area fraction calculation thresholds
-    redDominanceThreshold: 50, // RGB dominance threshold
-    redIntensityThreshold: 0.6, // Minimum red intensity
+    redDominanceThreshold: 60,
+    redIntensityThreshold: 0.7,
     minRedAreaFraction: 0.3, // Minimum return value for detected red areas
-    weakRedMultiplier: 0.05, // Multiplier for weak red content
+    weakRedMultiplier: 0.05,
     maxWeakRedFraction: 0.1, // Maximum value for weak red content
   };
 
