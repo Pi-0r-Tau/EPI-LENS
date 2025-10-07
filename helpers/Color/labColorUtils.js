@@ -1,16 +1,6 @@
-/**
- * Converts RGB color values to CIE L,a,b color space.
- * @param {number} r
- * @param {number} g
- * @param {number} b
- * @return {Object} L a b color object with properties L, a, b
- */
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 
 window.AnalyzerHelpers.rgbToLab = function (r, g, b) {
-  if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255)
-    throw new Error("RGB values out of range [0,255]");
-
   const RGB_TO_XYZ = [
     0.4124, 0.3576, 0.1805, 0.2126, 0.7152, 0.0722, 0.0193, 0.1192, 0.9505,
   ];
@@ -18,11 +8,18 @@ window.AnalyzerHelpers.rgbToLab = function (r, g, b) {
     REF_Y = 1.0,
     REF_Z = 1.08883;
 
-  // Normalize and gamma correct
-  const srgb = [r, g, b];
-  for (let i = 0; i < 3; ++i) {
-    let v = srgb[i] / 255;
-    srgb[i] = v > 0.04045 ? Math.pow((v + 0.055) / 1.055, 2.4) : v / 12.92;
+  // Normalize and gamma correct (sRGB to linear)
+  const LUT = window.AnalyzerHelpers.sRGB_TO_LINEAR_LUT;
+  let srgb;
+
+  if (LUT) {
+    srgb = [LUT[r], LUT[g], LUT[b]];
+  } else {
+    srgb = [r, g, b];
+    for (let i = 0; i < 3; ++i) {
+      let v = srgb[i] / 255;
+      srgb[i] = v > 0.04045 ? Math.pow((v + 0.055) / 1.055, 2.4) : v / 12.92;
+    }
   }
 
   // Convert to XYZ

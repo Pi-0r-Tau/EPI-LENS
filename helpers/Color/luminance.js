@@ -11,6 +11,8 @@ window.AnalyzerHelpers = window.AnalyzerHelpers || {};
       : val / 12.92;
   }
 
+  window.AnalyzerHelpers.sRGB_TO_LINEAR_LUT = LUT;
+
   AnalyzerHelpers.luminance = function(data, idx) {
     return LUT[data[idx]] * 0.2126 +
            LUT[data[idx + 1]] * 0.7152 +
