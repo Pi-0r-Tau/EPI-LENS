@@ -33,14 +33,12 @@ window.AnalyzerHelpers.detectPatternedStimulus = function (imageData) {
     const width = imageData.width, height = imageData.height;
     const data = imageData.data;
     const pixelCount = width * height;
-    if (data.length !== pixelCount * 4)
-        throw new Error("imageData.data length does not match canvas size");
+    const lumi = window.AnalyzerHelpers.luminance;
 
-    // Grayscale conversion (sRGB luminance weights)
+    // LUT based gamma corrected luminance
     const gray = new Float32Array(pixelCount);
-    const rWeight = 0.2126, gWeight = 0.7152, bWeight = 0.0722;
-    for (let i = 0, j = 0; i < data.length; i += 4, j++)
-        gray[j] = data[i] * rWeight + data[i + 1] * gWeight + data[i + 2] * bWeight;
+        for (let i = 0, j = 0; i < data.length; i += 4, j++)
+            gray[j] = lumi(data, i);
 
     const blockSize = 8;
     const blocksY = Math.ceil(height / blockSize);
@@ -65,7 +63,9 @@ window.AnalyzerHelpers.detectPatternedStimulus = function (imageData) {
                 }
             }
             const variance = count > 1 ? M2 / count : 0; // Treats each block of pixels as a population
-            blockScores[blockIdx++] = Math.sqrt(variance) / 127.5; // Normalize to max std dev for 0 - 255 range
+            // Normalize to max std dev for 0 - 1 range
+            // Gray values are via luminance.js which returns 0-1 floating point values so 0.5 not 127.5 for std dev normalization
+            blockScores[blockIdx++] = Math.sqrt(variance) / 0.5;
             totalContrast += blockScores[blockIdx - 1];
         }
     }
@@ -84,6 +84,7 @@ window.AnalyzerHelpers.detectPatternedStimulus = function (imageData) {
 
     // Autocorrelation for periodicity
     let maxCorr = 0;
+    // Detects spatial patterns with a period of at least 2 pixels and up to 20 or height/2 pixels
     const maxLag = Math.min(20, height >> 1);
     const diffFromMean = new Float32Array(height);
     for (let i = 0; i < height; i++) diffFromMean[i] = edgeRowSum[i] - meanEdge;
