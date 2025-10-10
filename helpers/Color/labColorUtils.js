@@ -9,18 +9,26 @@ window.AnalyzerHelpers.rgbToLab = function (r, g, b) {
     REF_Z = 1.08883;
 
   // Normalize and gamma correct (sRGB to linear)
-  const LUT = window.AnalyzerHelpers.sRGB_TO_LINEAR_LUT;
-  let srgb;
+  const LUT = window.AnalyzerHelpers && window.AnalyzerHelpers.sRGB_TO_LINEAR_LUT;
+  if (!LUT || LUT.length !== 256) return null;
 
-  if (LUT) {
-    srgb = [LUT[r], LUT[g], LUT[b]];
-  } else {
-    srgb = [r, g, b];
-    for (let i = 0; i < 3; ++i) {
-      let v = srgb[i] / 255;
-      srgb[i] = v > 0.04045 ? Math.pow((v + 0.055) / 1.055, 2.4) : v / 12.92;
-    }
-  }
+ // Ensure numeric inputs and clamp to 0..255 range
+  r = Number.isFinite(r) ? r : 0;
+  g = Number.isFinite(g) ? g : 0;
+  b = Number.isFinite(b) ? b : 0;
+  r = r < 0 ? 0 : r > 255 ? 255 : r;
+  g = g < 0 ? 0 : g > 255 ? 255 : g;
+  b = b < 0 ? 0 : b > 255 ? 255 : b;
+
+  // Linear interpolate LUT for fractional indices
+  const interpolateLUT = (X) => {
+    const i0 = Math.floor(X);
+    const t1 = i0 === 255 ? 255 : i0 + 1;
+    const f = X - i0;
+    return LUT[i0] + f * (LUT[t1] - LUT[i0]);
+  };
+
+  const srgb = [interpolateLUT(r), interpolateLUT(g), interpolateLUT(b)];
 
   // Convert to XYZ
   const X =
