@@ -18,14 +18,12 @@ window.AnalyzerHelpers.detectEdges = function (
     const data = imageData.data;
     const gray = new Float32Array(width * height);
 
-    for (let i = 0, j = 0; i < data.length; i += 4, ++j) {
-        const r = typeof data[i] === "number" && !isNaN(data[i]) ? data[i] : 0;
-        const g =
-            typeof data[i + 1] === "number" && !isNaN(data[i + 1]) ? data[i + 1] : 0;
-        const b =
-            typeof data[i + 2] === "number" && !isNaN(data[i + 2]) ? data[i + 2] : 0;
-        gray[j] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    }
+    // LUT for sRGB to linear ( 0 - 255 range) as sobel is in the same range
+    const lumi = window.AnalyzerHelpers.luminance255;
+
+    // Grayscale conversion (sRGB luminance weights)
+    for (let i = 0, j = 0; i < data.length; i += 4, j++)
+        gray[j] = lumi(data, i);
 
     let edgeCount = 0;
     const edgeMap = new Uint8Array(width * height); // Binary edge mask
