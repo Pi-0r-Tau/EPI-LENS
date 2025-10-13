@@ -62,14 +62,6 @@ Risk score is calculated as instances of a flash for threshold criteria within s
       
 - fileanalyzer / Offline video analysis:
 Adjustable analysis interval to let users choose how many frames are analyzed per second. Allowing users fast less detailed analysis or slower more detailed up to the fps limit of the video.
-
-- Reorganized analyzer-helpers.js with cleaner function separation and better memory management
-    - Sobel operator with vectorized processing for faster edge map generation
-    - Frame comparison with block-based processing for improved performance
-    - Memory footprint reduced through typed arrays and buffer reuse
-    - Error recovery and graceful degradation implemented for corrupted frames or werid input
-    - Fast Fourier Transform using optimized Cooley-Tukey algorithm with bit reversal and twiddle factor caching futher improvements
-    - RGB to LAB color space conversion improved for perceptual color difference measurements
  
 - NDJSON import and export supported
   - This helps with quota bytes exceeded when analysing multiple files in the fileanalyzer.
@@ -87,6 +79,16 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
 - Local Video Analysis now has an overlay for optional metrics, with user preferences saved to local storage. The metric that are accessible via this overlay are:
   - Saturated Red Detection
   - Contrast Sensitivity
+
+Red flash boundaries and transition events
+
+Saturated Red Detection must be toggled on via fileanalyzer.js/html. 
+- Red states:
+Binary state of each frame based on red content, returns an array of 0s and 1s indicating if flashing is active in each individual frame
+
+- Red Transitions:
+Change detection for red state between consecutive frames, returns an array of 0s and 1s indicating frames where the red state has flipped from the previous frame
+
 
 ## Recent updates to metrics
 - Patterned stimulus score
@@ -119,6 +121,8 @@ Adjustable analysis interval to let users choose how many frames are analyzed pe
   - Red Flashes per second
   - Red Flicker Risk Band
 - Spectral Dominant Instantaneous Frequency
+- Red states
+- Red Transitions
 
 
 ## Updates in progress
