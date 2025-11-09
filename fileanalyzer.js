@@ -243,21 +243,21 @@ function closeSettings() {
 }
 
 function prefSettings() {
-  if (redMetricsToggle) {
-    redMetricsEnabled = redMetricsToggle.checked;
-    localStorage.setItem(
-      'epilens_redMetricsEnabled',
-      redMetricsEnabled.toString()
-    );
-  }
+    if (redMetricsToggle) {
+        redMetricsEnabled = redMetricsToggle.checked;
+        localStorage.setItem(
+            'epilens_redMetricsEnabled',
+            redMetricsEnabled.toString()
+        );
+    }
 
-  if (temporalContrastToggle) {
-    temporalContrastEnabled = temporalContrastToggle.checked;
-    localStorage.setItem('epilens_temporalContrastEnabled', temporalContrastEnabled.toString());
-    console.log('Temporal contrast sensitivity', temporalContrastEnabled ? 'enabled' : 'disabled');
-}
+    if (temporalContrastToggle) {
+        temporalContrastEnabled = temporalContrastToggle.checked;
+        localStorage.setItem('epilens_temporalContrastEnabled', temporalContrastEnabled.toString());
+        console.log('Temporal contrast sensitivity', temporalContrastEnabled ? 'enabled' : 'disabled');
+    }
 
-  closeSettings();
+    closeSettings();
 }
 
 // Threshold value displays
