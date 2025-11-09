@@ -277,6 +277,16 @@ if (!window.VideoAnalyzer) {
                 this.metrics.lastFrameBrightness = brightness;
                 brightnessDiff = 0;
                 isFlash = false;
+
+            }
+            // TASK 8902.2
+            if (window.AnalyzerHelpers && window.AnalyzerHelpers.updateFlashViolation) {
+                this.currentViolationState = window.AnalyzerHelpers.updateFlashViolation.call(
+                    this,
+                    relativeTime,
+                    isFlash,
+                    this.metrics.frameCount
+                );
             }
 
             const dominantColor =
