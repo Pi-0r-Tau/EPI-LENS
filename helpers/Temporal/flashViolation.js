@@ -254,3 +254,37 @@ window.AnalyzerHelpers._computeFlashStatistics = function (allFlashes, totalDura
         flashDistribution
     };
 };
+
+window.AnalyzerHelpers._computeClusterStatistics = function (clusters) {
+    if (!clusters.length) {
+        return {
+            totalClusters: 0,
+            averageClusterSize: 0,
+            maxClusterSize: 0,
+            minClusterSize: 0,
+            averageClusterDuration: 0,
+            maxClusterDuration: 0,
+            minClusterDuration: 0,
+            clusterDensity: 0  // Global density of clusters over the analyzed duration
+        };
+    }
+
+    const sizes = clusters.map(c => c.count);
+    const durations = clusters.map(c => c.endTime - c.startTime);
+    const totalClusterTime = durations.reduce((a, b) => a + b, 0);
+    const allFlashes = clusters.reduce((sum, c) => sum + c.count, 0);
+    const timeSpan = Math.max(...clusters.map(c => c.endTime)) - Math.min(...clusters.map(c => c.startTime));
+    const clusterDensity = timeSpan > 0 ? allFlashes / timeSpan : 0;
+
+    return {
+        totalClusters: clusters.length,
+        averageClusterSize: sizes.reduce((a, b) => a + b, 0) / sizes.length,
+        maxClusterSize: Math.max(...sizes),
+        minClusterSize: Math.min(...sizes),
+        averageClusterDuration: totalClusterTime / clusters.length,
+        maxClusterDuration: Math.max(...durations),
+        minClusterDuration: Math.min(...durations),
+        medianClusterSize: window.AnalyzerHelpers._median(sizes),
+        clusterDensity: clusterDensity
+    };
+};
