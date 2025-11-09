@@ -930,6 +930,17 @@ if (!window.VideoAnalyzer) {
             this.dataChunks = [];
             this.currentChunk = [];
             this._frameDiffHistory = new Float32Array(8);
+            // TASK 8902.3: Init flash violation tracking with stored default cluster gap threshold
+            const savedClusterGapThreshold = this.savedClusterGapThreshold || 0.3;
+            if (window.AnalyzerHelpers && window.AnalyzerHelpers.initFlashViolationTracking) {
+                window.AnalyzerHelpers.initFlashViolationTracking.call(this, savedClusterGapThreshold);
+            }
+            // TASK 8902.4
+            // Reset flash violation tracking
+            if (window.AnalyzerHelpers && window.AnalyzerHelpers.resetFlashViolationTracking) {
+                const threshold = this.savedClusterGapThreshold || 0.3;
+                window.AnalyzerHelpers.resetFlashViolationTracking.call(this, threshold);
+            }
 
             // Return canvas to pool
             if (this.canvas) {
