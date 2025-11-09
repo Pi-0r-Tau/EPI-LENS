@@ -606,6 +606,35 @@ function renderFlashTimestamps(flashes) {
     return html;
 }
 
+// T8901.16: updateResults to include cluster summary updates via inline HTML
+
+function renderClusterDetails(clusters) {
+    if (!clusters || clusters.length === 0) {
+        return '<div style="color:#888;">None</div>';
+    }
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:0.95em;margin-top:4px;">
+        <thead>
+            <tr style="border-bottom:1px solid #444;">
+                <th style="text-align:left;padding:4px 6px;color:#90caf9;font-weight:bold;">Cluster</th>
+                <th style="text-align:left;padding:4px 6px;color:#90caf9;font-weight:bold;">Start (s)</th>
+                <th style="text-align:left;padding:4px 6px;color:#90caf9;font-weight:bold;">Duration (s)</th>
+                <th style="text-align:left;padding:4px 6px;color:#90caf9;font-weight:bold;">Flash Count</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    clusters.forEach((cluster, idx) => {
+        const duration = (cluster.endTime - cluster.startTime).toFixed(3);
+        html += `<tr style="border-bottom:1px solid #333;">
+            <td style="padding:4px 6px;">#${idx + 1}</td>
+            <td style="padding:4px 6px;">${Number(cluster.startTime).toFixed(3)}</td>
+            <td style="padding:4px 6px;">${duration}</td>
+            <td style="padding:4px 6px;">${cluster.count}</td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    return html;
+}
+
 function updateResults(result) {
     resultsPanel.innerHTML = renderResultsTable(result);
     updateSummaryPanelFields(result);
