@@ -221,18 +221,25 @@ function initializeSettingsOverlay() {
 }
 
 function openSettings() {
-  if (settingsOverlay) {
-    settingsOverlay.style.display = 'flex';
-    if (redMetricsToggle) redMetricsToggle.checked = redMetricsEnabled;
-    if (temporalContrastToggle)
-      temporalContrastToggle.checked = temporalContrastEnabled;
-  }
+    if (settingsOverlay) {
+        settingsOverlay.style.display = 'flex';
+        settingsOverlay.setAttribute('aria-hidden', 'false'); // WCAG Focus order bug fix
+        if (redMetricsToggle) redMetricsToggle.checked = redMetricsEnabled;
+        if (temporalContrastToggle)
+            temporalContrastToggle.checked = temporalContrastEnabled;
+        setTimeout(() => {
+            if (closeSettingsBtn) closeSettingsBtn.focus();
+        }, 100);
+    }
 }
 
 function closeSettings() {
-  if (settingsOverlay) {
-    settingsOverlay.style.display = 'none';
-  }
+    if (settingsOverlay) {
+        settingsOverlay.style.display = 'none';
+        settingsOverlay.setAttribute('aria-hidden', 'true'); // WCAG Focus order bug fix
+        // Return focus to the trigger button
+        if (openSettingsBtn) openSettingsBtn.focus();
+    }
 }
 
 function prefSettings() {
