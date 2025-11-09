@@ -81,6 +81,35 @@ function updateAnalysisIntervalFpsInfo() {
     analysisIntervalFpsInfo.textContent = `Current: ${fps} frames per second (fps)`;
 }
 
+// TASK 8902.10: Calculates the ideal cluster gap threshold based on the analysis
+// interval using multipler
+function calculateRecommendedClusterGapThreshold(analysisInterval) {
+    const multiplier = 3.5;
+    const calculatedThreshold = analysisInterval * multiplier;
+    const minThreshold = 0.05;
+    const maxThreshold = 2.0;
+    const clamped = Math.max(minThreshold, Math.min(maxThreshold, calculatedThreshold));
+    return Math.round(clamped * 100) / 100;
+}
+// Used via the fileanalyzer.html for the offline video analysis only
+function updateClusterGapThresholdDisplay() {
+    if (!analysisIntervalInput) return;
+
+    const interval = parseFloat(analysisIntervalInput.value);
+    const recommended = calculateRecommendedClusterGapThreshold(interval);
+
+    if (autoClusterGapThresholdValue) {
+        autoClusterGapThresholdValue.textContent = recommended.toFixed(2);
+    }
+
+    // Overridden, sync slider to auto value
+    if (!isClusterThresholdManuallyOverridden && clusterGapThresholdInput) {
+        clusterGapThresholdInput.value = recommended.toFixed(2);
+        clusterGapThresholdValue.textContent = recommended.toFixed(2);
+        clusterGapThreshold = recommended;
+    }
+}
+
 // Load saved analysis interval from localStorage
 if (analysisIntervalInput && analysisIntervalValueSpan) {
     const savedInterval = localStorage.getItem('epilens_analysisInterval');
