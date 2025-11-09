@@ -119,6 +119,7 @@ function drawMultiYAxisChart(canvas, chart, getChartDataForDraw, getMetricColor)
     const width = canvas.width / DPR;
     const height = canvas.height / DPR;
     ctx.clearRect(0, 0, width, height);
+    const bottom = 30; //Prev was not defined in X ticks
 
     const { xVals, yVals, left, w, h, minX, maxX, minY, maxY } = getChartDataForDraw(canvas, chart);
     // Grid Graph
