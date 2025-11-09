@@ -504,6 +504,8 @@ function updatePlaylistInfo() {
 function startAnalysis() {
     if (!video.src) return;
     if (!analyzer) analyzer = new VideoAnalyzer();
+    //T8902.15: start analysis with correct CGT
+    analyzer.setClusterGapThreshold(clusterGapThreshold);
     analyzer.reset();
     resetRiskEscalation(); // TASK 5771
     analyzer.redMetricsEnabled = redMetricsEnabled;
@@ -520,6 +522,7 @@ function startAnalysis() {
         intensity: intensity,
         flashesPerSecond: flashesPerSecond
     });
+    analyzer.clusterGapThreshold = clusterGapThreshold;
 
     if (playlist.length && playlist[playlistIndex]) {
         analyzer.videoTitle = playlist[playlistIndex].name;
