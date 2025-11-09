@@ -87,8 +87,7 @@ window.AnalyzerHelpers.streamCSV = function* () {
             "Red Flash Events",
             "Red Flash Per Second",
             "Red Flicker In Risk Band",
-            "Red State",
-            "Red Transition"
+            "Red State"
         ];
 
         let headers = [...baseHeaders];
@@ -209,7 +208,6 @@ window.AnalyzerHelpers.streamCSV = function* () {
                 Number(entry.redMetrics?.redFlashPerSecond || 0).toFixed(4),
                 entry.redMetrics?.redFlickerInRiskBand ? "1" : "0",
                 entry.redMetrics?.redState || 0,
-                entry.redMetrics?.redTransitions || 0
             ];
 
             // Builds row based on enabled features from fileanalyzer.js
