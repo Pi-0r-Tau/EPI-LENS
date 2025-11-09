@@ -288,3 +288,29 @@ window.AnalyzerHelpers._computeClusterStatistics = function (clusters) {
         clusterDensity: clusterDensity
     };
 };
+// T8901.7: Median
+window.AnalyzerHelpers._median = function (arr) {
+    const sorted = arr.slice().sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0
+        ? (sorted[mid - 1] + sorted[mid]) / 2
+        : sorted[mid];
+};
+// T8901.8: Reset 
+window.AnalyzerHelpers.resetFlashViolationTracking = function (clusterGapThreshold = 0.3) {
+    this.flashViolations = {
+        instances: [],
+        currentWindowFlashes: [],
+        windowStartTime: null,
+        windowStartFrame: null,
+        isInWindow: false,
+        totalViolationFrames: 0,
+        totalAnalyzedFrames: 0,
+        flashThreshold: 3,
+        flashClusters: [],
+        currentCluster: null,
+        clusterGapThreshold,
+        lastFlashTime: null,
+        allFlashes: []
+    };
+};
