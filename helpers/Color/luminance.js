@@ -22,7 +22,7 @@ window.AnalyzerHelpers = window.AnalyzerHelpers || {};
   const LUT255 = new Float32Array(256);
   for (let i = 0; i < 256; i++) LUT255[i] = LUT[i] * 255;
 
-  // LUT used for RGB to XYZ conversion in labColorUtils.js
+  // LUT used for RGB to XYZ conversion in labColorUtils.js, aka when normalized linear values are needed
   window.AnalyzerHelpers.sRGB_TO_LINEAR_LUT = LUT;
   
   window.AnalyzerHelpers.luminance = function(data, idx, weights = [0.2126, 0.7152, 0.0722]) {
@@ -30,8 +30,7 @@ window.AnalyzerHelpers = window.AnalyzerHelpers || {};
            LUT[data[idx + 1]] * weights[1] +
            LUT[data[idx + 2]] * weights[2];
   };
-
-  // LUT used for Sobel edge detection in spatialEdges.js
+  // LUT used for Sobel edge detection in spatialEdges.js, aka when pixel level image processing
   window.AnalyzerHelpers.sRGB_TO_LINEAR_255_LUT = LUT255;
 
   window.AnalyzerHelpers.luminance255 = function(data, idx, weights = [0.2126, 0.7152, 0.0722]) {
