@@ -523,3 +523,7 @@ body {
     color: #181818 !important;
     border-color: #90caf9 !important;
 }
+
+input[type="checkbox"] {
+    accent-color: #2196f3;
+}
