@@ -131,3 +131,23 @@ window.AnalyzerHelpers.updateFlashViolation = function (timestamp, isFlash, fram
         flashClusters: v.flashClusters.concat(v.currentCluster ? [v.currentCluster] : [])
     };
 };
+
+window.AnalyzerHelpers._getAssociatedClusters = function (windowStart, windowEnd, currentCluster, completedClusters) {
+    const associated = [];
+    const allClusters = completedClusters.concat(currentCluster ? [currentCluster] : []);
+
+    for (const cluster of allClusters) {
+        // Cluster overlaps window if cluster.endTime > windowStart AND cluster.startTime < windowEnd
+        if (cluster.endTime > windowStart && cluster.startTime < windowEnd) {
+            associated.push({
+                startTime: cluster.startTime,
+                endTime: cluster.endTime,
+                count: cluster.count,
+                overlapStart: Math.max(cluster.startTime, windowStart),
+                overlapEnd: Math.min(cluster.endTime, windowEnd)
+            });
+        }
+    }
+
+    return associated;
+};
