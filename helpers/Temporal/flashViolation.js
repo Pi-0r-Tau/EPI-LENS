@@ -151,3 +151,71 @@ window.AnalyzerHelpers._getAssociatedClusters = function (windowStart, windowEnd
 
     return associated;
 };
+
+window.AnalyzerHelpers.getFlashViolationStats = function (totalDuration) {
+    const v = this.flashViolations;
+
+    // Handle incomplete window at video end
+    if (v.isInWindow) {
+        const flashCount = v.currentWindowFlashes.length;
+        const windowEndTime = Math.min(v.windowStartTime + 1.0, totalDuration);
+        const actualDuration = windowEndTime - v.windowStartTime;
+
+        if (actualDuration >= 0.5 && flashCount > v.flashThreshold) {
+            const windowEndFrame = v.totalAnalyzedFrames - 1;
+            const violationFrameCount = windowEndFrame - v.windowStartFrame + 1;
+
+            v.instances.push({
+                startTime: v.windowStartTime,
+                endTime: windowEndTime,
+                duration: actualDuration,
+                startFrame: v.windowStartFrame,
+                endFrame: windowEndFrame,
+                frameCount: violationFrameCount,
+                flashCount,
+                incomplete: true,
+                associatedClusters: window.AnalyzerHelpers._getAssociatedClusters(
+                    v.windowStartTime,
+                    windowEndTime,
+                    v.currentCluster,
+                    v.flashClusters
+                )
+            });
+
+            v.totalViolationFrames += violationFrameCount;
+        }
+
+        v.isInWindow = false;
+    }
+
+    if (v.currentCluster) {
+        v.flashClusters.push(v.currentCluster);
+        v.currentCluster = null;
+    }
+
+    const totalViolationTime = v.instances.reduce((sum, inst) => sum + inst.duration, 0);
+    const dangerousFramePercent = v.totalAnalyzedFrames > 0
+        ? (v.totalViolationFrames / v.totalAnalyzedFrames) * 100
+        : 0;
+    const dangerousTimePercent = totalDuration > 0
+        ? (totalViolationTime / totalDuration) * 100
+        : 0;
+
+    const flashStats = window.AnalyzerHelpers._computeFlashStatistics(v.allFlashes, totalDuration);
+    const clusterStats = window.AnalyzerHelpers._computeClusterStatistics(v.flashClusters);
+
+    return {
+        violationCount: v.instances.length,
+        dangerousFrames: v.totalViolationFrames,
+        totalFrames: v.totalAnalyzedFrames,
+        dangerousFramePercent,
+        dangerousTimePercent,
+        dangerousTime: totalViolationTime,
+        totalDuration,
+        instances: v.instances,
+        flashClusterCount: v.flashClusters.length,
+        flashClusters: v.flashClusters,
+        clusterStatistics: clusterStats,
+        flashStatistics: flashStats
+    };
+};
