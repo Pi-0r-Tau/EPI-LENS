@@ -180,6 +180,17 @@ if (!window.VideoAnalyzer) {
                 chromaticContrast: 0.4,
             };
         }
+        // TASK 8902: Wiring in of TASK 8901.xx
+        // TASK 8902.1: Validates that threshold is a number, its greater than zero and not greater than 2.0
+        // If any check fails, skip method.
+        setClusterGapThreshold(threshold) {
+            if (typeof threshold === 'number' && threshold > 0 && threshold <= 2.0) {
+                this.savedClusterGapThreshold = threshold;
+                if (window.AnalyzerHelpers && window.AnalyzerHelpers.flashViolations) {
+                    window.AnalyzerHelpers.flashViolations.clusterGapThreshold = threshold;
+                }
+            }
+        }
 
         analyzeFrame(video, timestamp) {
             const FRAME_INTERVAL_MS = 1000 / 60;
