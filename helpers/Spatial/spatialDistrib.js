@@ -8,6 +8,9 @@ window.AnalyzerHelpers.spatialDistribution = function (imageData) {
     const height = imageData.height;
     const centerRadius = Math.min(width, height) * 0.2; // 20% radius: default for central risk
     const data = imageData.data;
+    // Uses 0..1 luminance for brightness distribution
+    // as I want perceived brightness not raw sRGB values
+    // which are non-linear
     const lumi = window.AnalyzerHelpers.luminance;
     let centerSum = 0, peripherySum = 0;
     const quadrants = [0, 0, 0, 0];
