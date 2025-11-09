@@ -1164,6 +1164,23 @@ if (!window.VideoAnalyzer) {
                 options
             );
         }
+        // TASK 8902.5: Retrieve flash violation stats for analyzed video
+        // returns defaults if helpers are not loading
+        getViolationStatistics(totalDuration) {
+            if (window.AnalyzerHelpers && window.AnalyzerHelpers.getFlashViolationStats) {
+                return window.AnalyzerHelpers.getFlashViolationStats.call(this, totalDuration);
+            }
+            return {
+                violationCount: 0,
+                dangerousFrames: 0,
+                totalFrames: this.metrics.frameCount,
+                dangerousFramePercent: 0,
+                dangerousTime: 0,
+                totalDuration: totalDuration || 0,
+                dangerousTimePercent: 0,
+                instances: []
+            };
+        }
     }
 
     window.VideoAnalyzer = VideoAnalyzer;
