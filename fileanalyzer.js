@@ -425,7 +425,7 @@ function handleFileSelect(e) {
     updatePlaylistInfo();
 }
 // TASK 5771: Video playlist summary stats reset bewtween videos
-
+// TASK 8902.13/14 additions of cluster and violation variables
 function resetSummaryPanelFields() {
     try {
         document.getElementById('SummaryFlashes').textContent = '0';
@@ -433,6 +433,22 @@ function resetSummaryPanelFields() {
         document.getElementById('SummaryPSI').textContent = '-';
         document.getElementById('SummaryAvgPSI').textContent = '-';
         document.getElementById('SummaryMaxPSI').textContent = '-';
+        document.getElementById('SummaryViolations').textContent = '-';
+        document.getElementById('SummaryDangerousFrames').textContent = '-';
+        document.getElementById('SummaryDangerousTime').textContent = '-';
+        // TASK 8902.13: Reset cluster summary fields
+        document.getElementById('SummaryFlashClusters').textContent = '-';
+        document.getElementById('SummaryAvgClusterSize').textContent = '-';
+        document.getElementById('SummaryMaxClusterSize').textContent = '-';
+        // TASK 8902.14: Cluster stats
+        document.getElementById('SummaryMinClusterSize').textContent = '-';
+        document.getElementById('SummaryMedianClusterSize').textContent = '-';
+        document.getElementById('SummaryClusterDensity').textContent = '-';
+        document.getElementById('SummaryFlashesInClusters').textContent = '-';
+        let clustersDiv = document.getElementById('SummaryClustersList');
+        if (clustersDiv) {
+            clustersDiv.innerHTML = '<div style="color:#888;">None</div>';
+        }
         let flashesDiv = document.getElementById('SummaryFlashesList');
         if (flashesDiv) {
             flashesDiv.innerHTML = '<div style="color:#888;">None</div>';
