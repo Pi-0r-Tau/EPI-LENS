@@ -11,6 +11,9 @@ window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 
 // Further sanity enforcement shall be referring to subtasks of TASK 8901 as T8901.xx 
 
+// !! This file is currently not wired up, its late 01:06 AM so will do this later or earlier one of the two.
+// This addition was a late night idea, which has snowballed into something a bit more.
+
 window.AnalyzerHelpers.initFlashViolationTracking = function () {
     this.flashViolations = {
         instances: [],
