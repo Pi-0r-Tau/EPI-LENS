@@ -685,6 +685,9 @@ function updateResults(result) {
  * - `#SummaryFlashes`: Displays the number of detected flashes.
  * - `#SummaryRisk`: Displays the risk level
  * - `#SummaryPSI`: Displays the PSI score
+ * - `#SummaryViolations`: Displays the number of detected violations
+ * - `#SummaryDangerousFrames`: Displays the percentage and count of dangerous frames
+ * - `#SummaryDangerousTime`: Displays the percentage and duration of dangerous time
  *
  * @param {Object} result 
  * @param {number} [result.flashCount]
@@ -703,6 +706,74 @@ function updateSummaryPanelFields(result) {
         document.getElementById('SummaryPSI').textContent = result && result.psi && result.psi.score !== undefined
             ? Number(result.psi.score).toFixed(4)
             : '-';
+        // T8902.18.1
+        // Update violation statistics if available
+        if (result && result.violationStats) {
+            const vs = result.violationStats;
+            document.getElementById('SummaryViolations').textContent = vs.violationCount || 0;
+
+            const frameText = vs.dangerousFrames > 0
+                ? `${vs.dangerousFramePercent.toFixed(2)}% (${vs.dangerousFrames}/${vs.totalFrames})`
+                : '0% (0/0)';
+            document.getElementById('SummaryDangerousFrames').textContent = frameText;
+
+            const timeText = vs.dangerousTime > 0
+                ? `${vs.dangerousTimePercent.toFixed(2)}% (${vs.dangerousTime.toFixed(1)}s/${vs.totalDuration.toFixed(1)}s)`
+                : '0% (0s/0s)';
+            document.getElementById('SummaryDangerousTime').textContent = timeText;
+        } else {
+            // Reset to defaults if no violation stats
+            document.getElementById('SummaryViolations').textContent = '-';
+            document.getElementById('SummaryDangerousFrames').textContent = '-';
+            document.getElementById('SummaryDangerousTime').textContent = '-';
+        }
+
+        // T8902.18.2: update cluster summary fields if available
+        if (analyzer && analyzer.flashViolations && analyzer.flashViolations.flashClusters) {
+            const clusters = analyzer.flashViolations.flashClusters;
+            const totalClusters = clusters.length;
+
+            if (totalClusters > 0) {
+                const sizes = clusters.map(c => c.count);
+                const avgSize = sizes.reduce((a, b) => a + b, 0) / sizes.length;
+                const maxSize = Math.max(...sizes);
+                // T8902.18.3: Addtional cluster stats
+                const minSize = Math.min(...sizes);
+                const medianSize = window.AnalyzerHelpers._median(sizes);
+                // Calculate cluster density and total flashes
+                const totalFlashesInClusters = sizes.reduce((a, b) => a + b, 0);
+                const timeSpan = Math.max(...clusters.map(c => c.endTime)) - Math.min(...clusters.map(c => c.startTime));
+                const clusterDensity = timeSpan > 0 ? totalFlashesInClusters / timeSpan : 0;
+                const totalFlashes = result && result.flashCount ? result.flashCount : 0;
+
+                document.getElementById('SummaryFlashClusters').textContent = totalClusters;
+                document.getElementById('SummaryAvgClusterSize').textContent = avgSize.toFixed(2);
+                document.getElementById('SummaryMaxClusterSize').textContent = maxSize;
+                // T8902.18.4: Enhanced cluster statistics
+                document.getElementById('SummaryMinClusterSize').textContent = minSize;
+                document.getElementById('SummaryMedianClusterSize').textContent = medianSize.toFixed(2);
+                document.getElementById('SummaryClusterDensity').textContent = clusterDensity.toFixed(2) + ' flashes/sec';
+                document.getElementById('SummaryFlashesInClusters').textContent = `${totalFlashesInClusters}/${totalFlashes}`;
+            } else {
+                document.getElementById('SummaryFlashClusters').textContent = '0';
+                document.getElementById('SummaryAvgClusterSize').textContent = '-';
+                document.getElementById('SummaryMaxClusterSize').textContent = '-';
+                // T8902.18.5: Additional cluster stats defaults
+                document.getElementById('SummaryMinClusterSize').textContent = '-';
+                document.getElementById('SummaryMedianClusterSize').textContent = '-';
+                document.getElementById('SummaryClusterDensity').textContent = '-';
+                document.getElementById('SummaryFlashesInClusters').textContent = '-';
+            }
+        } else {
+            document.getElementById('SummaryFlashClusters').textContent = '-';
+            document.getElementById('SummaryAvgClusterSize').textContent = '-';
+            document.getElementById('SummaryMaxClusterSize').textContent = '-';
+            // T8902.18.6: Reset enhanced stats to defaults
+            document.getElementById('SummaryMinClusterSize').textContent = '-';
+            document.getElementById('SummaryMedianClusterSize').textContent = '-';
+            document.getElementById('SummaryClusterDensity').textContent = '-';
+            document.getElementById('SummaryFlashesInClusters').textContent = '-';
+        }
     } catch (e) {}
 }
 
