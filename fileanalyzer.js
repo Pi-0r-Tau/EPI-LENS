@@ -892,6 +892,50 @@ function exportSelectedFormats() {
         }, exportDelay);
     }
 }
+//TASK 8902.19: Export of summary stats in JSON file
+function exportSummaryStats() {
+    if (!analyzer || !video) return;
+
+    const duration = video.duration;
+    const violationStats = analyzer.getViolationStatistics ?
+        analyzer.getViolationStatistics(duration) : null;
+
+    const summary = {
+        fileName: playlist.length && playlist[playlistIndex] ?
+            playlist[playlistIndex].name : 'unknown',
+        analysisDate: new Date().toISOString(),
+        duration: duration,
+        flashCount: analyzer.metrics ? analyzer.metrics.flashCount : 0,
+        riskLevel: analyzer.metrics ? analyzer.metrics.riskLevel : 'unknown',
+        violationStatistics: violationStats,
+        thresholds: {
+            flashesPerSecond: parseFloat(flashesPerSecondInput?.value || 3),
+            flashIntensity: parseFloat(flashIntensityInput?.value || 0.2)
+        }
+    };
+
+    if (analyzer.timelineData && analyzer.timelineData.length > 0) {
+        const psiScores = analyzer.timelineData
+            .map(entry => Number(entry.psi?.score))
+            .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
+
+        if (psiScores.length > 0) {
+            summary.psiStatistics = {
+                average: psiScores.reduce((a, b) => a + b, 0) / psiScores.length,
+                maximum: Math.max(...psiScores),
+                minimum: Math.min(...psiScores)
+            };
+        }
+    }
+
+    const summaryJson = JSON.stringify(summary, null, 2);
+    let baseFilename = `epilens-summary-${Date.now()}`;
+    if (playlist.length && playlist[playlistIndex]) {
+        baseFilename = `epilens-summary-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}`;
+    }
+
+    downloadFile(summaryJson, `${baseFilename}.json`, 'application/json');
+}
 
 function downloadFile(content, filename, mimeType) {
     const blob = new Blob([content], { type: mimeType });
@@ -959,13 +1003,25 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
             updateLiveMetricsChart(result);
         }
     }
+
+    // T8902.20.1: Get final violation stats
+    const violationStats = analyzer.getViolationStatistics ?
+        analyzer.getViolationStatistics(duration) : null;
+
     stopAnalysis();
+
+    if (violationStats) {
+        const finalResult = analyzer.getResults ? analyzer.getResults() : { flashCount: analyzer.metrics.flashCount, riskLevel: analyzer.metrics.riskLevel };
+        finalResult.violationStats = violationStats;
+        updateSummaryPanelFields(finalResult);
+    }
 
     // Automatically export in all selected formats, be it one, two or three
     // Nice to know thingy: By just selecting NDJSON the analysis speed is lightyears faster
     const exportCSV = document.getElementById('exportCSVOption').checked;
     const exportJSON = document.getElementById('exportJSONOption').checked;
     const exportNDJSON = document.getElementById('exportNDJSONOption').checked;
+    const exportSummary = document.getElementById('exportSummaryStatsOption').checked;
 
     let baseFilename = `epilens-file-analysis-${Date.now()}`;
     if (playlist.length && playlist[playlistIndex]) {
@@ -1012,6 +1068,105 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
                     ndjson += line;
                 }
                 downloadFile(ndjson, `${baseFilename}.ndjson`, 'application/x-ndjson');
+                resolve();
+            }, exportDelay);
+        }));
+    }
+    // T8902.20.2: Export summary JSON object
+    if (exportSummary) {
+        let gap_threshold = clusterGapThreshold;
+        exportPromises.push(new Promise(resolve => {
+            setTimeout(() => {
+                const summary = {
+                    fileName: playlist.length && playlist[playlistIndex] ?
+                        playlist[playlistIndex].name : 'unknown',
+                        // T8902.20.3: Flash violation stats info and def for JSON export
+                    violationExplanation: {
+                        wcagCriteria: 'WCAG 2.1 Success Criterion 2.3.1: Three Flashes or Below Threshold (Level A)',
+                        definition: ' A violation occurs when more than 3 flashes happen per second within any 1 second window, or when flashes exceed the general flash and red flash intensity thresholds.',
+                        windowBehavior: 'Flash triggered discrete windows: each window starts at the first flash and lasts exactly 1 second.',
+                        frameCountCalculation: 'Frames are analyzed at fixed intervals. Each 1-second window captures all frames from the window start through the last frame before crossing the 1-second boundary (inclusive counting).',
+                        expectedFramesPerWindow: interval > 0 ? Math.round(1.0 / interval) : null,
+                        note: 'Frame count per window = (endFrame - startFrame + 1). Both boundary frames are included in the count.'
+                    },
+                    // T8902.20.4: Cluster statistics info and defs for JSON export
+                    clusterExplanation: {
+                        definition: 'Flash clusters are temporal groupings of flashes seperated by gaps greater than the cluster gap threshold (' + gap_threshold + ' seconds).',
+                        gapThreshold: gap_threshold,
+                        algorithm: 'Single-linkage temporal clustering: flashes are grouped into the same cluster if they occur within ' + gap_threshold + ' seconds of any other flash in the cluster.',
+                        purpose: 'Clusters help identify patterns in flash distribution.',
+                        note: 'Clusters may overlap with violation windows but are independent groupings based on temporal proximity.'
+                    },
+                    analysisDate: new Date().toISOString(),
+                    duration: duration,
+                    flashCount: analyzer.metrics ? analyzer.metrics.flashCount : 0,
+                    riskLevel: analyzer.metrics ? analyzer.metrics.riskLevel : 'unknown',
+                    violationStatistics: violationStats,
+                    // T8902.20.5: cluster statistics for export
+                    clusterStatistics: analyzer.flashViolations && analyzer.flashViolations.flashClusters
+                        ? {
+                            totalClusters: analyzer.flashViolations.flashClusters.length,
+                            averageClusterSize: analyzer.flashViolations.flashClusters.length > 0
+                                ? (analyzer.flashViolations.flashClusters.reduce((sum, c) => sum + c.count, 0) / analyzer.flashViolations.flashClusters.length).toFixed(2)
+                                : 0,
+                            minClusterSize: analyzer.flashViolations.flashClusters.length > 0
+                                ? Math.min(...analyzer.flashViolations.flashClusters.map(c => c.count))
+                                : 0,
+                            maxClusterSize: analyzer.flashViolations.flashClusters.length > 0
+                                ? Math.max(...analyzer.flashViolations.flashClusters.map(c => c.count))
+                                : 0,
+                            medianClusterSize: analyzer.flashViolations.flashClusters.length > 0
+                                ? window.AnalyzerHelpers._median(analyzer.flashViolations.flashClusters.map(c => c.count)).toFixed(2)
+                                : 0,
+                            clusterDensity: (() => {
+                                const clusters = analyzer.flashViolations.flashClusters;
+                                if (clusters.length === 0) return 0;
+                                const totalFlashes = clusters.reduce((sum, c) => sum + c.count, 0);
+                                const timeSpan = Math.max(...clusters.map(c => c.endTime)) - Math.min(...clusters.map(c => c.startTime));
+                                return (timeSpan > 0 ? (totalFlashes / timeSpan).toFixed(2) : 0);
+                            })(),
+                            clusters: analyzer.flashViolations.flashClusters.map((c, idx) => ({
+                                clusterId: idx + 1,
+                                startTime: c.startTime.toFixed(3),
+                                endTime: c.endTime.toFixed(3),
+                                duration: (c.endTime - c.startTime).toFixed(3),
+                                startFrame: c.startFrame,
+                                endFrame: c.endFrame,
+                                flashCount: c.count,
+                                flashes: c.flashes.map(f => ({
+                                    timestamp: f.timestamp.toFixed(3),
+                                    frameNumber: f.frameNumber
+                                }))
+                            }))
+                        }
+                        : null,
+                    thresholds: {
+                        flashesPerSecond: parseFloat(flashesPerSecondInput?.value || 3),
+                        flashIntensity: parseFloat(flashIntensityInput?.value || 0.2),
+                        analysisInterval: interval,
+                        analysisFPS: interval > 0 ? parseFloat((1.0 / interval).toFixed(2)) : null
+
+                    }
+                };
+                if (analyzer.timelineData && analyzer.timelineData.length > 0) {
+                    const psiScores = analyzer.timelineData
+                        .map(entry => Number(entry.psi?.score))
+                        .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
+
+                    if (psiScores.length > 0) {
+                        summary.psiStatistics = {
+                            average: psiScores.reduce((a, b) => a + b, 0) / psiScores.length,
+                            maximum: Math.max(...psiScores),
+                            minimum: Math.min(...psiScores)
+                        };
+                    }
+                }
+                const summaryJson = JSON.stringify(summary, null, 2);
+                let summaryFilename = `epilens-summary-${Date.now()}`;
+                if (playlist.length && playlist[playlistIndex]) {
+                    summaryFilename = `epilens-summary-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}`;
+                }
+                downloadFile(summaryJson, `${summaryFilename}.json`, 'application/json');
                 resolve();
             }, exportDelay);
         }));
