@@ -652,6 +652,15 @@ function updateResults(result) {
             }
         }
     } catch (e) {}
+    // T8902.17: Update cluster summary details
+    try {
+        if (analyzer && analyzer.flashViolations && analyzer.flashViolations.flashClusters) {
+            const clustersDiv = document.getElementById('SummaryClustersList');
+            if (clustersDiv) {
+                clustersDiv.innerHTML = renderClusterDetails(analyzer.flashViolations.flashClusters);
+            }
+        }
+    } catch (e) {}
     try {
         if (analyzer && analyzer.timelineData) {
             const psiScores = analyzer.timelineData
@@ -667,7 +676,7 @@ function updateResults(result) {
                 document.getElementById('SummaryMaxPSI').textContent = '-';
             }
         }
-    } catch (e) {}
+    } catch (e) { }
 }
 
 /**
