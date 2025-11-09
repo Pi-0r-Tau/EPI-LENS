@@ -1,156 +1,269 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EPI-LENS File Analyzer</title>
     <link rel="stylesheet" href="fileanalyzer.css">
 </head>
 <body>
-    <div class="header">
+    <header class="header">
         <h1>EPI-LENS Local Video Analysis</h1>
-    </div>
+    </header>
     <div class="main-layout">
-        <aside class="sidebar">
-            <div class="panel">
-                <h3>Load Video(s)</h3>
+        <aside class="sidebar" aria-label="Analysis controls and settings">
+            <section class="panel">
+                <h2>Load Video(s)</h2>
                 <label for="videoFileInput">Select Video File(s):</label>
                 <input type="file" id="videoFileInput" accept="video/*" multiple>
-                <div id="playlistInfo" style="color:#90caf9;font-size:0.98em;margin-top:8px;"></div>
-            </div>
+                <output id="playlistInfo" style="color:#90caf9;font-size:0.98em;margin-top:8px;"></output>
+            </section>
 
-            <div class="panel" id="settingsPanel">
-                <h3>Metric Configuration</h3>
-                <button id="openSettingsBtn">Optional Metric Settings</button>
-            </div>
+           <section class="panel" id="settingsPanel">
+                <h2>Metric Configuration</h2>
+                <button id="openSettingsBtn" type="button">Optional Metric Settings</button>
+            </section>
 
-            <div class="panel" id="thresholdPanel">
-                <h3>Thresholds</h3>
+            <section class="panel" id="thresholdPanel">
+                <h2>Thresholds</h2>
                 <div style="margin-bottom:10px;">
                     <label for="flashesPerSecondThreshold">Flashes Per Second Threshold</label>
-                    <input type="range" id="flashesPerSecondThreshold" min="1" max="10" step="0.1" value="3" style="width:100%;">
-                    <span id="flashesPerSecondValue" style="color:#90caf9;">3.0</span>
+                    <input type="range" id="flashesPerSecondThreshold" min="1" max="10" step="0.1" value="3"
+                        style="width:100%;" aria-valuemin="1" aria-valuemax="10" aria-valuenow="3">
+                    <output id="flashesPerSecondValue" for="flashesPerSecondThreshold"
+                        style="color:#90caf9;">3.0</output>
                 </div>
                 <div style="margin-bottom:10px;">
                     <label for="flashIntensityThreshold">Flash Intensity Threshold</label>
-                    <input type="range" id="flashIntensityThreshold" min="0.05" max="1" step="0.01" value="0.2" style="width:100%;">
-                    <span id="flashIntensityValue" style="color:#90caf9;">0.20</span>
+                    <input type="range" id="flashIntensityThreshold" min="0.05" max="1" step="0.01" value="0.2"
+                        style="width:100%;" aria-valuemin="0.05" aria-valuemax="1" aria-valuenow="0.2">
+                    <output id="flashIntensityValue" for="flashIntensityThreshold" style="color:#90caf9;">0.20</output>
                 </div>
                 <div>
                     <label for="analysisInterval">Analysis Interval (seconds)</label>
-                    <input type="range" id="analysisInterval" min="0.01" max="0.5" step="0.01" value="0.033" style="width:100%;">
-                    <span id="analysisIntervalValue" style="color:#90caf9;">0.033</span>
+                    <input type="range" id="analysisInterval" min="0.01" max="0.5" step="0.01" value="0.033"
+                        style="width:100%;" aria-valuemin="0.01" aria-valuemax="0.5" aria-valuenow="0.033"
+                        aria-describedby="analysisIntervalFpsInfo analysisIntervalNote analysisIntervalHelp">
+                    <output id="analysisIntervalValue" for="analysisInterval" style="color:#90caf9;">0.033</output>
                     <div id="analysisIntervalFpsInfo" style="font-size:0.97em;color:#90caf9;margin-top:2px;"></div>
-                    <div style="font-size:0.97em;color:#ff9800;margin-top:2px;">
-                        <strong>Note:</strong> For standard 30fps videos, the maximum meaningful analysis rate is 30 frames per second (interval = 0.033s).
+                    <p id="analysisIntervalNote" style="font-size:0.97em;color:#ff9800;margin-top:2px;">
+                        <strong>Note:</strong> For standard 30fps videos, the maximum meaningful analysis rate is 30
+                        frames per second (interval = 0.033s).
                         Setting a lower interval will not analyze more frames than exist in the video.
-                    </div>
-                    <div style="font-size:0.97em;color:#bbb;margin-top:2px;">
+                    </p>
+                    <p id="analysisIntervalHelp" style="font-size:0.97em;color:#bbb;margin-top:2px;">
                         <strong>What does this mean?</strong><br>
                         This sets how often (in seconds) a frame is analyzed.<br>
                         Lower values (e.g. 0.033) mean more frequent analysis (30 frames per second).<br>
                         Higher values (e.g. 0.5) mean less frequent analysis (2 frames per second).<br>
-                        Use a lower value for more detailed analysis, or a higher value for faster, less detailed results.
-                    </div>
+                        Use a lower value for more detailed analysis, or a higher value for faster, less detailed
+                        results.
+                    </p>
                 </div>
-            </div>
-            <div class="panel" id="analysisControlsPanel">
-                <h3>Controls</h3>
+                <div style="margin-bottom: 10px;">
+                    <label for="clusterGapThresholdInput">Cluster Gap Threshold (Seconds)</label>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                        <input type="range" id="clusterGapThresholdInput" min="0.05" max="2.0" step="0.05" value="0.3"
+                            style="flex: 1;" aria-valuemin="0.05" aria-valuemax="2.0" aria-valuenow="0.3"
+                            aria-describedby="clusterGapThresholdNote clusterGapThresholdStatus">
+                        <output id="clusterGapThresholdValue" for="clusterGapThresholdInput"
+                            style="color: #90caf9; min-width: 50px; text-align: right;">0.30</output>
+                        <button id="resetClusterGapThresholdBtn" type="button" title="Reset to auto-calculated value"
+                            style="padding: 4px 12px; background: #2196f3; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">Auto</button>
+                    </div>
+                    <!-- TASK 8902.6 Cluster Auto-->
+                    <div id="clusterGapThresholdStatus" style="font-size: 0.95em; color: #90caf9; margin-bottom: 4px;">
+                        <strong>Auto:</strong> <span id="autoClusterGapThresholdValue">0.12</span>s (based on current
+                        FPS)
+                    </div>
+                    <p id="clusterGapThresholdNote" style="font-size: 0.97em; color: #bbb; margin-top: 2px;">
+                        <strong>What does this mean?</strong><br>
+                        Flashes within this time gap are grouped into the same cluster. Smaller values create more
+                        clusters (stricter grouping). Larger values create fewer clusters (looser grouping).<br>
+                        <strong>Auto-calculation:</strong> Calculated as 3.5x the analysis interval for consistent
+                        clustering behavior across different FPS rates.<br>
+                        <strong>Override:</strong> Drag the slider to manually adjust, or click "Auto" to reset to the
+                        recommended value.
+                    </p>
+                </div>
+            </section>
+            <section class="panel" id="analysisControlsPanel">
+                <h2>Controls</h2>
                 <div id="analysisControls" class="controls-panel" style="display:none;">
-                    <button id="startFileAnalysis">Start Analysis</button>
-                    <button id="stopFileAnalysis">Stop Analysis</button>
+                    <button id="startFileAnalysis" type="button">Start Analysis</button>
+                    <button id="stopFileAnalysis" type="button">Stop Analysis</button>
                     <div class="export-options">
-                        <h4>Export Formats</h4>
-                        <div class="export-checkboxes">
+                        <h3>Export Formats</h3>
+                        <fieldset class="export-checkboxes">
+                            <legend class="sr-only">Select export file formats</legend>
                             <label><input type="checkbox" id="exportCSVOption" checked> CSV</label>
                             <label><input type="checkbox" id="exportJSONOption" checked> JSON</label>
                             <label><input type="checkbox" id="exportNDJSONOption" checked> NDJSON</label>
-                        </div>
-                        <button id="exportSelectedFormats">Export Selected</button>
+                            <label><input type="checkbox" id="exportSummaryStatsOption" checked> Summary Stats</label>
+                        </fieldset>
+                        <button id="exportSelectedFormats" type="button">Export Selected</button>
                     </div>
                 </div>
-            </div>
-            <div class="panel summary-panel" id="SummaryPanel">
-                <h3>Summary</h3>
-                <div class="summary-row"><span class="summary-label">Detected Flashes:</span> <span id="SummaryFlashes">0</span></div>
-                <div class="summary-row"><span class="summary-label">Risk Level:</span> <span id="SummaryRisk">-</span></div>
-                <div class="summary-row"><span class="summary-label">PSI Score:</span> <span id="SummaryPSI">-</span></div>
-                <div class="summary-row"><span class="summary-label">Avg PSI:</span> <span id="SummaryAvgPSI">-</span></div>
-                <div class="summary-row"><span class="summary-label">Max PSI:</span> <span id="SummaryMaxPSI">-</span></div>
-                <div class="summary-row" style="align-items:flex-start;">
-                    <span class="summary-label" style="margin-top:2px;">Flash Timestamps:</span>
-                    <div class="flash-timestamps-container" style="flex:1;">
-                        <button id="toggleFlashesListBtn">Show</button>
-                        <div id="SummaryFlashesList"></div>
+            </section>
+            <section class="panel summary-panel" id="SummaryPanel" aria-labelledby="summaryHeading">
+                <h2 id="summaryHeading">Summary</h2>
+                <dl class="summary-list">
+                    <div class="summary-row">
+                        <dt class="summary-label">Detected Flashes:</dt>
+                        <dd id="SummaryFlashes">0</dd>
                     </div>
-                </div>
-            </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Risk Level:</dt>
+                        <dd id="SummaryRisk">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">PSI Score:</dt>
+                        <dd id="SummaryPSI">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Avg PSI:</dt>
+                        <dd id="SummaryAvgPSI">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Max PSI:</dt>
+                        <dd id="SummaryMaxPSI">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Violation Instances:</dt>
+                        <dd id="SummaryViolations">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Dangerous Frames:</dt>
+                        <dd id="SummaryDangerousFrames">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Dangerous Time:</dt>
+                        <dd id="SummaryDangerousTime">-</dd>
+                    </div>
+                    <!--TASK 8902.7 FLASH CLUSTERS SUMMARY-->
+                    <div class="summary-row">
+                        <dt class="summary-label">Flash Clusters:</dt>
+                        <dd id="SummaryFlashClusters">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Avg Cluster Size:</dt>
+                        <dd id="SummaryAvgClusterSize">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Max Cluster Size:</dt>
+                        <dd id="SummaryMaxClusterSize">-</dd>
+                    </div>
+                    <!--TASK 8902.8: CLUSTER STATS-->
+                    <div class="summary-row">
+                        <dt class="summary-label">Min Cluster Size:</dt>
+                        <dd id="SummaryMinClusterSize">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Median Cluster Size:</dt>
+                        <dd id="SummaryMedianClusterSize">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Cluster Density:</dt>
+                        <dd id="SummaryClusterDensity">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Flashes in Clusters:</dt>
+                        <dd id="SummaryFlashesInClusters">-</dd>
+                    </div>
+                    <div class="summary-row" style="display:block;">
+                        <dt class="summary-label">Cluster Details:</dt>
+                        <dd class="cluster-details-container" style="display:block;margin-top:4px;">
+                            <button id="toggleClusterListBtn" type="button" aria-expanded="false"
+                                aria-controls="SummaryClustersList">Show</button>
+                            <div id="SummaryClustersList" style="display:none;"></div>
+                        </dd>
+                    </div>
+                    <div class="summary-row" style="display:block;">
+                        <dt class="summary-label">Flash Timestamps:</dt>
+                        <dd class="flash-timestamps-container" style="display:block;margin-top:4px;">
+                            <button id="toggleFlashesListBtn" type="button" aria-expanded="false"
+                                aria-controls="SummaryFlashesList">Show</button>
+                            <div id="SummaryFlashesList"></div>
+                        </dd>
+                    </div>
+                </dl>
+            </section>
         </aside>
-        <main class="main-content">
-            <div class="video-panel">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                    <h3 style="margin:0;color:#90caf9;">Video Preview</h3>
-                    <div class="resize-controls" id="videoResizeControls">
-                        <span style="color:#bbb;font-size:0.98em;margin-right:6px;">Video Size:</span>
-                        <button type="button" id="videoSizeDown" title="Decrease video size" style="font-size:1.2em;">-</button>
-                        <button type="button" id="videoSizeUp" title="Increase video size" style="font-size:1.2em;">+</button>
+        <main class="main-content" aria-label="Video preview and metrics">
+            <section class="video-panel">
+                <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <h2 style="margin:0;color:#90caf9;">Video Preview</h2>
+                    <div class="resize-controls" id="videoResizeControls" role="group" aria-label="Video size controls">
+                        <span style="color:#bbb;font-size:0.98em;margin-right:6px;" id="videoSizeLabel">Video
+                            Size:</span>
+                        <button type="button" id="videoSizeDown" aria-label="Decrease video size"
+                            title="Decrease video size" style="font-size:1.2em;">-</button>
+                        <button type="button" id="videoSizeUp" aria-label="Increase video size"
+                            title="Increase video size" style="font-size:1.2em;">+</button>
                     </div>
-                </div>
-                <video id="videoPlayer" controls style="display:none;margin-top:0;"></video>
-            </div>
-            <div class="metrics-panel">
-                <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <div class="metrics-title">Live Metrics</div>
-                    <div class="resize-controls" id="graphResizeControls">
-                        <span style="color:#bbb;font-size:0.98em;margin-right:6px;">Graph Size:</span>
-                        <button type="button" id="graphSizeDown" title="Decrease graph size" style="font-size:1.2em;">-</button>
-                        <button type="button" id="graphSizeUp" title="Increase graph size" style="font-size:1.2em;">+</button>
+                </header>
+                <video id="videoPlayer" controls style="display:none;margin-top:0;"
+                    aria-label="Video player for analysis"></video>
+            </section>
+            <section class="metrics-panel">
+                <header style="display:flex;align-items:center;justify-content:space-between;">
+                    <h2 class="metrics-title">Live Metrics</h2>
+                    <div class="resize-controls" id="graphResizeControls" role="group" aria-label="Graph size controls">
+                        <span style="color:#bbb;font-size:0.98em;margin-right:6px;" id="graphSizeLabel">Graph
+                            Size:</span>
+                        <button type="button" id="graphSizeDown" aria-label="Decrease graph size"
+                            title="Decrease graph size" style="font-size:1.2em;">-</button>
+                        <button type="button" id="graphSizeUp" aria-label="Increase graph size"
+                            title="Increase graph size" style="font-size:1.2em;">+</button>
                     </div>
-                </div>
+                </header>
                 <div id="liveChartArea" class="live-chart-section" style="display:none;">
-                    <div id="metricSelector" class="metric-selector"></div>
-                    <canvas id="liveMetricsGraph" width="750" height="400" style="width:100%;background:#181818;border-radius:4px;"></canvas>
-                    <div id="liveMetricsLegend" style="margin-top:6px;"></div>
+                    <div id="metricSelector" class="metric-selector" role="group" aria-label="Metric selection"></div>
+                    <canvas id="liveMetricsGraph" width="750" height="400"
+                        style="width:100%;background:#181818;border-radius:4px;" role="img"
+                        aria-label="Live metrics graph"></canvas>
+                    <div id="liveMetricsLegend" style="margin-top:6px;" role="group" aria-label="Graph legend"></div>
                 </div>
-                <div id="fileAnalysisResults" class="results-panel"></div>
-            </div>
+                <div id="fileAnalysisResults" class="results-panel" role="region" aria-live="polite"></div>
+            </section>
         </main>
     </div>
-    <div id="settingsOverlay" class="settings-overlay">
+    <div id="settingsOverlay" class="settings-overlay" role="dialog" aria-labelledby="settingsTitle" aria-modal="true"
+        aria-hidden="true" style="display: none;">
         <div class="settings-modal">
-            <h2>Analysis Settings</h2>
-
-            <div class="settings-section">
+            <h2 id="settingsTitle">Analysis Settings</h2>
+            <section class="settings-section">
                 <h3>Optional Metrics</h3>
 
                 <div class="settings-toggle">
                     <label>
                         <input type="checkbox" id="redMetricsToggle">
                         <div class="toggle-content">
-                            <div class="toggle-title">Red Metrics Analysis</div>
-                            <div class="toggle-description">
-                                Analyzes red flashing content using saturated red detection. This metric specifically targets red-based photosensitive triggers.
-                            </div>
+                            <strong class="toggle-title">Red Metrics Analysis</strong>
+                            <p class="toggle-description">
+                                Analyzes red flashing content using saturated red detection. This metric specifically
+                                targets red-based photosensitive triggers.
+                            </p>
                         </div>
                     </label>
                 </div>
-
                 <div class="settings-toggle">
                     <label>
                         <input type="checkbox" id="temporalContrastToggle">
                         <div class="toggle-content">
-                            <div class="toggle-title">Temporal Contrast Sensitivity</div>
-                            <div class="toggle-description">
-                                Analyzes color contrast changes over time using CIE Delta-E calculations. Helps detect subtle color transitions that may trigger photosensitivity.
-                            </div>
+                            <strong class="toggle-title">Temporal Contrast Sensitivity</strong>
+                            <p class="toggle-description">
+                                Analyzes color contrast changes over time using CIE Delta-E calculations. Helps detect
+                                subtle color transitions that may trigger photosensitivity.
+                            </p>
                         </div>
                     </label>
                 </div>
-            </div>
-
-            <div class="settings-actions">
-                <button class="settings-btn secondary" id="closeSettingsBtn">Close</button>
-                <button class="settings-btn" id="saveSettingsBtn">Save Settings</button>
-            </div>
+            </section>
+            <footer class="settings-actions">
+                <button class="settings-btn secondary" id="closeSettingsBtn" type="button">Close</button>
+                <button class="settings-btn" id="saveSettingsBtn" type="button">Save Settings</button>
+            </footer>
         </div>
     </div>
     <script src="helpers/Color/luminance.js"></script>
@@ -172,6 +285,7 @@
     <script src="helpers/Color/contrastSen.js"></script>
     <script src="helpers/Color/colorHist.js"></script>
     <script src="helpers/Temporal/tempVar.js"></script>
+    <script src="helpers/Temporal/flashViolation.js"></script>
     <script src="helpers/Color/colorSpikes.js"></script>
     <script src="helpers/Temporal/tempChange.js"></script>
     <script src="helpers/Temporal/estFlickerFreq.js"></script>
