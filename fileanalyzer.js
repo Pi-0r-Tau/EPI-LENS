@@ -176,48 +176,48 @@ temporalContrastEnabled = prefTemporalContrast === 'true';
 // TASK 4890:
 //Initialize settings overlay
 function initializeSettingsOverlay() {
-  settingsOverlay = document.getElementById("settingsOverlay");
-  openSettingsBtn = document.getElementById("openSettingsBtn");
-  closeSettingsBtn = document.getElementById("closeSettingsBtn");
-  saveSettingsBtn = document.getElementById("saveSettingsBtn");
-  redMetricsToggle = document.getElementById("redMetricsToggle");
-  temporalContrastToggle = document.getElementById("temporalContrastToggle");
+    settingsOverlay = document.getElementById("settingsOverlay");
+    openSettingsBtn = document.getElementById("openSettingsBtn");
+    closeSettingsBtn = document.getElementById("closeSettingsBtn");
+    saveSettingsBtn = document.getElementById("saveSettingsBtn");
+    redMetricsToggle = document.getElementById("redMetricsToggle");
+    temporalContrastToggle = document.getElementById("temporalContrastToggle");
 
-if (redMetricsToggle) {
-    redMetricsToggle.checked = redMetricsEnabled;
-}
-
-if (temporalContrastToggle) {
-    temporalContrastToggle.checked = temporalContrastEnabled;
-  }
-
-  if (openSettingsBtn) {
-    openSettingsBtn.addEventListener('click', openSettings);
-  }
-
-  if (closeSettingsBtn) {
-    closeSettingsBtn.addEventListener('click', closeSettings);
-  }
-
-  if (saveSettingsBtn) {
-    saveSettingsBtn.addEventListener('click', prefSettings);
-  }
-  if (settingsOverlay) {
-    settingsOverlay.addEventListener('click', (e) => {
-      if (e.target === settingsOverlay) {
-        closeSettings();
-      }
-    });
-  }
-  document.addEventListener('keydown', (e) => {
-    if (
-      e.key === 'Escape' &&
-      settingsOverlay &&
-      settingsOverlay.style.display === 'flex'
-    ) {
-      closeSettings();
+    if (redMetricsToggle) {
+        redMetricsToggle.checked = redMetricsEnabled;
     }
-  });
+
+    if (temporalContrastToggle) {
+        temporalContrastToggle.checked = temporalContrastEnabled;
+    }
+
+    if (openSettingsBtn) {
+        openSettingsBtn.addEventListener('click', openSettings);
+    }
+
+    if (closeSettingsBtn) {
+        closeSettingsBtn.addEventListener('click', closeSettings);
+    }
+
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', prefSettings);
+    }
+    if (settingsOverlay) {
+        settingsOverlay.addEventListener('click', (e) => {
+            if (e.target === settingsOverlay) {
+                closeSettings();
+            }
+        });
+    }
+    document.addEventListener('keydown', (e) => {
+        if (
+            e.key === 'Escape' &&
+            settingsOverlay &&
+            settingsOverlay.style.display === 'flex'
+        ) {
+            closeSettings();
+        }
+    });
 }
 
 function openSettings() {
