@@ -518,11 +518,11 @@ function setupAddChartModal() {
         xAxisSearch.value = "";
         yAxisSearch.value = "";
         // Defaulted to always having brightness selected as default metric, this way annoying, keeping it incase I need it
-       // if (availableFields.length > 1) {
-         //   let defaultY = availableFields[1] !== availableFields[0] ? availableFields[1] : availableFields[0];
-         //   yAxisChecked.add(defaultY);
+        // if (availableFields.length > 1) {
+        //   let defaultY = availableFields[1] !== availableFields[0] ? availableFields[1] : availableFields[0];
+        //   yAxisChecked.add(defaultY);
         //    renderYAxisOptions();
-       // }
+        // }
         modal.classList.remove('hidden');
     };
     closeModalBtn.onclick = () => modal.classList.add('hidden');
