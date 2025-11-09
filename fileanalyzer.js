@@ -325,6 +325,26 @@ window.addEventListener('DOMContentLoaded', () => {
         toggleBtn.textContent = 'Show';
     }
 
+    // TASK 8902.12: Toggle cluster list visibility
+    const clustersList = document.getElementById('SummaryClustersList');
+    const clusterToggleBtn = document.getElementById('toggleClusterListBtn');
+    if (clusterToggleBtn && clustersList) {
+        clusterToggleBtn.onclick = function () {
+            if (clustersList.style.display === 'none' || clustersList.style.display === '') {
+                clustersList.style.display = 'block';
+                clusterToggleBtn.textContent = 'Hide';
+                clusterToggleBtn.setAttribute('aria-expanded', 'true');
+            } else {
+                clustersList.style.display = 'none';
+                clusterToggleBtn.textContent = 'Show';
+                clusterToggleBtn.setAttribute('aria-expanded', 'false');
+            }
+        };
+        // Default to hidden
+        clustersList.style.display = 'none';
+        clusterToggleBtn.textContent = 'Show';
+    }
+
     const videoPlayer = document.getElementById('videoPlayer');
     const videoSizeDown = document.getElementById('videoSizeDown');
     const videoSizeUp = document.getElementById('videoSizeUp');
