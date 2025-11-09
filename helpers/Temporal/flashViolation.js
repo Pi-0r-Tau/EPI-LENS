@@ -219,3 +219,38 @@ window.AnalyzerHelpers.getFlashViolationStats = function (totalDuration) {
         flashStatistics: flashStats
     };
 };
+
+// T8901.6 Compute statistics from all flashes
+window.AnalyzerHelpers._computeFlashStatistics = function (allFlashes, totalDuration) {
+    if (!allFlashes.length) {
+        return {
+            totalFlashes: 0,
+            averageFlashRate: 0,
+            maxFlashRate: 0,
+            flashDistribution: []
+        };
+    }
+
+    const totalFlashes = allFlashes.length;
+    const averageFlashRate = totalDuration > 0 ? totalFlashes / totalDuration : 0;
+
+    // Calculate flash distribution in 1-second windows
+    const windows = new Map();
+    for (const flash of allFlashes) {
+        const windowKey = Math.floor(flash.timestamp);
+        windows.set(windowKey, (windows.get(windowKey) || 0) + 1);
+    }
+
+    const flashDistribution = Array.from(windows.entries())
+        .map(([timeWindow, count]) => ({ timeWindow, count }))
+        .sort((a, b) => a.timeWindow - b.timeWindow);
+
+    const maxFlashRate = Math.max(...Array.from(windows.values()));
+
+    return {
+        totalFlashes,
+        averageFlashRate,
+        maxFlashRate,
+        flashDistribution
+    };
+};
