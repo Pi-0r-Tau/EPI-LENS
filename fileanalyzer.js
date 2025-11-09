@@ -123,9 +123,48 @@ if (analysisIntervalInput && analysisIntervalValueSpan) {
         analysisIntervalValueSpan.textContent = Number(analysisIntervalInput.value).toFixed(3);
         localStorage.setItem('epilens_analysisInterval', analysisIntervalInput.value);
         updateAnalysisIntervalFpsInfo();
+        updateClusterGapThresholdDisplay();
     });
     updateAnalysisIntervalFpsInfo();
 }
+
+// TASK 8902.11 Cluster Autothreshold cotrols EVENT LISTENERS
+const prefClusterGapThreshold = localStorage.getItem('epilens_clusterGapThreshold');
+const prefClusterThresholdManualOverride = localStorage.getItem('epilens_clusterThresholdManualOverride');
+
+if (prefClusterGapThreshold !== null) {
+    clusterGapThreshold = parseFloat(prefClusterGapThreshold);
+    clusterGapThresholdInput.value = clusterGapThreshold.toFixed(2);
+    clusterGapThresholdValue.textContent = clusterGapThreshold.toFixed(2);
+}
+
+if (prefClusterThresholdManualOverride === 'true') {
+    isClusterThresholdManuallyOverridden = true;
+}
+
+// Initialize auto-calculated value display
+updateClusterGapThresholdDisplay();
+
+// TASK 8902.11.1 Cluster Gap Threshold INPUT LISTENERS
+if (clusterGapThresholdInput) {
+    clusterGapThresholdInput.addEventListener('input', () => {
+        const value = parseFloat(clusterGapThresholdInput.value);
+        clusterGapThreshold = Math.round(value * 100) / 100;
+        clusterGapThresholdValue.textContent = clusterGapThreshold.toFixed(2);
+        isClusterThresholdManuallyOverridden = true;
+        localStorage.setItem('epilens_clusterGapThreshold', value.toFixed(2));
+        localStorage.setItem('epilens_clusterThresholdManualOverride', 'true');
+    });
+}
+
+if (resetClusterGapThresholdBtn) {
+    resetClusterGapThresholdBtn.addEventListener('click', () => {
+        isClusterThresholdManuallyOverridden = false;
+        localStorage.setItem('epilens_clusterThresholdManualOverride', 'false');
+        updateClusterGapThresholdDisplay();
+    });
+}
+
 // Task 4289: savedRedMetrics renamed to prefRedMetrics
 const prefRedMetrics = localStorage.getItem('epilens_redMetricsEnabled');
 redMetricsEnabled = prefRedMetrics === 'true';
