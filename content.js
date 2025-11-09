@@ -193,7 +193,7 @@
     }
 
     // Debug logging
-    setInterval(() => {
+   /* setInterval(() => {
         if (analyzer && analyzer.totalFrames > 0) {
             console.log('Analysis stats:', {
                 totalFrames: analyzer.totalFrames,
@@ -205,7 +205,8 @@
                 currentTime: videoElement.currentTime
             });
         }
-    }, 5000);
+   }, 5000);
+   */
 
     videoElement.addEventListener('pause', () => {
         if (isAnalyzing) {
