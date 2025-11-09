@@ -55,6 +55,14 @@ let settingsOverlay = null;
 let openSettingsBtn = null;
 let closeSettingsBtn = null;
 let saveSettingsBtn = null;
+// TASK 8902.9 Cont of wiring up of TASK 8901 relies on flashViolation.js
+let clusterGapThresholdInput = document.getElementById('clusterGapThresholdInput');
+let clusterGapThresholdValue = document.getElementById('clusterGapThresholdValue');
+let resetClusterGapThresholdBtn = document.getElementById('resetClusterGapThresholdBtn');
+let autoClusterGapThresholdValue = document.getElementById('autoClusterGapThresholdValue');
+let clusterGapThreshold = 0.3;
+let autoClusterGapThreshold = 0.3;
+let isClusterThresholdManuallyOverridden = false;
 
 // TASK 5771: reset risk escalation state safely for risk helper:
 // If video was part of playlist then the  risk level previously would not reset between videos
