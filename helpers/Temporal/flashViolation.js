@@ -57,7 +57,7 @@ window.AnalyzerHelpers.updateFlashViolation = function (timestamp, isFlash, fram
         // TT8901.3: Clustering based on gap threshold
         if (v.lastFlashTime === null || (timestamp - v.lastFlashTime) > v.clusterGapThreshold) {
             // Start new cluster
-            if (v.currentCluster !== null) {
+            if (v.currentCluster) {
                 v.flashClusters.push(v.currentCluster);
             }
             v.currentCluster = {
@@ -83,12 +83,12 @@ window.AnalyzerHelpers.updateFlashViolation = function (timestamp, isFlash, fram
     if (v.isInWindow && timestamp >= v.windowStartTime + 1.0) {
         const flashCount = v.currentWindowFlashes.length;
 
-        if (flashCount > v.flashThreshold) {  // Use configurable threshold
+        if (flashCount > v.flashThreshold) {
             const windowEndTime = v.windowStartTime + 1.0;
 
             // Since current frame timestamp >= windowEndTime, the previous frame (frameNumber - 1)
             // is the last frame that was analyzed before crossing the boundary
-            // This is guaranteed to be correct because we're called on every frame in sequence
+            // This is guaranteed to be correct because its called on every frame in sequence
             const windowEndFrame = frameNumber - 1;
 
             // BOTH START and END FRAMES are INCLUSIVE.
@@ -127,7 +127,7 @@ window.AnalyzerHelpers.updateFlashViolation = function (timestamp, isFlash, fram
         violationFrameCount: v.totalViolationFrames,
         violationInstanceCount: v.instances.length,
         // T8901.5: Cluster detection output
-        clusterCount: v.flashClusters.length + (v.currentCluster !== null ? 1 : 0),
-        flashClusters: v.flashClusters.concat(v.currentCluster !== null ? [v.currentCluster] : [])
+        clusterCount: v.flashClusters.length + (v.currentCluster ? 1 : 0),
+        flashClusters: v.flashClusters.concat(v.currentCluster ? [v.currentCluster] : [])
     };
 };
