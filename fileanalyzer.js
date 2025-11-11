@@ -46,6 +46,37 @@ let flashIntensityInput = document.getElementById('flashIntensityThreshold');
 let flashesPerSecondInput = document.getElementById('flashesPerSecondThreshold');
 // T8911.4 settings management moved to FileAnalyzerSettings (fileanalyzer-settings.js)
 
+function updateDOMField(elementId, value) {
+    const el = document.getElementById(elementId);
+    if (el) {
+        el.textContent = value;
+    }
+}
+
+function extractPSIScores(timelineData) {
+    if (!timelineData || timelineData.length === 0) return [];
+    return timelineData
+        .map(entry => Number(entry.psi?.score))
+        .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
+}
+
+function calculatePSIStatistics(psiScores) {
+    if (psiScores.length === 0) return null;
+    return {
+        average: psiScores.reduce((a, b) => a + b, 0) / psiScores.length,
+        maximum: Math.max(...psiScores)
+    };
+}
+
+function updatePSIFields(stats) {
+    if (stats) {
+        updateDOMField('SummaryAvgPSI', stats.average.toFixed(4));
+        updateDOMField('SummaryMaxPSI', stats.maximum.toFixed(4));
+    } else {
+        updateDOMField('SummaryAvgPSI', '-');
+        updateDOMField('SummaryMaxPSI', '-');
+    }
+}
 
 // TASK 5771: reset risk escalation state safely for risk helper:
 // If video was part of playlist then the  risk level previously would not reset between videos
@@ -57,334 +88,64 @@ function resetRiskEscalation() {
     } catch (e) { }
 }
 
-function updateAnalysisIntervalFpsInfo() {
-    if (!analysisIntervalInput || !analysisIntervalFpsInfo) return;
-    const interval = parseFloat(analysisIntervalInput.value);
-    const fps = interval > 0 ? (1 / interval).toFixed(2) : '-';
-    analysisIntervalFpsInfo.textContent = `Current: ${fps} frames per second (fps)`;
-}
-
-// TASK 8902.10: Calculates the ideal cluster gap threshold based on the analysis
-// interval using multipler
-function calculateRecommendedClusterGapThreshold(analysisInterval) {
-    const multiplier = 3.5;
-    const calculatedThreshold = analysisInterval * multiplier;
-    const minThreshold = 0.05;
-    const maxThreshold = 2.0;
-    const clamped = Math.max(minThreshold, Math.min(maxThreshold, calculatedThreshold));
-    return Math.round(clamped * 100) / 100;
-}
-// Used via the fileanalyzer.html for the offline video analysis only
-function updateClusterGapThresholdDisplay() {
-    if (!analysisIntervalInput) return;
-
-    const interval = parseFloat(analysisIntervalInput.value);
-    const recommended = calculateRecommendedClusterGapThreshold(interval);
-
-    if (autoClusterGapThresholdValue) {
-        autoClusterGapThresholdValue.textContent = recommended.toFixed(2);
-    }
-
-    // Overridden, sync slider to auto value
-    if (!isClusterThresholdManuallyOverridden && clusterGapThresholdInput) {
-        clusterGapThresholdInput.value = recommended.toFixed(2);
-        clusterGapThresholdValue.textContent = recommended.toFixed(2);
-        clusterGapThreshold = recommended;
-    }
-}
-
-// Load saved analysis interval from localStorage
-if (analysisIntervalInput && analysisIntervalValueSpan) {
-    const savedInterval = localStorage.getItem('epilens_analysisInterval');
-    if (savedInterval !== null) {
-        analysisIntervalInput.value = savedInterval;
-        analysisIntervalValueSpan.textContent = Number(savedInterval).toFixed(3);
-    } else {
-        analysisIntervalValueSpan.textContent = Number(analysisIntervalInput.value).toFixed(3);
-    }
-    analysisIntervalInput.addEventListener('input', () => {
-        analysisIntervalValueSpan.textContent = Number(analysisIntervalInput.value).toFixed(3);
-        localStorage.setItem('epilens_analysisInterval', analysisIntervalInput.value);
-        updateAnalysisIntervalFpsInfo();
-        updateClusterGapThresholdDisplay();
-    });
-    updateAnalysisIntervalFpsInfo();
-}
-
-// TASK 8902.11 Cluster Autothreshold cotrols EVENT LISTENERS
-const prefClusterGapThreshold = localStorage.getItem('epilens_clusterGapThreshold');
-const prefClusterThresholdManualOverride = localStorage.getItem('epilens_clusterThresholdManualOverride');
-
-if (prefClusterGapThreshold !== null) {
-    clusterGapThreshold = parseFloat(prefClusterGapThreshold);
-    clusterGapThresholdInput.value = clusterGapThreshold.toFixed(2);
-    clusterGapThresholdValue.textContent = clusterGapThreshold.toFixed(2);
-}
-
-if (prefClusterThresholdManualOverride === 'true') {
-    isClusterThresholdManuallyOverridden = true;
-}
-
-// Initialize auto-calculated value display
-updateClusterGapThresholdDisplay();
-
-// TASK 8902.11.1 Cluster Gap Threshold INPUT LISTENERS
-if (clusterGapThresholdInput) {
-    clusterGapThresholdInput.addEventListener('input', () => {
-        const value = parseFloat(clusterGapThresholdInput.value);
-        clusterGapThreshold = Math.round(value * 100) / 100;
-        clusterGapThresholdValue.textContent = clusterGapThreshold.toFixed(2);
-        isClusterThresholdManuallyOverridden = true;
-        localStorage.setItem('epilens_clusterGapThreshold', value.toFixed(2));
-        localStorage.setItem('epilens_clusterThresholdManualOverride', 'true');
-    });
-}
-
-if (resetClusterGapThresholdBtn) {
-    resetClusterGapThresholdBtn.addEventListener('click', () => {
-        isClusterThresholdManuallyOverridden = false;
-        localStorage.setItem('epilens_clusterThresholdManualOverride', 'false');
-        updateClusterGapThresholdDisplay();
-    });
-}
-
-// Task 4289: savedRedMetrics renamed to prefRedMetrics
-const prefRedMetrics = localStorage.getItem('epilens_redMetricsEnabled');
-redMetricsEnabled = prefRedMetrics === 'true';
-
-// Task 4289: savedTemporalContrast renamed to prefTemporalContrast
-const prefTemporalContrast = localStorage.getItem('epilens_temporalContrastEnabled');
-temporalContrastEnabled = prefTemporalContrast === 'true';
-
-// TASK 4890:
-//Initialize settings overlay
-function initializeSettingsOverlay() {
-    settingsOverlay = document.getElementById("settingsOverlay");
-    openSettingsBtn = document.getElementById("openSettingsBtn");
-    closeSettingsBtn = document.getElementById("closeSettingsBtn");
-    saveSettingsBtn = document.getElementById("saveSettingsBtn");
-    redMetricsToggle = document.getElementById("redMetricsToggle");
-    temporalContrastToggle = document.getElementById("temporalContrastToggle");
-
-    if (redMetricsToggle) {
-        redMetricsToggle.checked = redMetricsEnabled;
-    }
-
-    if (temporalContrastToggle) {
-        temporalContrastToggle.checked = temporalContrastEnabled;
-    }
-
-    if (openSettingsBtn) {
-        openSettingsBtn.addEventListener('click', openSettings);
-    }
-
-    if (closeSettingsBtn) {
-        closeSettingsBtn.addEventListener('click', closeSettings);
-    }
-
-    if (saveSettingsBtn) {
-        saveSettingsBtn.addEventListener('click', prefSettings);
-    }
-    if (settingsOverlay) {
-        settingsOverlay.addEventListener('click', (e) => {
-            if (e.target === settingsOverlay) {
-                closeSettings();
-            }
-        });
-    }
-    document.addEventListener('keydown', (e) => {
-        if (
-            e.key === 'Escape' &&
-            settingsOverlay &&
-            settingsOverlay.style.display === 'flex'
-        ) {
-            closeSettings();
-        }
-    });
-}
-
-function openSettings() {
-    if (settingsOverlay) {
-        settingsOverlay.style.display = 'flex';
-        settingsOverlay.setAttribute('aria-hidden', 'false'); // WCAG Focus order bug fix
-        if (redMetricsToggle) redMetricsToggle.checked = redMetricsEnabled;
-        if (temporalContrastToggle)
-            temporalContrastToggle.checked = temporalContrastEnabled;
-        setTimeout(() => {
-            if (closeSettingsBtn) closeSettingsBtn.focus();
-        }, 100);
-    }
-}
-
-function closeSettings() {
-    if (settingsOverlay) {
-        settingsOverlay.style.display = 'none';
-        settingsOverlay.setAttribute('aria-hidden', 'true'); // WCAG Focus order bug fix
-        // Return focus to the trigger button
-        if (openSettingsBtn) openSettingsBtn.focus();
-    }
-}
-
-function prefSettings() {
-    if (redMetricsToggle) {
-        redMetricsEnabled = redMetricsToggle.checked;
-        localStorage.setItem(
-            'epilens_redMetricsEnabled',
-            redMetricsEnabled.toString()
-        );
-    }
-
-    if (temporalContrastToggle) {
-        temporalContrastEnabled = temporalContrastToggle.checked;
-        localStorage.setItem('epilens_temporalContrastEnabled', temporalContrastEnabled.toString());
-        console.log('Temporal contrast sensitivity', temporalContrastEnabled ? 'enabled' : 'disabled');
-    }
-
-    closeSettings();
-}
-
-// Threshold value displays
 if (flashIntensityInput) {
     flashIntensityInput.addEventListener('input', () => {
-        document.getElementById('flashIntensityValue').textContent = Number(flashIntensityInput.value).toFixed(2);
+        updateDOMField('flashIntensityValue', Number(flashIntensityInput.value).toFixed(2));
     });
 }
 if (flashesPerSecondInput) {
     flashesPerSecondInput.addEventListener('input', () => {
-        document.getElementById('flashesPerSecondValue').textContent = Number(flashesPerSecondInput.value).toFixed(1);
+        updateDOMField('flashesPerSecondValue', Number(flashesPerSecondInput.value).toFixed(1));
     });
-}
-if (analysisIntervalInput && analysisIntervalValueSpan) {
-    analysisIntervalInput.addEventListener('input', () => {
-        analysisIntervalValueSpan.textContent = Number(analysisIntervalInput.value).toFixed(3);
-    });
-    analysisIntervalValueSpan.textContent = Number(analysisIntervalInput.value).toFixed(3);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    // TASK 4890:
-      initializeSettingsOverlay();
-    if (!chartsBtn) {
-        chartsBtn = document.createElement('button');
-        chartsBtn.id = 'openChartsViewBtn';
-        chartsBtn.textContent = 'Open Charts View';
-        chartsBtn.style.background = '#ff9800';
-        chartsBtn.style.color = '#fff';
-        chartsBtn.style.marginLeft = '0';
-        chartsBtn.style.marginRight = '8px';
-        chartsBtn.onclick = openChartsView;
-        if (controls) controls.appendChild(chartsBtn);
+    // T8904: Initialize settings manager
+    if (!settingsManager) {
+        settingsManager = new FileAnalyzerSettings();
+        settingsManager.initialize();
     }
-    if (!restartBtn) {
-        restartBtn = document.createElement('button');
-        restartBtn.id = 'restartAnalysisBtn';
-        restartBtn.textContent = 'Restart Analysis';
-        restartBtn.style.background = '#f44336';
-        restartBtn.style.color = '#fff';
-        restartBtn.style.marginLeft = '0';
-        restartBtn.onclick = restartAnalysis;
-        if (controls) controls.appendChild(restartBtn);
+
+    // T8904: UI Controls
+    if (!uiControls) {
+        uiControls = new FileAnalyzerUIControls(drawLiveMetricsGraph);
+        uiControls.initialize();
     }
+
+    // T8903.2 Initialize exporter
+    if (!exporter) {
+        exporter = new FileAnalyzerExporter();
+    }
+
+    // Create and append buttons to controls
     if (controls) {
+        _initializeButton(chartsBtn, {
+            id: 'openChartsViewBtn',
+            text: 'Open Charts View',
+            background: '#ff9800',
+            onClick: openChartsView
+        });
+        _initializeButton(restartBtn, {
+            id: 'restartAnalysisBtn',
+            text: 'Restart Analysis',
+            background: '#f44336',
+            onClick: restartAnalysis
+        });
+
+        // Apply consistent button spacing
         Array.from(controls.children).forEach(btn => {
             btn.style.marginRight = '8px';
             btn.style.marginBottom = '8px';
         });
     }
-    const flashesList = document.getElementById('SummaryFlashesList');
-    const toggleBtn = document.getElementById('toggleFlashesListBtn');
-    if (toggleBtn && flashesList) {
-        toggleBtn.onclick = function() {
-            if (flashesList.style.display === 'none' || flashesList.style.display === '') {
-                flashesList.style.display = 'block';
-                toggleBtn.textContent = 'Hide';
-            } else {
-                flashesList.style.display = 'none';
-                toggleBtn.textContent = 'Show';
-            }
-        };
-        // Default to hidden
-        flashesList.style.display = 'none';
-        toggleBtn.textContent = 'Show';
-    }
 
-    // TASK 8902.12: Toggle cluster list visibility
-    const clustersList = document.getElementById('SummaryClustersList');
-    const clusterToggleBtn = document.getElementById('toggleClusterListBtn');
-    if (clusterToggleBtn && clustersList) {
-        clusterToggleBtn.onclick = function () {
-            if (clustersList.style.display === 'none' || clustersList.style.display === '') {
-                clustersList.style.display = 'block';
-                clusterToggleBtn.textContent = 'Hide';
-                clusterToggleBtn.setAttribute('aria-expanded', 'true');
-            } else {
-                clustersList.style.display = 'none';
-                clusterToggleBtn.textContent = 'Show';
-                clusterToggleBtn.setAttribute('aria-expanded', 'false');
-            }
-        };
-        // Default to hidden
-        clustersList.style.display = 'none';
-        clusterToggleBtn.textContent = 'Show';
-    }
+        // Toggle flashes list visibility
+    _setupToggleVisibility('toggleFlashesListBtn', 'SummaryFlashesList');
 
-    const videoPlayer = document.getElementById('videoPlayer');
-    const videoSizeDown = document.getElementById('videoSizeDown');
-    const videoSizeUp = document.getElementById('videoSizeUp');
-    let videoSizes = [
-        { width: "320px", height: "180px" },
-        { width: "480px", height: "270px" },
-        { width: "640px", height: "360px" },
-        { width: "800px", height: "450px" },
-        { width: "100%", height: "auto" }
-    ];
-    let videoSizeIdx = 2;
-
-    function applyVideoSize() {
-        if (!videoPlayer) return;
-        const sz = videoSizes[videoSizeIdx];
-        videoPlayer.style.width = sz.width;
-        videoPlayer.style.height = sz.height;
-        videoPlayer.style.maxWidth = "100%";
-        videoPlayer.style.maxHeight = "600px";
-    }
-    if (videoPlayer) applyVideoSize();
-    if (videoSizeDown) videoSizeDown.onclick = function() {
-        if (videoSizeIdx > 0) { videoSizeIdx--; applyVideoSize(); }
-    };
-    if (videoSizeUp) videoSizeUp.onclick = function() {
-        if (videoSizeIdx < videoSizes.length - 1) { videoSizeIdx++; applyVideoSize(); }
-    };
-    // TASK 1973: As liveMetricsGraph is defined via let, dont want to redefine it via const
-    liveMetricsGraph = document.getElementById('liveMetricsGraph');
-    const graphSizeDown = document.getElementById('graphSizeDown');
-    const graphSizeUp = document.getElementById('graphSizeUp');
-    let graphSizes = [
-        { w: 400, h: 200 },
-        { w: 600, h: 300 },
-        { w: 750, h: 400 },
-        { w: 1000, h: 500 },
-        { w: 1200, h: 600 }
-    ];
-    let graphSizeIdx = 2;
-
-    function applyGraphSize() {
-        if (!liveMetricsGraph) return;
-        const sz = graphSizes[graphSizeIdx];
-        liveMetricsGraph.width = sz.w;
-        liveMetricsGraph.height = sz.h;
-        liveMetricsGraph.style.width = "100%";
-        liveMetricsGraph.style.height = sz.h + "px";
-        drawLiveMetricsGraph();
-    }
-    if (liveMetricsGraph) applyGraphSize();
-    if (graphSizeDown) graphSizeDown.onclick = function() {
-        if (graphSizeIdx > 0) { graphSizeIdx--; applyGraphSize(); }
-    };
-    if (graphSizeUp) graphSizeUp.onclick = function() {
-        if (graphSizeIdx < graphSizes.length - 1) { graphSizeIdx++; applyGraphSize(); }
-    };
+    // TASK 8901: Toggle cluster list visibility
+    _setupToggleVisibility('toggleClusterListBtn', 'SummaryClustersList', true);
 });
+
 
 fileInput.addEventListener('change', handleFileSelect);
 document.getElementById('startFileAnalysis').addEventListener('click', startAnalysis);
