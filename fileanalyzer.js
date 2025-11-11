@@ -613,118 +613,21 @@ function updateLiveMetricsLegend() {
         </span>`
     ).join('');
 }
-
+// TASK 8915 delegates to  T8911.1 and fileanalyzer-exporter.js (TASK 8907)
 function exportSelectedFormats() {
-    if (!analyzer) return;
-
-    // Get selected export formats
-    const exportCSV = document.getElementById('exportCSVOption').checked;
-    const exportJSON = document.getElementById('exportJSONOption').checked;
-    const exportNDJSON = document.getElementById('exportNDJSONOption').checked;
-
-    // Get base filename
-    let baseFilename = `epilens-file-analysis-${Date.now()}`;
-    if (playlist.length && playlist[playlistIndex]) {
-        baseFilename = `epilens-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}`;
-    }
-
-    let exportDelay = 0;
-
-    if (exportCSV) {
-        setTimeout(() => {
-            // Stream CSV
-            let csv = '';
-            for (const line of analyzer.streamCSV()) {
-                csv += line;
-            }
-            downloadFile(csv, `${baseFilename}.csv`, 'text/csv');
-        }, exportDelay);
-        exportDelay += 150;
-    }
-
-    if (exportJSON) {
-        setTimeout(() => {
-            // JSON requires full data object for generation, so no streaming
-            const json = analyzer.generateJSON();
-            downloadFile(json, `${baseFilename}.json`, 'application/json');
-        }, exportDelay);
-        exportDelay += 150;
-    }
-
-    if (exportNDJSON) {
-        setTimeout(() => {
-            // Stream NDJSON
-            let ndjson = '';
-            for (const line of analyzer.streamNDJSON()) {
-                ndjson += line;
-            }
-            downloadFile(ndjson, `${baseFilename}.ndjson`, 'application/x-ndjson');
-        }, exportDelay);
-    }
+    if (!analyzer || !exporter) return;
+    exporter.exportSelectedFormats(analyzer, playlist, playlistIndex);
 }
-//TASK 8902.19: Export of summary stats in JSON file
+
 function exportSummaryStats() {
-    if (!analyzer || !video) return;
-
-    const duration = video.duration;
-    const violationStats = analyzer.getViolationStatistics ?
-        analyzer.getViolationStatistics(duration) : null;
-
-    const summary = {
-        fileName: playlist.length && playlist[playlistIndex] ?
-            playlist[playlistIndex].name : 'unknown',
-        analysisDate: new Date().toISOString(),
-        duration: duration,
-        flashCount: analyzer.metrics ? analyzer.metrics.flashCount : 0,
-        riskLevel: analyzer.metrics ? analyzer.metrics.riskLevel : 'unknown',
-        violationStatistics: violationStats,
-        thresholds: {
-            flashesPerSecond: parseFloat(flashesPerSecondInput?.value || 3),
-            flashIntensity: parseFloat(flashIntensityInput?.value || 0.2)
-        }
-    };
-
-    if (analyzer.timelineData && analyzer.timelineData.length > 0) {
-        const psiScores = analyzer.timelineData
-            .map(entry => Number(entry.psi?.score))
-            .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
-
-        if (psiScores.length > 0) {
-            summary.psiStatistics = {
-                average: psiScores.reduce((a, b) => a + b, 0) / psiScores.length,
-                maximum: Math.max(...psiScores),
-                minimum: Math.min(...psiScores)
-            };
-        }
-    }
-
-    const summaryJson = JSON.stringify(summary, null, 2);
-    let baseFilename = `epilens-summary-${Date.now()}`;
-    if (playlist.length && playlist[playlistIndex]) {
-        baseFilename = `epilens-summary-${sanitizeFileName(playlist[playlistIndex].name.replace(/\.[^/.]+$/, ""))}`;
-    }
-
-    downloadFile(summaryJson, `${baseFilename}.json`, 'application/json');
+    if (!analyzer || !exporter) return;
+    exporter.exportSummaryStats(analyzer, video, playlist, playlistIndex, {
+        flashesPerSecond: parseFloat(flashesPerSecondInput?.value || 3),
+        flashIntensity: parseFloat(flashIntensityInput?.value || 0.2)
+    });
 }
 
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);    
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        URL.revokeObjectURL(a.href);
-        a.remove();
-    }, 300);
-}
-
-// Sanitizes file names for export
-function sanitizeFileName(name) {
-    return name.replace(/[^a-z0-9_\-\.]/gi, '_');
-}
+// downloadFile + sanitizeFileName are dealt with in fileanalyzer-exporter.js
 
 function renderMetricSelector() {
     if (!liveChartArea) return;
