@@ -108,4 +108,102 @@ class FileAnalyzerExporter {
         });
     }
 
+    // TASK 8902.19: Export of summary stats in JSON file
+    exportSummaryStats(analyzer, video, playlist, playlistIndex, thresholds) {
+        if (!analyzer || !video) return;
+
+        const duration = video.duration;
+        const violationStats = analyzer.getViolationStatistics ?
+            analyzer.getViolationStatistics(duration) : null;
+
+        const summary = {
+            fileName: playlist.length && playlist[playlistIndex] ?
+                playlist[playlistIndex].name : 'unknown',
+            analysisDate: new Date().toISOString(),
+            duration: duration,
+            flashCount: analyzer.metrics ? analyzer.metrics.flashCount : 0,
+            riskLevel: analyzer.metrics ? analyzer.metrics.riskLevel : 'unknown',
+            violationStatistics: violationStats,
+            thresholds: {
+                flashesPerSecond: parseFloat(thresholds.flashesPerSecond || 3),
+                flashIntensity: parseFloat(thresholds.flashIntensity || 0.2)
+            }
+        };
+
+        if (analyzer.timelineData && analyzer.timelineData.length > 0) {
+            const psiScores = analyzer.timelineData
+                .map(entry => Number(entry.psi?.score))
+                .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
+
+            if (psiScores.length > 0) {
+                summary.psiStatistics = {
+                    average: psiScores.reduce((a, b) => a + b, 0) / psiScores.length,
+                    maximum: Math.max(...psiScores),
+                    minimum: Math.min(...psiScores)
+                };
+            }
+        }
+
+        const summaryJson = JSON.stringify(summary, null, 2);
+        const baseFilename = this.generateBaseFilename(playlist, playlistIndex, 'epilens-summary');
+        this.downloadFile(summaryJson, `${baseFilename}.json`, 'application/json');
+    }
+
+    async exportAnalysisComplete(
+        analyzer,
+        video,
+        playlist,
+        playlistIndex,
+        clusterGapThreshold,
+        analysisInterval
+    ) {
+        if (!analyzer) return;
+
+        const exportCSV = document.getElementById('exportCSVOption')?.checked || false;
+        const exportJSON = document.getElementById('exportJSONOption')?.checked || false;
+        const exportNDJSON = document.getElementById('exportNDJSONOption')?.checked || false;
+        const exportSummary = document.getElementById('exportSummaryStatsOption')?.checked || false;
+
+        const baseFilename = this.generateBaseFilename(playlist, playlistIndex);
+        const duration = video.duration;
+        const violationStats = analyzer.getViolationStatistics ?
+            analyzer.getViolationStatistics(duration) : null;
+
+        const exportPromises = [];
+        let exportDelay = 100;
+
+        if (exportCSV) {
+            exportPromises.push(this.exportCSV(analyzer, baseFilename, exportDelay));
+            exportDelay += 150;
+        }
+
+        if (exportJSON) {
+            exportPromises.push(this.exportJSON(analyzer, baseFilename, exportDelay));
+            exportDelay += 150;
+        }
+
+        if (exportNDJSON) {
+            exportPromises.push(this.exportNDJSON(analyzer, baseFilename, exportDelay));
+            exportDelay += 150;
+        }
+
+        if (exportSummary) {
+            exportPromises.push(
+                this.exportSummaryWMetadata(
+                    analyzer,
+                    baseFilename,
+                    duration,
+                    violationStats,
+                    clusterGapThreshold,
+                    analysisInterval,
+                    playlist,
+                    playlistIndex,
+                    exportDelay
+                )
+            );
+        }
+
+        await Promise.all(exportPromises);
+    }
+
 }
