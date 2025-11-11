@@ -700,19 +700,11 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
     );
 
      try {
+        // T8903.3.2
         if (analyzer && analyzer.timelineData && analyzer.timelineData.length > 0) {
-            const psiScores = analyzer.timelineData
-                .map(entry => Number(entry.psi?.score))
-                .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
-            if (psiScores.length > 0) {
-                const avgPsi = psiScores.reduce((a, b) => a + b, 0) / psiScores.length;
-                const maxPsi = Math.max(...psiScores);
-                document.getElementById('SummaryAvgPSI').textContent = avgPsi.toFixed(4);
-                document.getElementById('SummaryMaxPSI').textContent = maxPsi.toFixed(4);
-            } else {
-                document.getElementById('SummaryAvgPSI').textContent = '-';
-                document.getElementById('SummaryMaxPSI').textContent = '-';
-            }
+            const psiScores = extractPSIScores(analyzer.timelineData);
+            const psiStats = calculatePSIStatistics(psiScores);
+            updatePSIFields(psiStats);
 
             const flashes = analyzer.timelineData
                 .filter(entry => entry.isFlash)
@@ -726,6 +718,7 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
             }
         }
     } catch (e) { }
+
     if (playlistIndex < playlist.length - 1) {
         playlistIndex++;
         loadVideoFromPlaylist(playlistIndex);
