@@ -260,14 +260,9 @@ function loadVideoFromPlaylist(index) {
 
     if (!analyzer) analyzer = new VideoAnalyzer();
     analyzer.videoTitle = file.name;
-    if (analysisIntervalInput && analysisIntervalValueSpan) {
-        const savedInterval = localStorage.getItem('epilens_analysisInterval');
-        if (savedInterval !== null) {
-            analysisIntervalInput.value = savedInterval;
-            analysisIntervalValueSpan.textContent = Number(savedInterval).toFixed(3);
-            updateAnalysisIntervalFpsInfo();
-        }
-    }
+    // TASK 8904.11 UI reset code removal
+    // UI control reset logic now elsewhere in the ether.. nah its in the fileanalyzer-settings.js
+    // Where in should be
 }
 
 function updatePlaylistInfo() {
