@@ -33,7 +33,9 @@ const ALL_METRICS = [
     { key: "spectralFlatness", label: "Spectral Flatness", color: "#ffd600" },
     { key: "sceneChangeScore", label: "Scene Change", color: "#ffb300" },
 ];
-
+let exporter = null; // T8911.1 fileanalyzerExporter instance
+let settingsManager = null; // T8911.2 Settings manager instance
+let uiControls = null; //T8911.3 Settings UI controls instance 
 let selectedMetrics = ["brightness", "intensity", "riskLevel"];
 let chartsBtn = null;
 let restartBtn = null;
@@ -42,27 +44,8 @@ let playlistIndex = 0;
 let playlistInfo = document.getElementById('playlistInfo');
 let flashIntensityInput = document.getElementById('flashIntensityThreshold');
 let flashesPerSecondInput = document.getElementById('flashesPerSecondThreshold');
-let analysisIntervalInput = document.getElementById('analysisInterval');
-let analysisIntervalValueSpan = document.getElementById('analysisIntervalValue');
-let analysisIntervalFpsInfo = document.getElementById('analysisIntervalFpsInfo');
-let redMetricsEnabled = false;
-let redMetricsToggle = null;
-let temporalContrastEnabled = false;
-let temporalContrastToggle = null;
-// TASK 4890: Optional metrics via overlay menu
-// Settings overlay elements
-let settingsOverlay = null;
-let openSettingsBtn = null;
-let closeSettingsBtn = null;
-let saveSettingsBtn = null;
-// TASK 8902.9 Cont of wiring up of TASK 8901 relies on flashViolation.js
-let clusterGapThresholdInput = document.getElementById('clusterGapThresholdInput');
-let clusterGapThresholdValue = document.getElementById('clusterGapThresholdValue');
-let resetClusterGapThresholdBtn = document.getElementById('resetClusterGapThresholdBtn');
-let autoClusterGapThresholdValue = document.getElementById('autoClusterGapThresholdValue');
-let clusterGapThreshold = 0.3;
-let autoClusterGapThreshold = 0.3;
-let isClusterThresholdManuallyOverridden = false;
+// T8911.4 settings management moved to FileAnalyzerSettings (fileanalyzer-settings.js)
+
 
 // TASK 5771: reset risk escalation state safely for risk helper:
 // If video was part of playlist then the  risk level previously would not reset between videos
