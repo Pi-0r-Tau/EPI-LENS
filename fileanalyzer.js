@@ -325,6 +325,7 @@ function stopAnalysis() {
     isAnalyzing = false;
     if (analysisTimer) clearTimeout(analysisTimer);
     if (!video.paused) video.pause();
+    // T8904.12.2
     // updateSummaryStatus removed as its a stub from way way long ago, where I thought it was important
     // spoilers it was not, it was un needed bloat
 }
@@ -344,16 +345,19 @@ function restartAnalysis() {
     selectedMetrics = ["brightness", "intensity", "riskLevel"];
     renderMetricSelector();
     if (video) video.currentTime = 0;
-    updateSummaryPanelStatus();
+    // T8904.12.2
+   // updateSummaryStatus removed
 }
 
 video.addEventListener('play', () => {
     if (isAnalyzing) analyzeFrameLoop();
-    updateSummaryPanelStatus();
+    // T8904.12.2
+   // updateSummaryStatus removed
 });
 video.addEventListener('pause', () => {
     stopAnalysis();
-    updateSummaryPanelStatus();
+    // T8904.12.2
+    // updateSummaryStatus removed
 });
 
 function renderFlashTimestamps(flashes) {
