@@ -145,6 +145,41 @@ window.addEventListener('DOMContentLoaded', () => {
     // TASK 8901: Toggle cluster list visibility
     _setupToggleVisibility('toggleClusterListBtn', 'SummaryClustersList', true);
 });
+// TASK 8904.9 Wireing up of buttons and vis toggle
+function _initializeButton(btnRef, config) {
+    if (!btnRef) {
+        const btn = document.createElement('button');
+        btn.id = config.id;
+        btn.textContent = config.text;
+        btn.style.background = config.background;
+        btn.style.color = '#fff';
+        btn.style.marginLeft = '0';
+        btn.onclick = config.onClick;
+        if (controls) controls.appendChild(btn);
+    }
+}
+
+function _setupToggleVisibility(toggleBtnId, contentDivId, hasAriaExpanded = false) {
+    const toggleBtn = document.getElementById(toggleBtnId);
+    const contentDiv = document.getElementById(contentDivId);
+
+    if (toggleBtn && contentDiv) {
+        toggleBtn.onclick = function () {
+            if (contentDiv.style.display === 'none' || contentDiv.style.display === '') {
+                contentDiv.style.display = 'block';
+                toggleBtn.textContent = 'Hide';
+                if (hasAriaExpanded) toggleBtn.setAttribute('aria-expanded', 'true');
+            } else {
+                contentDiv.style.display = 'none';
+                toggleBtn.textContent = 'Show';
+                if (hasAriaExpanded) toggleBtn.setAttribute('aria-expanded', 'false');
+            }
+        };
+        // Default to hidden
+        contentDiv.style.display = 'none';
+        toggleBtn.textContent = 'Show';
+    }
+}
 
 
 fileInput.addEventListener('change', handleFileSelect);
