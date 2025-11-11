@@ -36,4 +36,109 @@ class FileAnalyzerUIControls {
         this.graphSizeUp = null;
     }
 
+    initialize() {
+        this._queryDOMElements();
+        this._setupVideoControls();
+        this._setupGraphControls();
+        this._applyVideoSize();
+        this._applyGraphSize();
     }
+
+    _queryDOMElements() {
+        this.videoPlayer = document.getElementById('videoPlayer');
+        this.videoSizeDown = document.getElementById('videoSizeDown');
+        this.videoSizeUp = document.getElementById('videoSizeUp');
+        this.liveMetricsGraph = document.getElementById('liveMetricsGraph');
+        this.graphSizeDown = document.getElementById('graphSizeDown');
+        this.graphSizeUp = document.getElementById('graphSizeUp');
+    }
+
+    _setupVideoControls() {
+        if (this.videoSizeDown) {
+            this.videoSizeDown.addEventListener('click', () => {
+                if (this.videoSizeIdx > 0) {
+                    this.videoSizeIdx--;
+                    this._applyVideoSize();
+                }
+            });
+        }
+
+        if (this.videoSizeUp) {
+            this.videoSizeUp.addEventListener('click', () => {
+                if (this.videoSizeIdx < this.videoSizes.length - 1) {
+                    this.videoSizeIdx++;
+                    this._applyVideoSize();
+                }
+            });
+        }
+    }
+
+    _setupGraphControls() {
+        if (this.graphSizeDown) {
+            this.graphSizeDown.addEventListener('click', () => {
+                if (this.graphSizeIdx > 0) {
+                    this.graphSizeIdx--;
+                    this._applyGraphSize();
+                }
+            });
+        }
+
+        if (this.graphSizeUp) {
+            this.graphSizeUp.addEventListener('click', () => {
+                if (this.graphSizeIdx < this.graphSizes.length - 1) {
+                    this.graphSizeIdx++;
+                    this._applyGraphSize();
+                }
+            });
+        }
+    }
+
+    _applyVideoSize() {
+        if (!this.videoPlayer) return;
+        const sz = this.videoSizes[this.videoSizeIdx];
+        this.videoPlayer.style.width = sz.width;
+        this.videoPlayer.style.height = sz.height;
+        this.videoPlayer.style.maxWidth = "100%";
+        this.videoPlayer.style.maxHeight = "600px";
+    }
+
+    _applyGraphSize() {
+        if (!this.liveMetricsGraph) return;
+        const sz = this.graphSizes[this.graphSizeIdx];
+        this.liveMetricsGraph.width = sz.w;
+        this.liveMetricsGraph.height = sz.h;
+        this.liveMetricsGraph.style.width = "100%";
+        this.liveMetricsGraph.style.height = sz.h + "px";
+
+        if (this.drawLiveMetricsGraphCallback) {
+            this.drawLiveMetricsGraphCallback();
+        }
+    }
+
+    getVideoPlayer() {
+        return this.videoPlayer;
+    }
+
+    getLiveMetricsGraph() {
+        return this.liveMetricsGraph;
+    }
+
+    getCurrentVideoSize() {
+        return this.videoSizes[this.videoSizeIdx];
+    }
+
+    getCurrentGraphSize() {
+        return this.graphSizes[this.graphSizeIdx];
+    }
+
+    resetVideoSize() {
+        this.videoSizeIdx = 2;
+        this._applyVideoSize();
+    }
+
+    resetGraphSize() {
+        this.graphSizeIdx = 2;
+        this._applyGraphSize();
+    }
+
+}
