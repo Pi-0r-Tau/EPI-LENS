@@ -205,25 +205,26 @@ function handleFileSelect(e) {
 }
 // TASK 5771: Video playlist summary stats reset bewtween videos
 // TASK 8902.13/14 additions of cluster and violation variables
+// TASK 8904.10 Uses updateDOMField to reduce repeats of code logic, also looks prettier and didn't hurt my hands to type
 function resetSummaryPanelFields() {
     try {
-        document.getElementById('SummaryFlashes').textContent = '0';
-        document.getElementById('SummaryRisk').textContent = '-';
-        document.getElementById('SummaryPSI').textContent = '-';
-        document.getElementById('SummaryAvgPSI').textContent = '-';
-        document.getElementById('SummaryMaxPSI').textContent = '-';
-        document.getElementById('SummaryViolations').textContent = '-';
-        document.getElementById('SummaryDangerousFrames').textContent = '-';
-        document.getElementById('SummaryDangerousTime').textContent = '-';
+        updateDOMField('SummaryFlashes', '0');
+        updateDOMField('SummaryRisk', '-');
+        updateDOMField('SummaryPSI', '-');
+        updateDOMField('SummaryAvgPSI', '-');
+        updateDOMField('SummaryMaxPSI', '-');
+        updateDOMField('SummaryViolations', '-');
+        updateDOMField('SummaryDangerousFrames', '-');
+        updateDOMField('SummaryDangerousTime', '-');
         // TASK 8902.13: Reset cluster summary fields
-        document.getElementById('SummaryFlashClusters').textContent = '-';
-        document.getElementById('SummaryAvgClusterSize').textContent = '-';
-        document.getElementById('SummaryMaxClusterSize').textContent = '-';
+        updateDOMField('SummaryFlashClusters', '-');
+        updateDOMField('SummaryAvgClusterSize', '-');
+        updateDOMField('SummaryMaxClusterSize', '-');
         // TASK 8902.14: Cluster stats
-        document.getElementById('SummaryMinClusterSize').textContent = '-';
-        document.getElementById('SummaryMedianClusterSize').textContent = '-';
-        document.getElementById('SummaryClusterDensity').textContent = '-';
-        document.getElementById('SummaryFlashesInClusters').textContent = '-';
+        updateDOMField('SummaryMinClusterSize', '-');
+        updateDOMField('SummaryMedianClusterSize', '-');
+        updateDOMField('SummaryClusterDensity', '-');
+        updateDOMField('SummaryFlashesInClusters', '-');
         let clustersDiv = document.getElementById('SummaryClustersList');
         if (clustersDiv) {
             clustersDiv.innerHTML = '<div style="color:#888;">None</div>';
