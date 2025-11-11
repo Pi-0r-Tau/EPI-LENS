@@ -69,4 +69,43 @@ class FileAnalyzerExporter {
         await Promise.all(exportPromises);
     }
 
+    exportCSV(analyzer, baseFilename, delay = 0) {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                // Stream CSV
+                let csv = '';
+                for (const line of analyzer.streamCSV()) {
+                    csv += line;
+                }
+                this.downloadFile(csv, `${baseFilename}.csv`, 'text/csv');
+                resolve();
+            }, delay);
+        });
+    }
+
+    exportJSON(analyzer, baseFilename, delay = 0) {
+        return new Promise(resolve => {
+            // JSON requires full data object for generation, so no streaming
+            setTimeout(() => {
+                const json = analyzer.generateJSON();
+                this.downloadFile(json, `${baseFilename}.json`, 'application/json');
+                resolve();
+            }, delay);
+        });
+    }
+
+    exportNDJSON(analyzer, baseFilename, delay = 0) {
+        return new Promise(resolve => {
+            // Stream NDJSON
+            setTimeout(() => {
+                let ndjson = '';
+                for (const line of analyzer.streamNDJSON()) {
+                    ndjson += line;
+                }
+                this.downloadFile(ndjson, `${baseFilename}.ndjson`, 'application/x-ndjson');
+                resolve();
+            }, delay);
+        });
+    }
+
 }
