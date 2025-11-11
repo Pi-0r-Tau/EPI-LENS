@@ -280,11 +280,12 @@ function startAnalysis() {
     if (!video.src) return;
     if (!analyzer) analyzer = new VideoAnalyzer();
     //T8902.15: start analysis with correct CGT
-    analyzer.setClusterGapThreshold(clusterGapThreshold);
+    // T8904.12 All settings go via the settingsManager aka fileanayzer-settings.js
+    analyzer.setClusterGapThreshold(settingsManager.getClusterGapThreshold());
     analyzer.reset();
     resetRiskEscalation(); // TASK 5771
-    analyzer.redMetricsEnabled = redMetricsEnabled;
-    analyzer.temporalContrastEnabled = temporalContrastEnabled;
+    analyzer.redMetricsEnabled = settingsManager.isRedMetricsEnabled();
+    analyzer.temporalContrastEnabled = settingsManager.isTemporalContrastEnabled();
     analyzer.isFileAnalyzer = true;
     //console.log(`Red metrics ${redMetricsEnabled ? 'ENABLED' : 'DISABLED'} for analysis`);
 
@@ -297,7 +298,7 @@ function startAnalysis() {
         intensity: intensity,
         flashesPerSecond: flashesPerSecond
     });
-    analyzer.clusterGapThreshold = clusterGapThreshold;
+    analyzer.clusterGapThreshold = settingsManager.getClusterGapThreshold();
 
     if (playlist.length && playlist[playlistIndex]) {
         analyzer.videoTitle = playlist[playlistIndex].name;
@@ -314,13 +315,8 @@ function startAnalysis() {
     resultsPanel.innerHTML = '<div>Analyzing...</div>';
     liveMetricsHistory = [];
     drawLiveMetricsGraph();
-    setSummaryPanelStatus("Analyzing");
-    setSummaryPanelFile();
-    let interval = 1 / 30;
-    if (analysisIntervalInput) {
-        interval = parseFloat(analysisIntervalInput.value);
-        localStorage.setItem('epilens_analysisInterval', analysisIntervalInput.value);
-    }
+    let interval = settingsManager.getAnalysisInterval();
+    localStorage.setItem('epilens_analysisInterval', interval.toString());
     analyzeVideoAtFixedIntervals(video, analyzer, interval)
 
 }
