@@ -741,33 +741,11 @@ function seekVideo(video, time) {
     });
 }
 
-
-(function() {
-    function updateSummary(result) {
-        try {
-            document.getElementById('SummaryFlashes').textContent = result && result.flashCount !== undefined
-                ? result.flashCount
-                : '0';
-            document.getElementById('SummaryRisk').textContent = result && result.riskLevel
-                ? result.riskLevel
-                : '-';
-            document.getElementById('SummaryPSI').textContent = result && result.psi && result.psi.score !== undefined
-                ? Number(result.psi.score).toFixed(4)
-                : '-';
-        } catch (e) {}
+window.setSummaryPanelFile = function () {
+    if (playlist.length && playlist[playlistIndex]) {
+        const filename = playlist[playlistIndex].name;
+        if (playlistInfo) {
+            playlistInfo.textContent = `Loaded: ${filename}`;
+        }
     }
-
-    const origUpdateResults = window.updateResults;
-    window.updateResults = function(result) {
-        if (origUpdateResults) origUpdateResults(result);
-        updateSummary(result);
-    };
-    // TASK 2932: See story, this is messy but needed for future stats in the fileanalyzer html
-
-    window.updateSummaryPanelStatus = function () {
-    };
-    window.setSummaryPanelStatus = function () {
-    };
-    window.setSummaryPanelFile = function () {
-    };
-})();
+};
