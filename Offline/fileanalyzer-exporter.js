@@ -245,7 +245,54 @@ class FileAnalyzerExporter {
         playlist,
         playlistIndex
     ) {
-        
+        const summary = {
+            fileName: playlist.length && playlist[playlistIndex] ?
+                playlist[playlistIndex].name : 'unknown',
+                // T8902.20.3: Flash violation stats info and def for JSON export
+            violationExplanation: {
+                wcagCriteria: 'WCAG 2.1 Success Criterion 2.3.1: Three Flashes or Below Threshold (Level A)',
+                definition: 'A violation occurs when more than 3 flashes happen per second within any 1 second window, or when flashes exceed the general flash and red flash intensity thresholds.',
+                windowBehavior: 'Flash triggered discrete windows: each window starts at the first flash and lasts exactly 1 second.',
+                frameCountCalculation: 'Frames are analyzed at fixed intervals. Each 1-second window captures all frames from the window start through the last frame before crossing the 1-second boundary (inclusive counting).',
+                expectedFramesPerWindow: analysisInterval > 0 ? Math.round(1.0 / analysisInterval) : null,
+                note: 'Frame count per window = (endFrame - startFrame + 1). Both boundary frames are included in the count.'
+            },
+            //T8902.30.4: Cluster statistics info and def for JSON export
+            clusterExplanation: {
+                definition: `Flash clusters are temporal groupings of flashes separated by gaps greater than the cluster gap threshold (${clusterGapThreshold} seconds).`,
+                gapThreshold: clusterGapThreshold,
+                algorithm: `Single-linkage temporal clustering: flashes are grouped into the same cluster if they occur within ${clusterGapThreshold} seconds of any other flash in the cluster.`,
+                purpose: 'Clusters help identify patterns in flash distribution.',
+                note: 'Clusters may overlap with violation windows but are independent groupings based on temporal proximity.'
+            },
+            analysisDate: new Date().toISOString(),
+            duration: duration,
+            flashCount: analyzer.metrics ? analyzer.metrics.flashCount : 0,
+            riskLevel: analyzer.metrics ? analyzer.metrics.riskLevel : 'unknown',
+            violationStatistics: violationStats,
+            //T8902.20.5: cluster statistics for export
+            clusterStatistics: this.buildClusterStatistics(analyzer),
+            thresholds: {
+                analysisInterval: analysisInterval,
+                analysisFPS: analysisInterval > 0 ? parseFloat((1.0 / analysisInterval).toFixed(2)) : null
+            }
+        };
+
+        if (analyzer.timelineData && analyzer.timelineData.length > 0) {
+            const psiScores = analyzer.timelineData
+                .map(entry => Number(entry.psi?.score))
+                .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
+
+            if (psiScores.length > 0) {
+                summary.psiStatistics = {
+                    average: psiScores.reduce((a, b) => a + b, 0) / psiScores.length,
+                    maximum: Math.max(...psiScores),
+                    minimum: Math.min(...psiScores)
+                };
+            }
+        }
+
+        return summary;
     }
 
 }
