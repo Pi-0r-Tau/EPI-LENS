@@ -206,4 +206,46 @@ class FileAnalyzerExporter {
         await Promise.all(exportPromises);
     }
 
+    exportSummaryWMetadata(
+        analyzer,
+        baseFilename,
+        duration,
+        violationStats,
+        clusterGapThreshold,
+        analysisInterval,
+        playlist,
+        playlistIndex,
+        delay = 0
+    ) {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                const summary = this.buildSummary(
+                    analyzer,
+                    duration,
+                    violationStats,
+                    clusterGapThreshold,
+                    analysisInterval,
+                    playlist,
+                    playlistIndex
+                );
+
+                const summaryJson = JSON.stringify(summary, null, 2);
+                this.downloadFile(summaryJson, `${baseFilename}.json`, 'application/json');
+                resolve();
+            }, delay);
+        });
+    }
+
+    buildSummary(
+        analyzer,
+        duration,
+        violationStats,
+        clusterGapThreshold,
+        analysisInterval,
+        playlist,
+        playlistIndex
+    ) {
+        
+    }
+
 }
