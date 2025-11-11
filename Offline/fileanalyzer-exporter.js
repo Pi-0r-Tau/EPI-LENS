@@ -295,4 +295,46 @@ class FileAnalyzerExporter {
         return summary;
     }
 
+    buildClusterStatistics(analyzer) {
+        if (!analyzer?.flashViolations?.flashClusters) {
+            return null;
+        }
+
+        const clusters = analyzer.flashViolations.flashClusters;
+        if (clusters.length === 0) {
+            return null;
+        }
+
+        const clusterSizes = clusters.map(c => c.count);
+        const totalFlashes = clusterSizes.reduce((sum, c) => sum + c, 0);
+        const timeSpan = Math.max(...clusters.map(c => c.endTime)) -
+                         Math.min(...clusters.map(c => c.startTime));
+
+        return {
+            totalClusters: clusters.length,
+            averageClusterSize: (clusterSizes.reduce((a, b) => a + b, 0) / clusterSizes.length).toFixed(2),
+            minClusterSize: Math.min(...clusterSizes),
+            maxClusterSize: Math.max(...clusterSizes),
+            medianClusterSize: window.AnalyzerHelpers._median?.(clusterSizes).toFixed(2) || 0,
+            clusterDensity: timeSpan > 0 ? (totalFlashes / timeSpan).toFixed(2) : 0,
+            totalFlashesInClusters: totalFlashes,
+            clusters: clusters.map((c, idx) => ({
+                clusterId: idx + 1,
+                startTime: c.startTime.toFixed(3),
+                endTime: c.endTime.toFixed(3),
+                duration: (c.endTime - c.startTime).toFixed(3),
+                startFrame: c.startFrame,
+                endFrame: c.endFrame,
+                flashCount: c.count,
+                flashes: c.flashes?.map(f => ({
+                    timestamp: f.timestamp.toFixed(3),
+                    frameNumber: f.frameNumber
+                })) || []
+            }))
+        };
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.FileAnalyzerExporter = FileAnalyzerExporter;
 }
