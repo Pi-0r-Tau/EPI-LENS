@@ -325,7 +325,8 @@ function stopAnalysis() {
     isAnalyzing = false;
     if (analysisTimer) clearTimeout(analysisTimer);
     if (!video.paused) video.pause();
-    updateSummaryPanelStatus();
+    // updateSummaryStatus removed as its a stub from way way long ago, where I thought it was important
+    // spoilers it was not, it was un needed bloat
 }
 
 /**
