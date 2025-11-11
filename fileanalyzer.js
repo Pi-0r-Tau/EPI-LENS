@@ -438,19 +438,11 @@ function updateResults(result) {
         }
     } catch (e) {}
     try {
+        // T8904.12.3
         if (analyzer && analyzer.timelineData) {
-            const psiScores = analyzer.timelineData
-                .map(entry => Number(entry.psi?.score))
-                .filter(score => typeof score === 'number' && !isNaN(score) && score !== 0);
-            if (psiScores.length > 0) {
-                const avgPsi = psiScores.reduce((a, b) => a + b, 0) / psiScores.length;
-                const maxPsi = Math.max(...psiScores);
-                document.getElementById('SummaryAvgPSI').textContent = avgPsi.toFixed(4);
-                document.getElementById('SummaryMaxPSI').textContent = maxPsi.toFixed(4);
-            } else {
-                document.getElementById('SummaryAvgPSI').textContent = '-';
-                document.getElementById('SummaryMaxPSI').textContent = '-';
-            }
+            const psiScores = extractPSIScores(analyzer.timelineData);
+            const psiStats = calculatePSIStatistics(psiScores);
+            updatePSIFields(psiStats);
         }
     } catch (e) { }
 }
