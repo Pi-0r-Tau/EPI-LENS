@@ -192,16 +192,25 @@
       const amplitude = mag * ((isDc || isNyquist) ? SCALE_DC : SCALE_OS);
       const phase = Math.atan2(im, re);
 
+    // TASK S117.6
+    // Spent ages going over and over this, turns out that phase was wrapping every 2Pi radians
+    // Subtract how much phase should have advanced if the freq was exactly at the bin
+    // center, then compare phases
+    // Testing now shows that compared to prev freq drift is fixed and stable rather than noisy
       let instFreqHz = 0;
       if (typeof prevPhase[k] === "number" && deltaT > 0) {
-        let dphi = phase - prevPhase[k];
+        const fk = (k * fs) / M // bin center Hz
+        const expected = 2 * Math.PI * fk * deltaT;
+        let dphi = phase - prevPhase[k] - expected;
+
         while (dphi > Math.PI) dphi -= 2 * Math.PI;
-        while (dphi < -Math.PI) dphi += 2 * Math.PI;
+        while (dphi < -Math.PI) dphi += 2 * Math.PI
 
         // instFreqHz = bin center + offset
-        const fk = (k * fs) / M; // bin center frequency in Hz
-        const offsetHz = (dphi / (2 * Math.PI)) / deltaT;
+        const offsetHz = dphi / (2 * Math.PI * deltaT);
         instFreqHz = fk + offsetHz;
+      } else {
+        instFreqHz = (k * fs) / M;
       }
 
       instFreqs[k] = instFreqHz;
