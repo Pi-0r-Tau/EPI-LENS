@@ -1,7 +1,10 @@
 const MAX_SIGNAL_LENGTH = 4096;
 
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
-window.AnalyzerHelpers.performFFT = function (signal) {
+// TASK S117.3
+// sampleRate = 1 added, want a safety net for if padPowerOfTwo in spectralAnalysis.js is called but it does not have a sample rate
+// The code will always be given the correct Hz by the spectralAnalysis. But I want to be able to quickly tell if I change and break something
+window.AnalyzerHelpers.performFFT = function (signal, sampleRate = 1) {
     if (!signal || !signal.length) throw new Error("Empty signal");
     if (!Array.isArray(signal) && !(signal instanceof Float32Array) && !(signal instanceof Float64Array)) {
         throw new Error("Need array or typed array");
@@ -18,22 +21,25 @@ window.AnalyzerHelpers.performFFT = function (signal) {
     if (typeof window.FFT !== "function") throw new Error("DSP.js not loaded");
 
     try {
-        const fft = new window.FFT(len, 1);
+        const fft = new window.FFT(len, sampleRate || 1);
         fft.forward(signal);
         return {
             re: fft.real.slice(0, len),
             im: fft.imag.slice(0, len)
         };
     } catch (err) {
-        throw new Error("FFT failed:" + err.message);
+        // So prev string throws causes undefined error messages
+        // Now some quality of life.. an actual error message
+        const msg = (err && err.message) ? err.message : String(err);
+        throw new Error("FFT failed:" + msg);
     }
 };
 
-window.AnalyzerHelpers.padToPowerOfTwo = function (signal) {
+window.AnalyzerHelpers.padToPowerOfTwo = function (signal, sampleRate = 1) {
     const n = signal.length;
     let pow2 = 1;
     while (pow2 < n) pow2 <<= 1;
-    if (pow2 === n) return window.AnalyzerHelpers.performFFT(signal);
+    if (pow2 === n) return window.AnalyzerHelpers.performFFT(signal, sampleRate);
 
     let padded;
     if (signal instanceof Float32Array) {
@@ -45,5 +51,5 @@ window.AnalyzerHelpers.padToPowerOfTwo = function (signal) {
     }
 
     for (let i = 0; i < n; i++) padded[i] = signal[i];
-    return window.AnalyzerHelpers.performFFT(padded);
+    return window.AnalyzerHelpers.performFFT(padded, sampleRate);
 };
