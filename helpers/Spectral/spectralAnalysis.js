@@ -160,7 +160,7 @@
     const spectrum = [];
     let windowSum = 0;
     for (let i = 0; i < N; i++) windowSum += hann[i];
-    // TASK S117.4
+    // TASK S117.5
     // Amplitude scaling factors have special cases for DC and Nyquist bins
     // tests indicates that I had stupidly double-scaled these bins.
     const SCALE_OS = windowSum > 0 ? 2 / windowSum : 0;  // 1<k<Nyquist
