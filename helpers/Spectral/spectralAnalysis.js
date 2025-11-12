@@ -136,7 +136,8 @@
       signal[i] = (signal[i] - median) * hann[i];
     }
     // fft.js for padToPowerOfTwo, then dsp.js for fft
-    const fft = window.AnalyzerHelpers.padToPowerOfTwo(signal);
+    // TASK S117.4 pass the fs (aka sampleRate) through 
+    const fft = window.AnalyzerHelpers.padToPowerOfTwo(signal, fs);
     if (!fft || !fft.re || !fft.im) {
       return {
         dominantFrequency: 0,
