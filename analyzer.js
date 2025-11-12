@@ -779,19 +779,24 @@ if (!window.VideoAnalyzer) {
                 bufferLen
             );
         }
-
+        // TASK S117: performSpectralAnalysis expects 5 params but also the analyzer.js is shared between the default yt analyzer and the offine fileanalyzer
+        // So what this means, on one hand I  can be completely certain of the fps and for the yt analyzer, I have no clue  as I am sampling as fast as I can
+        // So this is the S117 (spectral 117)
         performSpectralAnalysis(
             brightness,
             bufferLen = 128,
             fftLen = 64,
-            fps = 60
+            fps = 60,
+            timestamp
         ) {
+            const spectFps = fps || (this.minAnalysisInterval ? 1000 / this.minAnalysisInterval : 60);
             return window.AnalyzerHelpers.spectralAnalysis.call(
                 this,
                 brightness,
                 bufferLen,
                 fftLen,
-                fps
+                spectFps,
+                timestamp
             );
         }
 
