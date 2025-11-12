@@ -141,11 +141,23 @@ FFT.prototype.forward = function (buffer) {
         imag[i] = 0;
     }
     while (halfSize < bufferSize) {
+        // PATCH (TASK S117.2)
         //phaseShiftStepReal = Math.cos(-Math.PI/halfSize);
         //phaseShiftStepImag = Math.sin(-Math.PI/halfSize);
-        phaseShiftStepReal = cosTable[halfSize];
-        phaseShiftStepImag = sinTable[halfSize];
+        // phaseShiftStepReal = cosTable[halfSize];
+        // phaseShiftStepImag = sinTable[halfSize];
 
+        // So on review of this code, it seems the twiddle factors were being
+        // incorrectly indexed, causing (some..well alot) inaccuracy in the FFT results.
+        // The step index should depend on the total buffer size, not the
+        // current halfSize.
+        // So this should fix the incorrect results in the FFT output.
+        // Spent so so so so so long debuging this..
+
+        var stepIndex = bufferSize / (halfSize * 2);
+        phaseShiftStepReal = cosTable[stepIndex];
+        phaseShiftStepImag = sinTable[stepIndex];
+        // END OF PATCH 
         currentPhaseShiftReal = 1;
         currentPhaseShiftImag = 0;
 
@@ -177,7 +189,8 @@ FFT.prototype.forward = function (buffer) {
         }
         halfSize = halfSize << 1;
     }
-    this.calculateSpectrum();
+    // PATCH
+    // this.calculateSpectrum();
     return this.spectrum;
 };
 // Extract to window for fft.js,
