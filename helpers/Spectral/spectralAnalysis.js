@@ -261,7 +261,7 @@
         }
         pNoise /= nCount;
         const pSignal = maxAmp * maxAmp;
-        const EPS = 1e-12; // Don't let noise power be zero, needs tests
+        const EPS = 1e-12; // Don't let noise power be zero, needs tests UPDATE have tested all good here
         confidence = 10 * Math.log10(pSignal / Math.max(pNoise, EPS));
       }
     }
@@ -285,8 +285,11 @@
       // Answers should be yes, yes, no.
     }
     return {
-      dominantFrequency,
+      dominantFrequency, // For complex patterns with multiple frequencies, this is the strongest stable frequency
       dominantInstFreq, // TASK 1950: Instantaneous dominant frequency added to JSON, CSV, NDJSON exports
+      // For complex patterns with multiple frequencies, but the pattern of change over time. Think that Journo who was sent flashing
+      // lights to trigger seizures, the frequency varied a lot but the dominantInstFreq would have captured that variation.
+      // Basically how malicious the flashing is. Pattern changing stuff
       spectrum,
       windowSize: N,
       spectralFlatness,
