@@ -158,15 +158,27 @@
     }
     const nyqBins = M >> 1;
     const spectrum = [];
-    // Amplitude scale for Hann window, scaling is correct if window def and N changes
     let windowSum = 0;
     for (let i = 0; i < N; i++) windowSum += hann[i];
-    const scale = windowSum > 0 ? 2 / windowSum : 4/ N;
+    // TASK S117.4
+    // Amplitude scaling factors have special cases for DC and Nyquist bins
+    // tests indicates that I had stupidly double-scaled these bins.
+    const SCALE_OS = windowSum > 0 ? 2 / windowSum : 0;  // 1<k<Nyquist
+    const SCALE_DC = windowSum > 0 ? 1 / windowSum : 0;  // k=0 or k=Nyquist
 
     const prevPhase = window.AnalyzerHelpers._prevPhase;
     const prevTimestamp = typeof window.AnalyzerHelpers._prevTimestamp === "number"
       ? window.AnalyzerHelpers._prevTimestamp
       : undefined;
+    // Also now it subtrats expected phase advance from bin center frequency making sure that te
+    // phase state is reset when fs or M changes
+
+    if (window.AnalyzerHelpers._prevM !== M || window.AnalyzerHelpers._prevFs !== fs) {
+      for (const k in prevPhase) delete prevPhase[k];
+    }
+
+    window.AnalyzerHelpers._prevM = M;
+    window.AnalyzerHelpers._prevFs = fs;
 
     const instFreqs = [];
     const deltaT = (typeof timestamp === "number" && typeof prevTimestamp === "number" && timestamp !== prevTimestamp)
@@ -174,7 +186,10 @@
       : 1 / fs;
     for (let k = 0; k < nyqBins; k++) {
       const re = fft.re[k], im = fft.im[k];
-      const amplitude = Math.hypot(re, im) * scale;
+      const mag = Math.hypot(re, im);
+      const isDc = (k === 0);
+      const isNyquist = (M % 2 === 0) && (k === nyqBins);
+      const amplitude = mag * ((isDc || isNyquist) ? SCALE_DC : SCALE_OS);
       const phase = Math.atan2(im, re);
 
       let instFreqHz = 0;
