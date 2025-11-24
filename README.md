@@ -13,6 +13,10 @@ Think of it similar to PEAT (Photosensitive Epilepsy Analysis Tool) but open sou
 
 ![image](https://github.com/user-attachments/assets/6fc05c3b-bb2a-48ff-9e72-e75a6df391f6)
 
+For those who want to visuallize a red flash:
+![image](https://github.com/user-attachments/assets/7a449c72-e8a6-46ca-8fb0-5794f0d78998)
+
+
 Graphs above shows a small selection of metrics for ease of understanding
 
 ![image](https://github.com/user-attachments/assets/567c3121-8f48-473a-ad80-84187c8d1faf)
