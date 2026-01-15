@@ -52,6 +52,51 @@ Risk score is calculated as instances of a flash for threshold criteria within s
 - YouTube
 - Local files via local video analysis suite
 
+## Recent updates to metrics
+- Patterned stimulus score
+- Dominant color (LAB)
+-  CIE76 ΔE
+-  RGB to LAB
+-  Red Delta
+-  Red Intensity
+-  Scene Change Score
+- Spectral Flatness
+- Color Change Magnitude
+- Contrast Sensitivity:
+  - Normalized Sensitivity
+  - Fluctuations (Std. of color differences)
+  - Avg. Delta E
+  - Max. Delta E
+  - Significant Changes
+  - Fluctuation Rate
+  - Weighted Avg. Delta E
+  - Coefficient of Variation (Ratio of fluctuations to the Avg.)
+  - Median Delta E
+  - P90 Delta E
+  - P95 Delta E
+  - Stream weighted Avg. Delta E
+- Saturated Red Detection:
+  - Red Area Avg.
+  - Red Area Max.
+  - Red Transitions
+  - Red Flash Events
+  - Red Flashes per second
+  - Red Flicker Risk Band
+- Spectral Dominant Instantaneous Frequency
+- Red states
+- Red Transitions
+- Temporal Clustering of Flashes
+
+
+## Updates in progress
+- Implementation of Jordan, J. B. & Vanderheiden, G. C. (2024). International Guidelines for Photosensitive Epilepsy: Gap Analysis and Recommendations. ACM Transactions on Accessible Computing, 17(3), 17:1 - 17:35. (https://github.com/jbjord/pseGuidelines)
+
+
+## Future metrics
+- Chromatic Flicker Fusion Rate (CFFR)
+- Spatiotemporal Contrast Sensitivity Metric (STCSM)
+
+
 ## Recent updates
   
 - fileanalyzer overhaul:
@@ -94,49 +139,7 @@ Binary state of each frame based on red content, returns an array of 0s and 1s i
 Change detection for red state between consecutive frames, returns an array of 0s and 1s indicating frames where the red state has flipped from the previous frame
 
 
-## Recent updates to metrics
-- Patterned stimulus score
-- Dominant color (LAB)
--  CIE76 ΔE
--  RGB to LAB
--  Red Delta
--  Red Intensity
--  Scene Change Score
-- Spectral Flatness
-- Color Change Magnitude
-- Contrast Sensitivity:
-  - Normalized Sensitivity
-  - Fluctuations (Std. of color differences)
-  - Avg. Delta E
-  - Max. Delta E
-  - Significant Changes
-  - Fluctuation Rate
-  - Weighted Avg. Delta E
-  - Coefficient of Variation (Ratio of fluctuations to the Avg.)
-  - Median Delta E
-  - P90 Delta E
-  - P95 Delta E
-  - Stream weighted Avg. Delta E
-- Saturated Red Detection:
-  - Red Area Avg.
-  - Red Area Max.
-  - Red Transitions
-  - Red Flash Events
-  - Red Flashes per second
-  - Red Flicker Risk Band
-- Spectral Dominant Instantaneous Frequency
-- Red states
-- Red Transitions
 
-
-## Updates in progress
-- Implementation of Jordan, J. B. & Vanderheiden, G. C. (2024). International Guidelines for Photosensitive Epilepsy: Gap Analysis and Recommendations. ACM Transactions on Accessible Computing, 17(3), 17:1 - 17:35. (https://github.com/jbjord/pseGuidelines)
-
-
-## Future metrics
-- Chromatic Flicker Fusion Rate (CFFR)
-- Spatiotemporal Contrast Sensitivity Metric (STCSM)
-- Temporal Clustering of Flashes
 
 ## Core Metrics Overview
 
