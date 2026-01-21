@@ -19,7 +19,9 @@ For those who want to visuallize a red flash:
 
 Graphs above shows a small selection of metrics for ease of understanding
 
-![image](https://github.com/user-attachments/assets/567c3121-8f48-473a-ad80-84187c8d1faf)
+![image](https://github.com/user-attachments/assets/8e2c6f7b-6896-42d8-aed5-f1396d0ed68c)
+
+
 
 
 
