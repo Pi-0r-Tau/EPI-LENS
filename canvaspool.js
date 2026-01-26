@@ -3,9 +3,11 @@
 if (!window.CanvasPool) {
     class CanvasPool {
         constructor() {
+            // Max numb of canvases to keep pooled, so basically max memory usage
             this.maxPoolSize = 10;
+            // Then the actual pool, organized by size buckets
             this.sizeBuckets = new Map();
-            this._count = 0; // no. of canvases currently in the pool
+            this._count = 0; // no. of canvases currently in the pool, ready to enforce maxPoolSize
         }
 
         getSizeBucket(width, height) {
