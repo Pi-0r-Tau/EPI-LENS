@@ -13,7 +13,9 @@ if (!window.CanvasPool) {
         getSizeBucket(width, height) {
             return `${width}x${height}`;
         }
-
+        // Called by:
+        // - videoAnalyzer.captureFrame() on every frame analyzed
+        // 
         get(width, height) {
             const key = this.getSizeBucket(width, height);
             const bucket = this.sizeBuckets.get(key);
@@ -35,7 +37,10 @@ if (!window.CanvasPool) {
             canvas.height = height;
             return canvas;
         }
-
+        // Called by:
+        // - videoAnalyzer.captureFrame() on resizing
+        // - videoAnalyzer.reset() on analyzer reset
+        // - videoAnalyzer.destroy() to release all canvases cleaning up 
         release(canvas) {
             if (!canvas) return;
             if (this._count >= this.maxPoolSize) return;
