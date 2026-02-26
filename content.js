@@ -288,15 +288,11 @@
             if (analyzer) {
                 analyzer.lastExportTime = currentTime;
             }
-
-
-            if (results && results.timestamp) {
-                console.log('Frame analyzed at:', {
-                    videoTime: currentTime,
-                    relativeTimestamp: results.timestamp,
-                    absoluteTimestamp: results.absoluteTimestamp
-                });
-            }
+            // S1126:
+            // Removal of console log in hot path
+            // The way it was working was senting 3600 messages to the console per min
+            // Why this was here originally was okay, why I kept it here on push IDK.
+            
 
             if (!results) {
                 requestAnimationFrame(() => analyzeVideo(options));
