@@ -193,7 +193,7 @@ function openChartsView() {
     const json = analyzer.generateJSON();
 
     if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-        chrome.strorage.local.set({ epilensAnalysisData: json }, () => {
+        chrome.storage.local.set({ epilensAnalysisData: json }, () => {
             window.open('Charting/charts.html', '_blank');
         });
     } else {
