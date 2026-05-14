@@ -174,7 +174,8 @@ async function loadData() {
         try {
             const raw = localStorage.getItem('epilensAnalysisData');
             if (raw) {
-                const parsed = JSON.parse(raw);
+                let parsed = JSON.parse(raw);
+                if (typeof parsed === 'string') parsed = JSON.parse(parsed);
                 if (parsed.analysis && Array.isArray(parsed.analysis)) {
                     analysisData = parsed.analysis.map(row => flattenMetrics(row));
                     availableFields = Object.keys(analysisData[0] || {});
