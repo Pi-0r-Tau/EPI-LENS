@@ -880,8 +880,8 @@ if (!window.VideoAnalyzer) {
             return window.AnalyzerHelpers.luminance(data, idx, weights);
         }
 
-        calculateEdgeChange(window = 2) {
-            return window.AnalyzerHelpers.edgeChange.call(this, window);
+        calculateEdgeChange(LBW = 2) {
+            return window.AnalyzerHelpers.edgeChange.call(this, LBW);
         }
         // Used via yt analyzer instance only
         generateCSV() {
