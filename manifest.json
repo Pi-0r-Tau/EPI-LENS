@@ -54,7 +54,6 @@
     "helpers/Spatial/spatialDistrib.js",
     "helpers/Color/chromaticFlashes.js",
     "helpers/Temporal/tempContrast.js",
-    "helpers/Spectral/spectralAnalysis.js",
     "helpers/Temporal/periodicity.js",
     "helpers/Temporal/tempCoherence.js",
     "helpers/Spatial/spatialEdges.js",
