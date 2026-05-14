@@ -139,7 +139,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-        // Toggle flashes list visibility
+    // Toggle flashes list visibility
     _setupToggleVisibility('toggleFlashesListBtn', 'SummaryFlashesList');
 
     // TASK 8901: Toggle cluster list visibility
@@ -191,9 +191,15 @@ function openChartsView() {
     if (!analyzer) return;
     if (!video.paused) video.pause();
     const json = analyzer.generateJSON();
-    chrome.storage.local.set({ epilensAnalysisData: json }, () => {
-        window.open('Charting/charts.html', '_blank');
-    });
+
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+        chrome.strorage.local.set({ epilensAnalysisData: json }, () => {
+            window.open('Charting/charts.html', '_blank');
+        });
+    } else {
+        localStorage.setItem('epilensAnalysisData', JSON.stringify(json));
+        window.open('charting/charts.html', '_blank');
+    }
 }
 
 function handleFileSelect(e) {
@@ -233,7 +239,7 @@ function resetSummaryPanelFields() {
         if (flashesDiv) {
             flashesDiv.innerHTML = '<div style="color:#888;">None</div>';
         }
-    } catch (e) {}
+    } catch (e) { }
 }
 
 function loadVideoFromPlaylist(index) {
@@ -346,13 +352,13 @@ function restartAnalysis() {
     renderMetricSelector();
     if (video) video.currentTime = 0;
     // T8904.12.2
-   // updateSummaryStatus removed
+    // updateSummaryStatus removed
 }
 
 video.addEventListener('play', () => {
     if (isAnalyzing) analyzeFrameLoop();
     // T8904.12.2
-   // updateSummaryStatus removed
+    // updateSummaryStatus removed
 });
 video.addEventListener('pause', () => {
     stopAnalysis();
@@ -427,7 +433,7 @@ function updateResults(result) {
                 flashesDiv.innerHTML = renderFlashTimestamps(flashes);
             }
         }
-    } catch (e) {}
+    } catch (e) { }
     // T8902.17: Update cluster summary details
     try {
         if (analyzer && analyzer.flashViolations && analyzer.flashViolations.flashClusters) {
@@ -436,7 +442,7 @@ function updateResults(result) {
                 clustersDiv.innerHTML = renderClusterDetails(analyzer.flashViolations.flashClusters);
             }
         }
-    } catch (e) {}
+    } catch (e) { }
     try {
         // T8904.12.3
         if (analyzer && analyzer.timelineData) {
@@ -493,7 +499,7 @@ function updateSummaryPanelFields(result) {
             updateDOMField('SummaryDangerousTime', '-');
         }
 
-         // T8902.18.2: update cluster summary fields if available
+        // T8902.18.2: update cluster summary fields if available
         _updateClusterSummary(result);
     } catch (e) { }
 }
@@ -650,7 +656,7 @@ function renderMetricSelector() {
             <input type="checkbox" value="${metric.key}" ${selectedMetrics.includes(metric.key) ? 'checked' : ''} style="margin-right:4px;">
             <span style="color:${metric.color};">${metric.label}</span>
         `;
-        label.querySelector('input').onchange = function() {
+        label.querySelector('input').onchange = function () {
             if (this.checked) {
                 if (!selectedMetrics.includes(metric.key)) selectedMetrics.push(metric.key);
             } else {
@@ -663,7 +669,7 @@ function renderMetricSelector() {
     });
 }
 
-async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
+async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 / 30) {
     video.pause();
     const duration = video.duration;
     for (let t = 0; t < duration; t += interval) {
@@ -699,7 +705,7 @@ async function analyzeVideoAtFixedIntervals(video, analyzer, interval = 1 /30) {
         interval
     );
 
-     try {
+    try {
         // T8903.3.2
         if (analyzer && analyzer.timelineData && analyzer.timelineData.length > 0) {
             const psiScores = extractPSIScores(analyzer.timelineData);

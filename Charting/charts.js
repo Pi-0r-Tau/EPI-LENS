@@ -171,7 +171,23 @@ async function loadData() {
             }
         });
     } else {
-        showError('chrome.storage.local not available.');
+        try {
+            const raw = localStorage.getItem('epilensAnalysisData');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed.analysis && Array.isArray(parsed.analysis)) {
+                    analysisData = parsed.analysis.map(row => flattenMetrics(row));
+                    availableFields = Object.keys(analysisData[0] || {});
+                    renderAllCharts();
+                } else {
+                    showError('No analysis data found.');
+                }
+            } else {
+                showError('No analysis data found.');
+            }
+        } catch (e) {
+            showError('Failed to parse analysis data.');
+        }
     }
 }
 
