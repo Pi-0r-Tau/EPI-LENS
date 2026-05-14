@@ -197,7 +197,7 @@ function openChartsView() {
             window.open('Charting/charts.html', '_blank');
         });
     } else {
-        localStorage.setItem('epilensAnalysisData', JSON.stringify(json));
+        localStorage.setItem('epilensAnalysisData', json);
         window.open('Charting/charts.html', '_blank');
     }
 }
