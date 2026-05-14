@@ -1,6 +1,7 @@
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 window.AnalyzerHelpers.temporalChange = function (
     currentBrightness,
+    timestamp,
     maxHistory = 1000
 ) {
     if (
@@ -10,6 +11,11 @@ window.AnalyzerHelpers.temporalChange = function (
         currentBrightness > 1
     )
         currentBrightness = 0;
+    // Wallclock bug temporal change should be based on frame timestamp (Task 2208.f)
+    // Expect video.currentTime in seconds store null if invalid
+    const ts = (typeof timestamp === "number" && isFinite(timestamp) && timestamp >= 0)
+        ? timestamp
+        : null;
 
     const changes = this.advancedMetrics.temporalChanges;
     let change = 0;
@@ -22,7 +28,7 @@ window.AnalyzerHelpers.temporalChange = function (
     }
 
     changes.push({
-        timestamp: Date.now(),
+        timestamp: ts,
         brightness: currentBrightness,
         change,
     });

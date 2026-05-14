@@ -438,7 +438,8 @@ if (!window.VideoAnalyzer) {
 
             const metrics = {
                 colorVariance: this.calculateColorVariance(imageData),
-                temporalChange: this.calculateTemporalChange(brightness),
+                // Wallclock bug temporal change should be based on frame timestamp (Task 2208.f)
+                temporalChange: this.calculateTemporalChange(brightness, timestamp),
                 flickerFrequency: this.estimateFlickerFrequency(),
                 entropy: this.calculateFrameEntropy(imageData),
                 psi: this.calculatePSI(brightness, brightnessDiff),
@@ -649,10 +650,11 @@ if (!window.VideoAnalyzer) {
             );
         }
 
-        calculateTemporalChange(currentBrightness, maxHistory = 1000) {
+        calculateTemporalChange(currentBrightness, timestamp, maxHistory = 1000) {
             return window.AnalyzerHelpers.temporalChange.call(
                 this,
                 currentBrightness,
+                timestamp,
                 maxHistory
             );
         }

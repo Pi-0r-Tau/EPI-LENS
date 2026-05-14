@@ -25,7 +25,7 @@ window.AnalyzerHelpers.estFlickerFrequency = function () {
         ) {
             if (prevTimestamp !== null) {
                 const diff = entry.timestamp - prevTimestamp;
-                if (diff > 0 && diff < 10000) {
+                if (diff > 0 && diff < 10) {
                     diffs.push(diff);
                 }
             }
@@ -42,7 +42,7 @@ window.AnalyzerHelpers.estFlickerFrequency = function () {
         ? sorted[mid]
         : (sorted[mid - 1] + sorted[mid]) / 2;
 
-    const frequency = medianDiff > 0 ? Math.min(1000 / medianDiff, 100) : 0;
+    const frequency = medianDiff > 0 ? Math.min(1 / medianDiff, 100) : 0;
 
     // if (frequency > 3) console.warn('Flicker detected:', frequency, 'Hz');
 
