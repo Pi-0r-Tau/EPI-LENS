@@ -454,7 +454,7 @@ if (!window.VideoAnalyzer) {
                     imageData
                 ),
                 spectralData: this.performSpectralAnalysis(brightness),
-                coherenceData: this.calculateTemporalCoherence(brightness),
+                coherenceData: this.calculateTemporalCoherence(brightness, timestamp),
                 edgeData: this.detectEdges(imageData),
                 dominantColor: dominantColor,
                 dominantLab: dominantLab,
@@ -806,12 +806,13 @@ if (!window.VideoAnalyzer) {
             return window.AnalyzerHelpers.periodicity(signal, minLag, threshold);
         }
 
-        calculateTemporalCoherence(brightness, windowSize = 30, maxLag = 10) {
+        calculateTemporalCoherence(brightness, timestamp, windowSize = 30, maxLag = 10) {
             return window.AnalyzerHelpers.temporalCoherence.call(
                 this,
                 brightness,
                 windowSize,
-                maxLag
+                maxLag,
+                timestamp
             );
         }
 

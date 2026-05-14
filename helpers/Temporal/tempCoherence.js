@@ -2,7 +2,8 @@ window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 window.AnalyzerHelpers.temporalCoherence = function (
     brightness,
     windowSize = 30,
-    maxLag = 10
+    maxLag = 10,
+    timestamp = null
 ) {
     brightness =
         typeof brightness === "number" &&
@@ -70,9 +71,13 @@ window.AnalyzerHelpers.temporalCoherence = function (
         periodicity = this.detectPeriodicity(validBuffer);
     }
     // Store history
+    const ts = (typeof timestamp === "number" && isFinite(timestamp) && timestamp >= 0)
+    ? timestamp
+    : null;
+    
     tc.coherenceHistory = tc.coherenceHistory || [];
     tc.coherenceHistory.push({
-        timestamp: Date.now(),
+        timestamp: ts,
         coherenceScore,
         periodicityScore: periodicity.confidence,  // TASK 191: Just the number, not full object
     });
