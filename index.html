@@ -1,292 +1,272 @@
- <!-- TASK 2207.f Serve the EPI-LENS to github pages-->
+<!-- TASK 2207.f Serve the EPI-LENS to github pages-->
 
 <!DOCTYPE html>
-<html lang="en" class="govuk-template">
+<html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EPI-LENS File Analyzer</title>
-    <link rel="stylesheet" href="https://unpkg.com/govuk-frontend@5.9.0/dist/govuk/govuk-frontend.min.css">
-    <link rel="stylesheet" href="test.css">
+    <link rel="stylesheet" href="fileanalyzer.css">
 </head>
-<body class="govuk-template__body">
 
-    <header class="govuk-header" role="banner">
-        <div class="govuk-header__container govuk-width-container">
-            <div class="govuk-header__content">
-                <span class="govuk-header__service-name">EPI-LENS Local Video Analysis</span>
-            </div>
-        </div>
+<body>
+    <header class="header">
+        <h1>EPI-LENS Local Video Analysis</h1>
     </header>
+    <div class="main-layout">
+        <aside class="sidebar" aria-label="Analysis controls and settings">
+            <section class="panel">
+                <h2>Load Video(s)</h2>
+                <label for="videoFileInput">Select Video File(s):</label>
+                <input type="file" id="videoFileInput" accept="video/*" multiple>
+                <output id="playlistInfo" style="color:#90caf9;font-size:0.98em;margin-top:8px;"></output>
+            </section>
 
-    <div class="govuk-width-container">
-        <main class="govuk-main-wrapper" id="main-content">
-            <div class="govuk-grid-row">
+            <section class="panel" id="settingsPanel">
+                <h2>Metric Configuration</h2>
+                <button id="openSettingsBtn" type="button">Optional Metric Settings</button>
+            </section>
 
-                <aside class="govuk-grid-column-one-third" aria-label="Analysis controls and settings">
-
-                    <section class="app-panel govuk-!-margin-bottom-4">
-                        <h2 class="govuk-heading-m">Load Video(s)</h2>
-                        <div class="govuk-form-group">
-                            <label class="govuk-label" for="videoFileInput">Select Video File(s):</label>
-                            <input class="govuk-file-upload" type="file" id="videoFileInput" accept="video/*" multiple>
-                        </div>
-                        <output id="playlistInfo" class="govuk-body-s"></output>
-                    </section>
-
-                    <section class="app-panel govuk-!-margin-bottom-4" id="settingsPanel">
-                        <h2 class="govuk-heading-m">Metric Configuration</h2>
-                        <button id="openSettingsBtn" type="button" class="govuk-button govuk-button--secondary govuk-!-width-full govuk-!-margin-bottom-0">Optional Metric Settings</button>
-                    </section>
-
-                    <section class="app-panel govuk-!-margin-bottom-4" id="thresholdPanel">
-                        <h2 class="govuk-heading-m">Thresholds</h2>
-
-                        <div class="govuk-form-group">
-                            <label class="govuk-label" for="flashesPerSecondThreshold">Flashes Per Second Threshold</label>
-                            <input type="range" id="flashesPerSecondThreshold" min="1" max="10" step="0.1" value="3"
-                                class="app-range" aria-valuemin="1" aria-valuemax="10" aria-valuenow="3">
-                            <output id="flashesPerSecondValue" for="flashesPerSecondThreshold" class="govuk-body-s app-output">3.0</output>
-                        </div>
-
-                        <div class="govuk-form-group">
-                            <label class="govuk-label" for="flashIntensityThreshold">Flash Intensity Threshold</label>
-                            <input type="range" id="flashIntensityThreshold" min="0.05" max="1" step="0.01" value="0.2"
-                                class="app-range" aria-valuemin="0.05" aria-valuemax="1" aria-valuenow="0.2">
-                            <output id="flashIntensityValue" for="flashIntensityThreshold" class="govuk-body-s app-output">0.20</output>
-                        </div>
-
-                        <div class="govuk-form-group">
-                            <label class="govuk-label" for="analysisInterval">Analysis Interval (seconds)</label>
-                            <input type="range" id="analysisInterval" min="0.01" max="0.5" step="0.01" value="0.033"
-                                class="app-range" aria-valuemin="0.01" aria-valuemax="0.5" aria-valuenow="0.033"
-                                aria-describedby="analysisIntervalFpsInfo analysisIntervalNote analysisIntervalHelp">
-                            <output id="analysisIntervalValue" for="analysisInterval" class="govuk-body-s app-output">0.033</output>
-                            <div id="analysisIntervalFpsInfo" class="govuk-body-s govuk-!-margin-top-1"></div>
-                            <div class="govuk-warning-text" id="analysisIntervalNote">
-                                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
-                                <strong class="govuk-warning-text__text">
-                                    <span class="govuk-visually-hidden">Warning</span>
-                                    For standard 30fps videos, the maximum meaningful analysis rate is 30 frames per second (interval = 0.033s). Setting a lower interval will not analyze more frames than exist in the video.
-                                </strong>
-                            </div>
-                            <details class="govuk-details" id="analysisIntervalHelp">
-                                <summary class="govuk-details__summary">
-                                    <span class="govuk-details__summary-text">What does this mean?</span>
-                                </summary>
-                                <div class="govuk-details__text govuk-body-s">
-                                    This sets how often (in seconds) a frame is analyzed.<br>
-                                    Lower values (e.g. 0.033) mean more frequent analysis (30 frames per second).<br>
-                                    Higher values (e.g. 0.5) mean less frequent analysis (2 frames per second).<br>
-                                    Use a lower value for more detailed analysis, or a higher value for faster, less detailed results.
-                                </div>
-                            </details>
-                        </div>
-
-                        <div class="govuk-form-group">
-                            <label class="govuk-label" for="clusterGapThresholdInput">Cluster Gap Threshold (Seconds)</label>
-                            <div class="app-range-row">
-                                <input type="range" id="clusterGapThresholdInput" min="0.05" max="2.0" step="0.05" value="0.3"
-                                    class="app-range" aria-valuemin="0.05" aria-valuemax="2.0" aria-valuenow="0.3"
-                                    aria-describedby="clusterGapThresholdNote clusterGapThresholdStatus">
-                                <output id="clusterGapThresholdValue" for="clusterGapThresholdInput" class="govuk-body-s app-output">0.30</output>
-                                <button id="resetClusterGapThresholdBtn" type="button" class="govuk-button govuk-button--secondary app-btn-small govuk-!-margin-bottom-0">Auto</button>
-                            </div>
-                            <div id="clusterGapThresholdStatus" class="govuk-body-s govuk-!-margin-top-1">
-                                <strong>Auto:</strong> <span id="autoClusterGapThresholdValue">0.12</span>s (based on current FPS)
-                            </div>
-                            <details class="govuk-details" id="clusterGapThresholdNote">
-                                <summary class="govuk-details__summary">
-                                    <span class="govuk-details__summary-text">What does this mean?</span>
-                                </summary>
-                                <div class="govuk-details__text govuk-body-s">
-                                    Flashes within this time gap are grouped into the same cluster. Smaller values create more clusters (stricter grouping). Larger values create fewer clusters (looser grouping).<br>
-                                    <strong>Auto-calculation:</strong> Calculated as 3.5x the analysis interval for consistent clustering behavior across different FPS rates.<br>
-                                    <strong>Override:</strong> Drag the slider to manually adjust, or click "Auto" to reset to the recommended value.
-                                </div>
-                            </details>
-                        </div>
-                    </section>
-
-                    <section class="app-panel govuk-!-margin-bottom-4" id="analysisControlsPanel">
-                        <h2 class="govuk-heading-m">Controls</h2>
-                        <div id="analysisControls" class="controls-panel" style="display:none;">
-                            <button id="startFileAnalysis" type="button" class="govuk-button">Start Analysis</button>
-                            <button id="stopFileAnalysis" type="button" class="govuk-button govuk-button--warning">Stop Analysis</button>
-                            <div class="export-options govuk-!-margin-top-2">
-                                <h3 class="govuk-heading-s">Export Formats</h3>
-                                <fieldset class="govuk-fieldset">
-                                    <legend class="govuk-visually-hidden">Select export file formats</legend>
-                                    <div class="govuk-checkboxes govuk-checkboxes--small">
-                                        <div class="govuk-checkboxes__item">
-                                            <input class="govuk-checkboxes__input" type="checkbox" id="exportCSVOption" checked>
-                                            <label class="govuk-label govuk-checkboxes__label" for="exportCSVOption">CSV</label>
-                                        </div>
-                                        <div class="govuk-checkboxes__item">
-                                            <input class="govuk-checkboxes__input" type="checkbox" id="exportJSONOption" checked>
-                                            <label class="govuk-label govuk-checkboxes__label" for="exportJSONOption">JSON</label>
-                                        </div>
-                                        <div class="govuk-checkboxes__item">
-                                            <input class="govuk-checkboxes__input" type="checkbox" id="exportNDJSONOption" checked>
-                                            <label class="govuk-label govuk-checkboxes__label" for="exportNDJSONOption">NDJSON</label>
-                                        </div>
-                                        <div class="govuk-checkboxes__item">
-                                            <input class="govuk-checkboxes__input" type="checkbox" id="exportSummaryStatsOption" checked>
-                                            <label class="govuk-label govuk-checkboxes__label" for="exportSummaryStatsOption">Summary Stats</label>
-                                        </div>
-                                    </div>
-                                </fieldset>
-                                <button id="exportSelectedFormats" type="button" class="govuk-button govuk-button--secondary govuk-!-margin-top-3 govuk-!-margin-bottom-0">Export Selected</button>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="app-panel govuk-!-margin-bottom-4" id="SummaryPanel" aria-labelledby="summaryHeading">
-                        <h2 class="govuk-heading-m" id="summaryHeading">Summary</h2>
-                        <dl class="govuk-summary-list">
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Detected Flashes</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryFlashes">0</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Risk Level</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryRisk">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">PSI Score</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryPSI">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Avg PSI</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryAvgPSI">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Max PSI</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryMaxPSI">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Violation Instances</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryViolations">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Dangerous Frames</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryDangerousFrames">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Dangerous Time</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryDangerousTime">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Flash Clusters</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryFlashClusters">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Avg Cluster Size</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryAvgClusterSize">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Max Cluster Size</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryMaxClusterSize">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Min Cluster Size</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryMinClusterSize">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Median Cluster Size</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryMedianClusterSize">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Cluster Density</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryClusterDensity">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row">
-                                <dt class="govuk-summary-list__key">Flashes in Clusters</dt>
-                                <dd class="govuk-summary-list__value" id="SummaryFlashesInClusters">-</dd>
-                            </div>
-                            <div class="govuk-summary-list__row app-summary-expand">
-                                <dt class="govuk-summary-list__key">Cluster Details</dt>
-                                <dd class="govuk-summary-list__value">
-                                    <button id="toggleClusterListBtn" type="button" class="govuk-button govuk-button--secondary app-btn-small govuk-!-margin-bottom-1" aria-expanded="false" aria-controls="SummaryClustersList">Show</button>
-                                    <div id="SummaryClustersList" style="display:none;" class="govuk-body-s"></div>
-                                </dd>
-                            </div>
-                            <div class="govuk-summary-list__row app-summary-expand">
-                                <dt class="govuk-summary-list__key">Flash Timestamps</dt>
-                                <dd class="govuk-summary-list__value">
-                                    <button id="toggleFlashesListBtn" type="button" class="govuk-button govuk-button--secondary app-btn-small govuk-!-margin-bottom-1" aria-expanded="false" aria-controls="SummaryFlashesList">Show</button>
-                                    <div id="SummaryFlashesList" style="display:none;" class="govuk-body-s"></div>
-                                </dd>
-                            </div>
-                        </dl>
-                    </section>
-
-                </aside>
-
-                <div class="govuk-grid-column-two-thirds">
-
-                    <section class="app-panel govuk-!-margin-bottom-4">
-                        <div class="app-panel-header">
-                            <h2 class="govuk-heading-m govuk-!-margin-bottom-0">Video Preview</h2>
-                            <div class="resize-controls" id="videoResizeControls" role="group" aria-label="Video size controls">
-                                <span class="govuk-body-s" id="videoSizeLabel">Video Size:</span>
-                                <button type="button" id="videoSizeDown" aria-label="Decrease video size" title="Decrease video size" class="govuk-button govuk-button--secondary app-btn-small govuk-!-margin-bottom-0">-</button>
-                                <button type="button" id="videoSizeUp" aria-label="Increase video size" title="Increase video size" class="govuk-button govuk-button--secondary app-btn-small govuk-!-margin-bottom-0">+</button>
-                            </div>
-                        </div>
-                        <video id="videoPlayer" controls style="display:none;width:100%;margin-top:0;" aria-label="Video player for analysis"></video>
-                    </section>
-
-                    <section class="app-panel">
-                        <div class="app-panel-header">
-                            <h2 class="govuk-heading-m govuk-!-margin-bottom-0">Live Metrics</h2>
-                            <div class="resize-controls" id="graphResizeControls" role="group" aria-label="Graph size controls">
-                                <span class="govuk-body-s" id="graphSizeLabel">Graph Size:</span>
-                                <button type="button" id="graphSizeDown" aria-label="Decrease graph size" title="Decrease graph size" class="govuk-button govuk-button--secondary app-btn-small govuk-!-margin-bottom-0">-</button>
-                                <button type="button" id="graphSizeUp" aria-label="Increase graph size" title="Increase graph size" class="govuk-button govuk-button--secondary app-btn-small govuk-!-margin-bottom-0">+</button>
-                            </div>
-                        </div>
-                        <div id="liveChartArea" class="live-chart-section" style="display:none;">
-                            <div id="metricSelector" class="metric-selector" role="group" aria-label="Metric selection"></div>
-                            <canvas id="liveMetricsGraph" width="750" height="400"
-                                style="width:100%;background:#f3f2f1;border:1px solid #b1b4b6;" role="img"
-                                aria-label="Live metrics graph"></canvas>
-                            <div id="liveMetricsLegend" style="margin-top:6px;" role="group" aria-label="Graph legend"></div>
-                        </div>
-                        <div id="fileAnalysisResults" class="results-panel govuk-body" role="region" aria-live="polite"></div>
-                    </section>
-
+            <section class="panel" id="thresholdPanel">
+                <h2>Thresholds</h2>
+                <div style="margin-bottom:10px;">
+                    <label for="flashesPerSecondThreshold">Flashes Per Second Threshold</label>
+                    <input type="range" id="flashesPerSecondThreshold" min="1" max="10" step="0.1" value="3"
+                        style="width:100%;" aria-valuemin="1" aria-valuemax="10" aria-valuenow="3">
+                    <output id="flashesPerSecondValue" for="flashesPerSecondThreshold"
+                        style="color:#90caf9;">3.0</output>
                 </div>
-            </div>
-        </main>
-    </div>
-
-    <div id="settingsOverlay" class="settings-overlay" role="dialog" aria-labelledby="settingsTitle" aria-modal="true"
-        aria-hidden="true" style="display: none;">
-        <div class="settings-modal">
-            <h2 class="govuk-heading-l" id="settingsTitle">Analysis Settings</h2>
-            <section class="settings-section">
-                <h3 class="govuk-heading-m">Optional Metrics</h3>
-                <div class="govuk-checkboxes">
-                    <div class="govuk-checkboxes__item">
-                        <input class="govuk-checkboxes__input" type="checkbox" id="redMetricsToggle">
-                        <label class="govuk-label govuk-checkboxes__label" for="redMetricsToggle">
-                            <strong>Red Metrics Analysis</strong>
-                            <span class="govuk-hint">Analyzes red flashing content using saturated red detection. This metric specifically targets red-based photosensitive triggers.</span>
-                        </label>
+                <div style="margin-bottom:10px;">
+                    <label for="flashIntensityThreshold">Flash Intensity Threshold</label>
+                    <input type="range" id="flashIntensityThreshold" min="0.05" max="1" step="0.01" value="0.2"
+                        style="width:100%;" aria-valuemin="0.05" aria-valuemax="1" aria-valuenow="0.2">
+                    <output id="flashIntensityValue" for="flashIntensityThreshold" style="color:#90caf9;">0.20</output>
+                </div>
+                <div>
+                    <label for="analysisInterval">Analysis Interval (seconds)</label>
+                    <input type="range" id="analysisInterval" min="0.01" max="0.5" step="0.01" value="0.033"
+                        style="width:100%;" aria-valuemin="0.01" aria-valuemax="0.5" aria-valuenow="0.033"
+                        aria-describedby="analysisIntervalFpsInfo analysisIntervalNote analysisIntervalHelp">
+                    <output id="analysisIntervalValue" for="analysisInterval" style="color:#90caf9;">0.033</output>
+                    <div id="analysisIntervalFpsInfo" style="font-size:0.97em;color:#90caf9;margin-top:2px;"></div>
+                    <p id="analysisIntervalNote" style="font-size:0.97em;color:#ff9800;margin-top:2px;">
+                        <strong>Note:</strong> For standard 30fps videos, the maximum meaningful analysis rate is 30
+                        frames per second (interval = 0.033s).
+                        Setting a lower interval will not analyze more frames than exist in the video.
+                    </p>
+                    <p id="analysisIntervalHelp" style="font-size:0.97em;color:#bbb;margin-top:2px;">
+                        <strong>What does this mean?</strong><br>
+                        This sets how often (in seconds) a frame is analyzed.<br>
+                        Lower values (e.g. 0.033) mean more frequent analysis (30 frames per second).<br>
+                        Higher values (e.g. 0.5) mean less frequent analysis (2 frames per second).<br>
+                        Use a lower value for more detailed analysis, or a higher value for faster, less detailed
+                        results.
+                    </p>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <label for="clusterGapThresholdInput">Cluster Gap Threshold (Seconds)</label>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                        <input type="range" id="clusterGapThresholdInput" min="0.05" max="2.0" step="0.05" value="0.3"
+                            style="flex: 1;" aria-valuemin="0.05" aria-valuemax="2.0" aria-valuenow="0.3"
+                            aria-describedby="clusterGapThresholdNote clusterGapThresholdStatus">
+                        <output id="clusterGapThresholdValue" for="clusterGapThresholdInput"
+                            style="color: #90caf9; min-width: 50px; text-align: right;">0.30</output>
+                        <button id="resetClusterGapThresholdBtn" type="button" title="Reset to auto-calculated value"
+                            style="padding: 4px 12px; background: #2196f3; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">Auto</button>
                     </div>
-                    <div class="govuk-checkboxes__item">
-                        <input class="govuk-checkboxes__input" type="checkbox" id="temporalContrastToggle">
-                        <label class="govuk-label govuk-checkboxes__label" for="temporalContrastToggle">
-                            <strong>Temporal Contrast Sensitivity</strong>
-                            <span class="govuk-hint">Analyzes color contrast changes over time using CIE Delta-E calculations. Helps detect subtle color transitions that may trigger photosensitivity.</span>
-                        </label>
+                    <!-- TASK 8902.6 Cluster Auto-->
+                    <div id="clusterGapThresholdStatus" style="font-size: 0.95em; color: #90caf9; margin-bottom: 4px;">
+                        <strong>Auto:</strong> <span id="autoClusterGapThresholdValue">0.12</span>s (based on current
+                        FPS)
+                    </div>
+                    <p id="clusterGapThresholdNote" style="font-size: 0.97em; color: #bbb; margin-top: 2px;">
+                        <strong>What does this mean?</strong><br>
+                        Flashes within this time gap are grouped into the same cluster. Smaller values create more
+                        clusters (stricter grouping). Larger values create fewer clusters (looser grouping).<br>
+                        <strong>Auto-calculation:</strong> Calculated as 3.5x the analysis interval for consistent
+                        clustering behavior across different FPS rates.<br>
+                        <strong>Override:</strong> Drag the slider to manually adjust, or click "Auto" to reset to the
+                        recommended value.
+                    </p>
+                </div>
+            </section>
+            <section class="panel" id="analysisControlsPanel">
+                <h2>Controls</h2>
+                <div id="analysisControls" class="controls-panel" style="display:none;">
+                    <button id="startFileAnalysis" type="button">Start Analysis</button>
+                    <button id="stopFileAnalysis" type="button">Stop Analysis</button>
+                    <div class="export-options">
+                        <h3>Export Formats</h3>
+                        <fieldset class="export-checkboxes">
+                            <legend class="sr-only">Select export file formats</legend>
+                            <label><input type="checkbox" id="exportCSVOption" checked> CSV</label>
+                            <label><input type="checkbox" id="exportJSONOption" checked> JSON</label>
+                            <label><input type="checkbox" id="exportNDJSONOption" checked> NDJSON</label>
+                            <label><input type="checkbox" id="exportSummaryStatsOption" checked> Summary Stats</label>
+                        </fieldset>
+                        <button id="exportSelectedFormats" type="button">Export Selected</button>
                     </div>
                 </div>
             </section>
+            <section class="panel summary-panel" id="SummaryPanel" aria-labelledby="summaryHeading">
+                <h2 id="summaryHeading">Summary</h2>
+                <dl class="summary-list">
+                    <div class="summary-row">
+                        <dt class="summary-label">Detected Flashes:</dt>
+                        <dd id="SummaryFlashes">0</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Risk Level:</dt>
+                        <dd id="SummaryRisk">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">PSI Score:</dt>
+                        <dd id="SummaryPSI">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Avg PSI:</dt>
+                        <dd id="SummaryAvgPSI">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Max PSI:</dt>
+                        <dd id="SummaryMaxPSI">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Violation Instances:</dt>
+                        <dd id="SummaryViolations">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Dangerous Frames:</dt>
+                        <dd id="SummaryDangerousFrames">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Dangerous Time:</dt>
+                        <dd id="SummaryDangerousTime">-</dd>
+                    </div>
+                    <!--TASK 8902.7 FLASH CLUSTERS SUMMARY-->
+                    <div class="summary-row">
+                        <dt class="summary-label">Flash Clusters:</dt>
+                        <dd id="SummaryFlashClusters">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Avg Cluster Size:</dt>
+                        <dd id="SummaryAvgClusterSize">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Max Cluster Size:</dt>
+                        <dd id="SummaryMaxClusterSize">-</dd>
+                    </div>
+                    <!--TASK 8902.8: CLUSTER STATS-->
+                    <div class="summary-row">
+                        <dt class="summary-label">Min Cluster Size:</dt>
+                        <dd id="SummaryMinClusterSize">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Median Cluster Size:</dt>
+                        <dd id="SummaryMedianClusterSize">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Cluster Density:</dt>
+                        <dd id="SummaryClusterDensity">-</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt class="summary-label">Flashes in Clusters:</dt>
+                        <dd id="SummaryFlashesInClusters">-</dd>
+                    </div>
+                    <div class="summary-row" style="display:block;">
+                        <dt class="summary-label">Cluster Details:</dt>
+                        <dd class="cluster-details-container" style="display:block;margin-top:4px;">
+                            <button id="toggleClusterListBtn" type="button" aria-expanded="false"
+                                aria-controls="SummaryClustersList">Show</button>
+                            <div id="SummaryClustersList" style="display:none;"></div>
+                        </dd>
+                    </div>
+                    <div class="summary-row" style="display:block;">
+                        <dt class="summary-label">Flash Timestamps:</dt>
+                        <dd class="flash-timestamps-container" style="display:block;margin-top:4px;">
+                            <button id="toggleFlashesListBtn" type="button" aria-expanded="false"
+                                aria-controls="SummaryFlashesList">Show</button>
+                            <div id="SummaryFlashesList"></div>
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+        </aside>
+        <main class="main-content" aria-label="Video preview and metrics">
+            <section class="video-panel">
+                <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <h2 style="margin:0;color:#90caf9;">Video Preview</h2>
+                    <div class="resize-controls" id="videoResizeControls" role="group" aria-label="Video size controls">
+                        <span style="color:#bbb;font-size:0.98em;margin-right:6px;" id="videoSizeLabel">Video
+                            Size:</span>
+                        <button type="button" id="videoSizeDown" aria-label="Decrease video size"
+                            title="Decrease video size" style="font-size:1.2em;">-</button>
+                        <button type="button" id="videoSizeUp" aria-label="Increase video size"
+                            title="Increase video size" style="font-size:1.2em;">+</button>
+                    </div>
+                </header>
+                <video id="videoPlayer" controls style="display:none;margin-top:0;"
+                    aria-label="Video player for analysis"></video>
+            </section>
+            <section class="metrics-panel">
+                <header style="display:flex;align-items:center;justify-content:space-between;">
+                    <h2 class="metrics-title">Live Metrics</h2>
+                    <div class="resize-controls" id="graphResizeControls" role="group" aria-label="Graph size controls">
+                        <span style="color:#bbb;font-size:0.98em;margin-right:6px;" id="graphSizeLabel">Graph
+                            Size:</span>
+                        <button type="button" id="graphSizeDown" aria-label="Decrease graph size"
+                            title="Decrease graph size" style="font-size:1.2em;">-</button>
+                        <button type="button" id="graphSizeUp" aria-label="Increase graph size"
+                            title="Increase graph size" style="font-size:1.2em;">+</button>
+                    </div>
+                </header>
+                <div id="liveChartArea" class="live-chart-section" style="display:none;">
+                    <div id="metricSelector" class="metric-selector" role="group" aria-label="Metric selection"></div>
+                    <canvas id="liveMetricsGraph" width="750" height="400"
+                        style="width:100%;background:#181818;border-radius:4px;" role="img"
+                        aria-label="Live metrics graph"></canvas>
+                    <div id="liveMetricsLegend" style="margin-top:6px;" role="group" aria-label="Graph legend"></div>
+                </div>
+                <div id="fileAnalysisResults" class="results-panel" role="region" aria-live="polite"></div>
+            </section>
+        </main>
+    </div>
+    <div id="settingsOverlay" class="settings-overlay" role="dialog" aria-labelledby="settingsTitle" aria-modal="true"
+        aria-hidden="true" style="display: none;">
+        <div class="settings-modal">
+            <h2 id="settingsTitle">Analysis Settings</h2>
+            <section class="settings-section">
+                <h3>Optional Metrics</h3>
+
+                <div class="settings-toggle">
+                    <label>
+                        <input type="checkbox" id="redMetricsToggle">
+                        <div class="toggle-content">
+                            <strong class="toggle-title">Red Metrics Analysis</strong>
+                            <p class="toggle-description">
+                                Analyzes red flashing content using saturated red detection. This metric specifically
+                                targets red-based photosensitive triggers.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+                <div class="settings-toggle">
+                    <label>
+                        <input type="checkbox" id="temporalContrastToggle">
+                        <div class="toggle-content">
+                            <strong class="toggle-title">Temporal Contrast Sensitivity</strong>
+                            <p class="toggle-description">
+                                Analyzes color contrast changes over time using CIE Delta-E calculations. Helps detect
+                                subtle color transitions that may trigger photosensitivity.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+            </section>
             <footer class="settings-actions">
-                <button class="govuk-button govuk-button--secondary" id="closeSettingsBtn" type="button">Close</button>
-                <button class="govuk-button" id="saveSettingsBtn" type="button">Save Settings</button>
+                <button class="settings-btn secondary" id="closeSettingsBtn" type="button">Close</button>
+                <button class="settings-btn" id="saveSettingsBtn" type="button">Save Settings</button>
             </footer>
         </div>
     </div>
@@ -333,4 +313,5 @@
     <script src="Offline/fileanalyzer-ui.js"></script>
     <script src="fileanalyzer.js"></script>
 </body>
+
 </html>
