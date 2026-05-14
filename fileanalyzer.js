@@ -197,7 +197,15 @@ function openChartsView() {
             window.open('Charting/charts.html', '_blank');
         });
     } else {
-        localStorage.setItem('epilensAnalysisData', json);
+        // QuotaExceededError manual catch for localstorage 
+        try {
+            localStorage.setItem('epilensAnalysisData', json);
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                window.open('Charting/charts.html', '_blank');
+                return;
+            }
+        }
         window.open('Charting/charts.html', '_blank');
     }
 }
