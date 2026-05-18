@@ -7,7 +7,7 @@ EPI-LENS is a [GitHub Pages tool](https://pi-0r-tau.github.io/EPI-LENS/) and  br
 
 Extracts temporal, spatial and spectral metrics from video content and exports data as CSV, JSON and NDJSON.
 
-Think of it similar to PEAT (Photosensitive Epilepsy Analysis Tool) but open source, vanilla JS and a browser extension.
+Think of it similar to PEAT (Photosensitive Epilepsy Analysis Tool) but open source, vanilla JS and a browser extension for youtube analysis and a GitHub pages tool for offline video analysis.
 
 ## Supports YouTube video and offline/local playlist live analysis. 
 
