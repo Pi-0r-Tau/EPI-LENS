@@ -34,7 +34,7 @@ window.AnalyzerHelpers.frameHistogramDiff = function (data1, data2) {
     for (let i = 0; i < data1.length; i += 4) {
         // Skip if both pixels are fully transparentt, reduce computation and it's pretty pointless to skew results for pixels that I can't even see.
         if (!(data1[i + 3] | data2[i + 3])) continue;
-        
+
         // Linear luminance is closer to human vision, Harding FPA and PEAT use it so why not.
         const lum1 = _histR[data1[i]] + _histG[data1[i + 1]] + _histB[data1[i + 2]];
         const lum2 = _histR[data2[i]] + _histG[data2[i + 1]] + _histB[data2[i + 2]];
@@ -45,8 +45,6 @@ window.AnalyzerHelpers.frameHistogramDiff = function (data1, data2) {
     let diff = 0,
         total = 0;
     for (let i = 0; i < bins; ++i) {
-        // Unint32Array values are always non-negative integers so ternary beats Math.abs,
-        // and binDiff<1 for integers is just !binDiff
         const binDiff = hist1[i] > hist2[i] ? hist1[i] - hist2[i] : hist2[i] - hist1[i];
         if (!binDiff) continue;
         diff += binDiff;
