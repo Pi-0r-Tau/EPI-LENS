@@ -1,3 +1,4 @@
+const R = 0.2126, G = 0.7152, B = 0.0722;
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
 window.AnalyzerHelpers.frameEntropy = function (imageData, maxHistory = 1000) {
   if (!imageData?.data || !imageData.width || !imageData.height) return 0;
@@ -9,10 +10,7 @@ window.AnalyzerHelpers.frameEntropy = function (imageData, maxHistory = 1000) {
   if (pixels === 0) return 0;
 
   const histogram = new Uint32Array(256); // 8-bit brightness bins
-  const clamp = (val) => val < 0 ? 0 : val > 255 ? 255 : val;
-
-  // Cache luminance helper
-  const luminance255Fn = window.AnalyzerHelpers.luminance255;
+  const LUT255 = window.AnalyzerHelpers.sRGB_TO_LINEAR_255_LUT;
   let visiblePixels = 0;
   let i = 0,
     len = data.length;
@@ -21,8 +19,7 @@ window.AnalyzerHelpers.frameEntropy = function (imageData, maxHistory = 1000) {
       const alpha = data[i + k + 3];
       if (alpha === 0) continue;
 
-      const GCL = luminance255Fn(data, i + k); // Gamma-Corrected Luminance
-      const brightness = clamp(Math.round(GCL));
+      const brightness = (LUT255[data[i+k]] * R + LUT255[data[i+k+1]] * G + LUT255[data[i+k+2]] * B + 0.5) | 0;
       histogram[brightness]++;
       visiblePixels++;
     }
@@ -32,8 +29,7 @@ window.AnalyzerHelpers.frameEntropy = function (imageData, maxHistory = 1000) {
     const alpha = data[i + 3];
     if (alpha === 0) continue;
 
-    const GCL = luminance255Fn(data, i);
-    const brightness = clamp(Math.round(GCL));
+    const brightness = (LUT255[data[i]] * R + LUT255[data[i+1]] * G + LUT255[data[i+2]] * B + 0.5) | 0;
     histogram[brightness]++;
     visiblePixels++;
   }
