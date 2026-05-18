@@ -1,60 +1,54 @@
 window.AnalyzerHelpers = window.AnalyzerHelpers || {};
+// 229.1.O
+// So in generated tests/ benchmark-helpers.js this was flagged as pretty poor:
+// with 0.85ms median for 57,600px and 2.38 ms for 129,600 px 
+// redid testing:
+// 1280x720 @25% : Median of 0.523ms
+// Avg to 0.662ms
+// 1920X1080 @25: Median of 1.182ms
+// Avg to 1.584ms
+// Nicely pushed simulated_30fps_loop 30 frames from Avg of 34.14ms to 27.86ms, with median of 30.77ms to 25.62ms and also ops per second from 28 to roughly 36
+
+let _histR, _histG, _histB;
+
 window.AnalyzerHelpers.frameHistogramDiff = function (data1, data2) {
     if (!data1 || !data2 || data1.length !== data2.length) return 0;
-
 
     const bins = 32; // Sweet spot, less bins = less sensitivity, more bins = more noise.
     // Unint32Array as in testing csv results were all zero, this change has seemed to fix it
     const hist1 = new Uint32Array(bins),
         hist2 = new Uint32Array(bins);
-    const binSize = 256 / bins;
-
-    // Grab the LUT
-    const getLuminance = window.AnalyzerHelpers.luminance;
-    const useLUT = typeof getLuminance === 'function';
-    
-    // Linear luminance is closer to human vision, Harding FPA and PEAT use it so why not.
-    function srgb2linear(v) {
-        v /= 255;
-        return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    if (!_histR) {
+        // cache the LUT-based histograms
+        const LUT = window.AnalyzerHelpers.sRGB_TO_LINEAR_LUT;
+        _histR = new Float64Array(256);
+        _histG = new Float64Array(256);
+        _histB = new Float64Array(256);
+        for (let k = 0; k < 256; k++) {
+            _histR[k] = LUT[k] * 0.2126;
+            _histG[k] = LUT[k] * 0.7152;
+            _histB[k] = LUT[k] * 0.0722;
+        }
     }
 
     for (let i = 0; i < data1.length; i += 4) {
-        // Skip if both pixels are fully transparent, reduce computation and it's pretty pointless to skew results for pixels that I can't even see.
-        if (data1[i + 3] === 0 && data2[i + 3] === 0) continue;
-
-        let lum1, lum2;
-
-        if (useLUT) {
-            lum1 = getLuminance(data1, i);
-            lum2 = getLuminance(data2, i);
-        } else {
-        // Fallback path calculate on the fly
-        // If this is used something has gone wrong, but hey at least it works
-        const rWeight = 0.2126, gWeight = 0.7152, bWeight = 0.0722;
-
-      lum1 =
-        srgb2linear(data1[i]) * rWeight +
-        srgb2linear(data1[i + 1]) * gWeight +
-        srgb2linear(data1[i + 2]) * bWeight;
-      lum2 =
-        srgb2linear(data2[i]) * rWeight +
-        srgb2linear(data2[i + 1]) * gWeight +
-        srgb2linear(data2[i + 2]) * bWeight;
-    }
-
-        const v1 = Math.floor(lum1 * 255);
-        const v2 = Math.floor(lum2 * 255);
-        hist1[Math.min(bins - 1, Math.floor(v1 / binSize))]++;
-        hist2[Math.min(bins - 1, Math.floor(v2 / binSize))]++;
+        // Skip if both pixels are fully transparentt, reduce computation and it's pretty pointless to skew results for pixels that I can't even see.
+        if (!(data1[i + 3] | data2[i + 3])) continue;
+        
+        // Linear luminance is closer to human vision, Harding FPA and PEAT use it so why not.
+        const lum1 = _histR[data1[i]] + _histG[data1[i + 1]] + _histB[data1[i + 2]];
+        const lum2 = _histR[data2[i]] + _histG[data2[i + 1]] + _histB[data2[i + 2]];
+        hist1[(lum1 * 255) >>> 3]++;
+        hist2[(lum2 * 255) >>> 3]++;
     }
 
     let diff = 0,
         total = 0;
     for (let i = 0; i < bins; ++i) {
-        const binDiff = Math.abs(hist1[i] - hist2[i]);
-        // Ignore tiny changes
-        if (binDiff < 1) continue;
+        // Unint32Array values are always non-negative integers so ternary beats Math.abs,
+        // and binDiff<1 for integers is just !binDiff
+        const binDiff = hist1[i] > hist2[i] ? hist1[i] - hist2[i] : hist2[i] - hist1[i];
+        if (!binDiff) continue;
         diff += binDiff;
         total += hist1[i] + hist2[i];
     }
