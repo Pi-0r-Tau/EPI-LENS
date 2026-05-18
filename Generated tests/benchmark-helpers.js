@@ -707,3 +707,59 @@ require('fs').writeFileSync(
 );
 
 console.log(`\n${COLORS.green}✓${COLORS.reset} Saved: benchmark-results.json\n`);
+
+// Regression check: BASELINE="Generated tests/baseline.json" REGRESSION_THRESHOLD=2 node "benchmark-helpers.js""
+// If change is good cp "Generated tests/benchmark-results.json" "Generated tests/baseline.json" so that the basline can be updated
+const BASELINE_PATH = process.env.BASELINE;
+const _rt = parseFloat(process.env.REGRESSION_THRESHOLD);
+const REGRESSION_THRESHOLD = isNaN(_rt) ? 0.10 : (_rt > 1 ? _rt / 100 : _rt);
+
+if (BASELINE_PATH) {
+    let baseline;
+    try { baseline = JSON.parse(require('fs').readFileSync(BASELINE_PATH, 'utf8')); }
+    catch (e) { console.log(`${COLORS.yellow} Could not load baseline: ${e.message}${COLORS.reset}`); }
+
+    if (baseline) {
+        const baseMap = new Map(baseline.results.map(r => [r.name, r]));
+        let regressions = 0;
+
+        console.log(`\n${COLORS.bold}════════════════════════════════════════════════════════════${COLORS.reset}`);
+        console.log(`${COLORS.bold}  REGRESSION REPORT (threshold: ${(REGRESSION_THRESHOLD * 100).toFixed(0)}%)${COLORS.reset}`);
+        console.log(`${COLORS.bold}════════════════════════════════════════════════════════════${COLORS.reset}\n`);
+
+        for (const r of results) {
+            if (r.error) continue;
+            const b = baseMap.get(r.name);
+            if (!b || b.error) continue;
+
+            const prev = parseFloat(b.medianMs);
+            const curr = parseFloat(r.medianMs);
+            const delta = (curr - prev) / prev;
+            const NOISE_FLOOR_MS = parseFloat(process.env.NOISE_FLOOR) || 0.01; // 10µs minimum
+
+            const absDeltaMs = Math.abs(curr - prev);
+            if (absDeltaMs < NOISE_FLOOR_MS) continue; // ignore changes smaller than noise floor
+
+            const sign = delta > 0 ? '+' : '';
+            const color = delta > REGRESSION_THRESHOLD ? COLORS.red :
+                          delta < -0.01 ? COLORS.green : COLORS.dim;
+            const tag = delta > REGRESSION_THRESHOLD ? ' ← REGRESSION' : '';
+
+            console.log(
+                `  ${color}${sign}${(delta * 100).toFixed(1)}%${COLORS.reset}  ` +
+                `${r.name.padEnd(50)} ` +
+                `${COLORS.dim}${prev.toFixed(4)} → ${curr.toFixed(4)} ms (median)${COLORS.reset}` +
+                `${COLORS.red}${tag}${COLORS.reset}`
+            );
+
+            if (delta > REGRESSION_THRESHOLD) regressions++;
+        }
+
+        if (regressions > 0) {
+            console.log(`\n  ${COLORS.red}${COLORS.bold}${regressions} regression(s) detected.${COLORS.reset}\n`);
+            process.exitCode = 1; // non-zero exit for CI
+        } else {
+            console.log(`  ${COLORS.green}No regressions detected.${COLORS.reset}\n`);
+        }
+    }
+}
