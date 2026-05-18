@@ -449,10 +449,9 @@ if (!window.VideoAnalyzer) {
                     brightness,
                     timestamp
                 ),
-                frameDiffData: window.AnalyzerHelpers.calculateFrameDifference.call(
-                    this,
-                    imageData
-                ),
+                // 228.7.b frameDifference first frame = 1 fix. Now returns null for first frame, and is calculated from second frame onwards.
+                frameDiffData: this.lastFrame ? window.AnalyzerHelpers.calculateFrameDifference.call(this, imageData) : null,
+
                 spectralData: this.performSpectralAnalysis(brightness),
                 coherenceData: this.calculateTemporalCoherence(brightness, timestamp),
                 edgeData: this.detectEdges(imageData),
